@@ -56,7 +56,7 @@ namespace Game.UI
             if (!showDebug || !Core.GameSettings.DebugHud) return;
             PlayerInventory inv = player.Inventory;
             PlayerMotor motor = player.Motor;
-            string line = inv != null ? $"Keycard L{inv.KeycardLevel}   Protection: {inv.Protections}   Scrap: {inv.Scrap}" : "";
+            string line = inv != null ? $"Keycard L{inv.KeycardLevel}   Protection: {inv.Protections}   Scrap: {inv.Scrap}   LV {Game.Combat.Progression.Level(inv.Xp)} ({inv.Xp} XP)" : "";
             if (motor != null)
             {
                 line += $"   |   {motor.State}{(motor.IsCrouching ? " (crouch)" : "")}   v=({motor.Velocity.x:0.0}, {motor.Velocity.y:0.0})";

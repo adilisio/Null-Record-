@@ -81,7 +81,7 @@ namespace Game.Save
             if (_loaded != null && _loaded.scene == SceneManager.GetActiveScene().path)
             {
                 // Flags first, so pickups/doors/encounters can check them in their Start.
-                _inventory.Restore(_loaded.keycardLevel, (HazardType)_loaded.protections, _loaded.scrap, _loaded.tools, _loaded.flags);
+                _inventory.Restore(_loaded.keycardLevel, (HazardType)_loaded.protections, _loaded.scrap, _loaded.tools, _loaded.flags, _loaded.xp);
                 LoadedFromSave = true;
             }
             else
@@ -183,6 +183,7 @@ namespace Game.Save
                 keycardLevel = _inventory.KeycardLevel,
                 protections = (int)_inventory.Protections,
                 scrap = _inventory.Scrap,
+                xp = _inventory.Xp,
                 tools = tools.ToArray(),
                 flags = flags.ToArray(),
                 companion = c != null ? c.CombatUnit : "",

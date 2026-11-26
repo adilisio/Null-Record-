@@ -44,7 +44,7 @@ _Last updated 2026-11-26. Read this first in a new session, then `CLAUDE.md` (co
 - **Full verification** (about 6–8 min; builds scenes, lighting shots, WAVs, then EditMode and PlayMode tests):
   `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 test`
   - Results go to `Logs/batch/{edit,play}.xml`; screenshots go to `Screenshots/`.
-  - Current status: **111 tests passing** (80 EditMode, 31 PlayMode).
+  - Current status: **119 tests passing** (87 EditMode, 32 PlayMode).
 - **Publish the web build:** run `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 web` (about 2 min after the first build), then `sh Tools/publish-web.sh`. Then check the live URL in the built-in browser.
 - **Scenes are generated.** `MainMenu.unity` and `Greybox_Intake.unity` are rebuilt by **Null Record → Build All Scenes**, so edit `MainMenuBuilder.cs` and `GreyboxLevelBuilder*.cs`, never the `.unity` files.
 - **Menus, HUD, touch controls and the dialogue box** are built in code on Screen Space - Camera canvases, so they appear in test screenshots.
@@ -63,7 +63,7 @@ All of it is greybox. "Placeholder" means it's meant to be replaced.
 |---|---|
 | Player | Run, sprint, jump (coyote time and buffer), crouch, ladders, ledge grab/climb, interact; footsteps and other sounds |
 | Level | 3 rooms: Holding (crate, ledge), Maintenance (ladder, catwalk, Thermal Lining, steam hazard, L2 keycard, Dace), Security (L2 door, optional fight) |
-| Combat | Optional grid tactics in Security. 1 m tiles, multi-floor, move plus one action, cooldowns, height bonus, cover, armour, knockback, telegraphed enemy attacks that target a tile, no randomness; win and lose flow |
+| Combat | Optional grid tactics in Security. 1 m tiles, multi-floor, move plus one action, cooldowns, height bonus, cover, armour, knockback, telegraphed enemy attacks that target a tile, no randomness; win and lose flow. A hazard tile (arc grate) you can shove enemies onto. Ranged AI holds high ground and avoids melee reach. Wins give scrap and party XP (50 XP per level, +2 max HP per level) |
 | Companion | **Dace** (working name, placeholder writing): recruit conversation with a tone choice, follows you (catches up across floors), joins fights, 3 banter lines |
 | Dialogue | JSON in `Assets/_Project/Dialogue`, flags and conditions, text box with placeholder portrait, barks |
 | Saving | Autosave on room entry, any progress, and before and after fights; room-entry respawn; one slot; PlayerPrefs on the web |
@@ -83,15 +83,14 @@ Code is under `Assets/_Project/Scripts/Runtime/{Player,World,Combat,Companions,D
   - The endings
 - **Untested by hand:** nobody has played a build with real hands yet. Feel, balance, mouse control in combat, touch on a real phone and web performance on phones are all unknown.
 - **Known rough edges:**
-  - The Sentry AI gave up the high ground in testing.
   - Dace has no collision, so they pass through walls and doors.
   - Companion HP doesn't carry over between fights.
   - The pause key is defined in code, not in the input asset.
   - URP Forward+ falls back to Forward on WebGL, so lights can look slightly different on the web.
 - **Not built yet:**
-  - XP and skill upgrades
-  - Tool rewards from fights
-  - Hazards inside encounters
+  - Per-unit XP, and skill choices on level-up
+  - Tool rewards from fights (wait for the hacking-tool design)
+  - More hazard kinds (timed steam, switchable wires)
   - Units and skills as data assets (ScriptableObjects)
   - Music
   - Real art and audio assets
@@ -100,7 +99,7 @@ Code is under `Assets/_Project/Scripts/Runtime/{Player,World,Combat,Companions,D
 
 ## 6. Suggested next steps (the owner chooses)
 
-1. **Tune combat:** smarter enemy positioning, hazards in encounters, a tool or XP reward, balance.
+1. **Tune combat further:** balance after a hands-on play, skill choices on level-up, a tool reward once hacking tools exist.
 2. **Rewrite Dace** once the owner gives the name and voice; add the rest of the companion arc.
 3. **Expand the slice:** another room or two, a hacking-tool gate, a second encounter with a third enemy type.
 4. **Real assets:** low-poly models, portraits, recorded sound and a music bed.

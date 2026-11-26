@@ -23,6 +23,8 @@ namespace Game.Combat
         public const int FallDamage = 2;
         /// <summary>Knocked into a wall or another unit.</summary>
         public const int ImpactDamage = 1;
+        /// <summary>Default damage of a hazard tile (arcing floor, steam vent).</summary>
+        public const int HazardDamage = 2;
     }
 
     /// <summary>What an enemy will do on its next phase. Attacks target a tile, not a unit: step off it to dodge.</summary>
@@ -39,6 +41,8 @@ namespace Game.Combat
         public UnitDef Def;
         public Team Team;
         public int Hp;
+        /// <summary>Max HP for this fight: the def's base plus any level bonus.</summary>
+        public int MaxHp;
         public Tile Tile;
         public bool IsLeader;
         public bool Moved;
@@ -99,13 +103,14 @@ namespace Game.Combat
 
         public CombatState(CombatGrid grid) => Grid = grid;
 
-        public Unit AddUnit(UnitDef def, Team team, Tile tile, bool leader = false)
+        public Unit AddUnit(UnitDef def, Team team, Tile tile, bool leader = false, int bonusHp = 0)
         {
             var u = new Unit
             {
                 Def = def,
                 Team = team,
-                Hp = def.MaxHp,
+                MaxHp = def.MaxHp + bonusHp,
+                Hp = def.MaxHp + bonusHp,
                 Tile = tile,
                 IsLeader = leader,
                 Cooldowns = new int[def.Skills.Length],
@@ -195,6 +200,7 @@ namespace Game.Combat
             if (path == null || path.Count == 0) return false;
             ApplyMove(u, path);
             u.Moved = true;
+            CheckEnd();
             return true;
         }
 
@@ -229,6 +235,13 @@ namespace Game.Combat
             if (last.Col != from.Col) u.Facing = last.Col > from.Col ? 1 : -1;
             u.Tile = last;
             Emit(new CombatEvent { Kind = CombatEventKind.Move, Actor = u, From = from, To = last, Path = new List<Tile>(path) });
+            Scorch(u);
+        }
+
+        /// <summary>Hazard tiles hurt whoever ends a move or a knockback step on them (passing through is safe).</summary>
+        private void Scorch(Unit u)
+        {
+            if (u.Alive && u.Tile != null && u.Tile.Hazard > 0) Damage(u, u.Tile.Hazard, $"{u.Name} is caught by the hazard");
         }
 
         private void Resolve(Unit attacker, int skillIndex, Tile target)
@@ -293,8 +306,10 @@ namespace Game.Combat
                 if (kind == EdgeKind.Drop)
                 {
                     if (from.Y - next.Y >= CombatRules.FallHeight) Damage(victim, CombatRules.FallDamage, $"{victim.Name} falls");
+                    Scorch(victim);
                     return;
                 }
+                Scorch(victim);
             }
         }
 
@@ -329,9 +344,11 @@ namespace Game.Combat
                 {
                     List<Tile> path = Grid.Path(e.Tile, intent.MoveTo, e.Def.Move, t => Occupied(t, e));
                     if (path != null && path.Count > 0) ApplyMove(e, path);
+                    CheckEnd();
+                    if (IsOver) return;
                 }
 
-                if (intent.Skill != null)
+                if (intent.Skill != null && e.Alive)
                 {
                     int si = Array.IndexOf(e.Def.Skills, intent.Skill);
                     if (e.SkillReady(si) && InRange(e.Tile, intent.Skill, intent.Target))
@@ -371,10 +388,18 @@ namespace Game.Combat
             }
         }
 
+        // Scoring weights, on the same scale as damage (100 = one point of damage). First-pass numbers.
+        private const int ThreatPenalty = 40;     // a ranged unit ending where a player can melee it next turn
+        private const int HazardPenalty = 150;    // ending a move on a hazard tile
+        private const int HighGroundHold = 100;   // a ranged unit keeping a height advantage while it waits
+        private const int RangeGapPenalty = 30;   // per column outside a ranged unit's band
+
         private Intent Plan(Unit e, HashSet<Tile> reserved)
         {
             var players = new List<Unit>(Alive(Team.Player));
             if (players.Count == 0) return null;
+            bool ranged = IsRanged(e);
+            Dictionary<Tile, int> threat = ranged ? MeleeThreat(players, e) : null;
 
             var options = new List<KeyValuePair<Tile, int>>(
                 Grid.Reachable(e.Tile, e.Def.Move, t => Occupied(t, e) || reserved.Contains(t)));
@@ -384,6 +409,7 @@ namespace Game.Combat
             int bestScore = int.MinValue;
             foreach (KeyValuePair<Tile, int> opt in options)
             {
+                int place = PlaceScore(opt.Key, opt.Value, threat);
                 for (int si = 0; si < e.Def.Skills.Length; si++)
                 {
                     if (!e.SkillReady(si)) continue;
@@ -392,7 +418,7 @@ namespace Game.Combat
                     {
                         if (!InRange(opt.Key, s, p.Tile)) continue;
                         int dmg = PreviewDamage(opt.Key, s, p.Tile, p);
-                        int score = dmg * 100 - opt.Value * 2
+                        int score = dmg * 100 + place
                             + (p.IsLeader ? 15 : 0)
                             + (dmg >= p.Hp ? 50 : 0)
                             + (s.Ranged ? Mathf.Abs(p.Tile.Col - opt.Key.Col) * 3 : 0);
@@ -406,22 +432,100 @@ namespace Game.Combat
             }
             if (best != null) return best;
 
-            // Nothing in reach: close the distance to the nearest player unit.
+            // Nothing in reach this turn.
             Tile approach = e.Tile;
-            float bestDist = float.MaxValue;
+            float bestValue = float.MinValue;
             foreach (KeyValuePair<Tile, int> opt in options)
             {
-                foreach (Unit p in players)
+                float value = PlaceScore(opt.Key, opt.Value, threat);
+                if (ranged)
                 {
-                    float d = Mathf.Abs(p.Tile.Col - opt.Key.Col) + Mathf.Abs(p.Tile.Y - opt.Key.Y) * 0.5f;
-                    if (d < bestDist)
+                    // Keep (or find) a firing spot: inside the range band, high if possible, out of melee reach.
+                    int gap = int.MaxValue;
+                    bool above = true;
+                    foreach (Unit p in players)
                     {
-                        bestDist = d;
-                        approach = opt.Key;
+                        gap = Mathf.Min(gap, BandGap(e, Mathf.Abs(p.Tile.Col - opt.Key.Col)));
+                        if (opt.Key.Y - p.Tile.Y < CombatRules.HeightAdvantage) above = false;
                     }
+                    value += -gap * RangeGapPenalty + (above ? HighGroundHold : 0);
+                }
+                else
+                {
+                    // Close the distance to the nearest player unit.
+                    float nearest = float.MaxValue;
+                    foreach (Unit p in players)
+                    {
+                        nearest = Mathf.Min(nearest, Mathf.Abs(p.Tile.Col - opt.Key.Col) + Mathf.Abs(p.Tile.Y - opt.Key.Y) * 0.5f);
+                    }
+                    value += -nearest * 100f;
+                }
+                if (value > bestValue)
+                {
+                    bestValue = value;
+                    approach = opt.Key;
                 }
             }
             return new Intent { MoveTo = approach };
+        }
+
+        /// <summary>What standing on <paramref name="t"/> is worth, apart from the attack: path cost, hazards, melee threat.</summary>
+        private static int PlaceScore(Tile t, int cost, Dictionary<Tile, int> threat)
+        {
+            int score = -cost * 2;
+            if (t.Hazard > 0) score -= HazardPenalty;
+            if (threat != null && threat.TryGetValue(t, out int n)) score -= n * ThreatPenalty;
+            return score;
+        }
+
+        private static bool IsRanged(Unit u)
+        {
+            foreach (SkillDef s in u.Def.Skills)
+            {
+                if (!s.Ranged) return false;
+            }
+            return u.Def.Skills.Length > 0;
+        }
+
+        /// <summary>How many columns <paramref name="dcol"/> is outside the unit's ranged band (0 = inside).</summary>
+        private static int BandGap(Unit u, int dcol)
+        {
+            int min = int.MaxValue, max = 0;
+            foreach (SkillDef s in u.Def.Skills)
+            {
+                min = Mathf.Min(min, s.MinRange);
+                max = Mathf.Max(max, s.MaxRange);
+            }
+            if (dcol < min) return min - dcol;
+            return dcol > max ? dcol - max : 0;
+        }
+
+        /// <summary>
+        /// For every tile, how many player units could step next to it and hit it in melee next turn.
+        /// Ranged enemies use this so they don't park where they'll be swarmed.
+        /// </summary>
+        public Dictionary<Tile, int> MeleeThreat(List<Unit> players, Unit ignore)
+        {
+            var result = new Dictionary<Tile, int>();
+            foreach (Unit p in players)
+            {
+                bool melee = false;
+                foreach (SkillDef s in p.Def.Skills) melee |= !s.Ranged;
+                if (!melee) continue;
+                var hit = new HashSet<Tile>();
+                foreach (Tile from in Grid.Reachable(p.Tile, p.Def.Move, t => Occupied(t, p) && UnitAt(t) != ignore).Keys)
+                {
+                    for (int dir = -1; dir <= 1; dir += 2)
+                    {
+                        foreach (Tile t in Grid.Column(from.Col + dir))
+                        {
+                            if (Mathf.Abs(t.Y - from.Y) <= CombatRules.MeleeMaxHeight) hit.Add(t);
+                        }
+                    }
+                }
+                foreach (Tile t in hit) result[t] = result.TryGetValue(t, out int n) ? n + 1 : 1;
+            }
+            return result;
         }
 
         // ---------------------------------------------------------------- helpers

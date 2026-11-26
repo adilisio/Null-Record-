@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Game.Combat
 {
     public enum Team
@@ -28,6 +30,24 @@ namespace Game.Combat
         /// <summary>Flat damage reduction (damage never drops below 1).</summary>
         public int Armor;
         public SkillDef[] Skills;
+    }
+
+    /// <summary>
+    /// XP and levels. First pass: one shared party XP pool (the GDD wants per-unit XP later);
+    /// each level gives every player unit +<see cref="HpPerLevel"/> max HP. Skill choices come later.
+    /// </summary>
+    public static class Progression
+    {
+        public const int XpPerLevel = 50;
+        public const int MaxLevel = 5;
+        public const int HpPerLevel = 2;
+
+        public static int Level(int xp) => Mathf.Clamp(1 + Mathf.Max(0, xp) / XpPerLevel, 1, MaxLevel);
+
+        public static int BonusHp(int xp) => (Level(xp) - 1) * HpPerLevel;
+
+        /// <summary>XP still needed for the next level, or 0 at the cap.</summary>
+        public static int ToNext(int xp) => Level(xp) >= MaxLevel ? 0 : Level(xp) * XpPerLevel - Mathf.Max(0, xp);
     }
 
     /// <summary>Prototype roster. Numbers are first-pass and meant to be tuned.</summary>

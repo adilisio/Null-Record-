@@ -90,9 +90,13 @@ namespace Game.Tests
         {
             yield return EnterSecurity();
             int scrapBefore = _inventory.Scrap;
+            int xpBefore = _inventory.Xp;
             _enc.Engage(_interactor);
             yield return Settle("opening events");
             CombatState st = _enc.State;
+            int hazardTiles = 0;
+            foreach (Tile t in st.Grid.Tiles) if (t.Hazard > 0) hazardTiles++;
+            Assert.AreEqual(1, hazardTiles, "the arc grate under the platform is live during the fight");
 
             // Make the fight short and safe; the rules themselves are covered by EditMode tests.
             foreach (Unit u in st.Units)
@@ -119,6 +123,8 @@ namespace Game.Tests
             yield return Until(() => _enc.Status == EncounterStatus.Cleared, 3f, "encounter wraps up");
 
             Assert.AreEqual(scrapBefore + 30, _inventory.Scrap, "scrap reward");
+            Assert.AreEqual(xpBefore + 50, _inventory.Xp, "XP reward");
+            Assert.AreEqual(2, Progression.Level(_inventory.Xp), "first win reaches level 2");
             Assert.IsTrue(_inventory.HasFlag("encounter_security_cleared"));
             Assert.IsFalse(_motor.ExternallyControlled);
             Assert.IsFalse(_enc.IsAvailable(_interactor), "a cleared encounter can't be engaged again");
@@ -128,6 +134,20 @@ namespace Game.Tests
             yield return Wait(0.4f);
             Release(Key.D);
             Assert.Greater(X, x0 + 0.5f, "free movement is back");
+        }
+
+        [UnityTest]
+        public IEnumerator Xp_RaisesMaxHpInTheNextFight()
+        {
+            yield return EnterSecurity();
+            _inventory.AddXp(Progression.XpPerLevel);
+            _enc.Engage(_interactor);
+            yield return Settle("opening events");
+            foreach (Unit u in _enc.State.Alive(Team.Player))
+            {
+                Assert.AreEqual(u.Def.MaxHp + Progression.HpPerLevel, u.MaxHp, $"{u.Name} gets the level bonus");
+                Assert.AreEqual(u.MaxHp, u.Hp);
+            }
         }
 
         [UnityTest]

@@ -121,7 +121,7 @@ namespace Game.Combat
             _labelRoot.rotation = Quaternion.identity;
             Color team = Unit.Team == Team.Player ? new Color(0.6f, 0.9f, 1f) : new Color(1f, 0.6f, 0.55f);
             Label.color = selected ? Color.white : team;
-            Label.text = (selected ? "> " : "") + Unit.Name + "\n" + $"{Unit.Hp}/{Unit.Def.MaxHp}";
+            Label.text = (selected ? "> " : "") + Unit.Name + "\n" + $"{Unit.Hp}/{Unit.MaxHp}";
             if (IntentLabel != null)
             {
                 Intent i = Unit.Intent;
@@ -150,6 +150,8 @@ namespace Game.Combat
         public static readonly Color InRange = new Color(1f, 0.6f, 0.15f, 0.28f);
         public static readonly Color Target = new Color(1f, 0.2f, 0.15f, 0.6f);
         public static readonly Color Danger = new Color(1f, 0.1f, 0.35f, 0.5f);
+        /// <summary>Live hazard tile (arcing floor). Stays this colour inside the move range too.</summary>
+        public static readonly Color HazardColor = new Color(0.8f, 1f, 0.15f, 0.55f);
         public static readonly Color CursorColor = new Color(1f, 1f, 1f, 0.85f);
 
         private readonly Transform _root;

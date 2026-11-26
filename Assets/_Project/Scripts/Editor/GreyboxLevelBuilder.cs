@@ -220,6 +220,10 @@ namespace Game.EditorTools
             GameObject zoneMarker = Box(room, "EncounterZone_Marker", new Vector3(49f, 0.02f, 0f), new Vector3(14f, 0.04f, 2.5f), encounter, collider: false);
             Box(room, "Cover_Low", new Vector3(47.5f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f)));
             Box(room, "Platform_High", new Vector3(51.5f, 2f, 0f), new Vector3(3f, 0.3f, 2f), Mat("Metal", new Color(0.5f, 0.52f, 0.55f), metallic: 0.8f));
+            // Arcing floor grate under the platform's edge: live only during the fight (see EncounterController.SetHazards).
+            // No collider, so the combat grid still sees the floor under it as one ordinary tile.
+            Box(room, "Hazard_ArcGrate", new Vector3(50.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f),
+                Mat("ArcGrate", new Color(0.12f, 0.14f, 0.05f), emission: new Color(0.7f, 1f, 0.15f) * 1.5f), collider: false);
 
             GameObject engageSign = Label(room, "[ optional encounter: E to engage ]", new Vector3(49f, 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f);
             GameObject encGo = new GameObject("Encounter_Security");
@@ -227,6 +231,7 @@ namespace Game.EditorTools
             encGo.transform.position = new Vector3(44.5f, 0f, 0f);
             EncounterController enc = encGo.AddComponent<EncounterController>();
             enc.SetInteractionPoint(new Vector3(0f, 0.9f, 0f), 1.2f);
+            enc.SetHazards(new Vector2(50.5f, 0f));
             enc.Configure(
                 new Rect(42f, -0.2f, 14f, 6.2f),
                 new[]

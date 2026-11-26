@@ -28,6 +28,8 @@ namespace Game.Save
         public int keycardLevel;
         public int protections;
         public int scrap;
+        /// <summary>Party XP (missing in older saves, so it reads as 0).</summary>
+        public int xp;
         public string[] tools = Array.Empty<string>();
         public string[] flags = Array.Empty<string>();
 

@@ -49,8 +49,14 @@ namespace Game.Combat
 
         [Header("Rewards")]
         [SerializeField] private int rewardScrap = 30;
+        [SerializeField] private int rewardXp = 50;
         [SerializeField] private string clearedFlag = "encounter_cleared";
         [TextArea] [SerializeField] private string rewardLog = "";
+
+        [Header("Hazards")]
+        [Tooltip("Floor points (world X/Y) whose tiles hurt whoever ends a move or is knocked onto them. Live only during the fight.")]
+        [SerializeField] private Vector2[] hazards = Array.Empty<Vector2>();
+        [SerializeField] private int hazardDamage = CombatRules.HazardDamage;
 
         [Header("Presentation")]
         [SerializeField] private Material tileMaterial;
@@ -106,6 +112,10 @@ namespace Game.Combat
             visorMaterial = visor;
             marker = zoneMarker;
         }
+
+        public void SetHazards(params Vector2[] points) => hazards = points ?? Array.Empty<Vector2>();
+
+        public IReadOnlyList<Vector2> Hazards => hazards;
 
         // ---------------------------------------------------------------- exploration side
 
@@ -172,10 +182,16 @@ namespace Game.Combat
                 return;
             }
             State = new CombatState(grid);
+            foreach (Vector2 h in hazards)
+            {
+                Tile ht = Nearest(grid, GroundAt(h));
+                if (ht != null) ht.Hazard = hazardDamage;
+            }
 
-            // Player and companion.
+            // Player and companion. Party XP raises max HP for both.
+            int bonusHp = player.Inventory != null ? Progression.BonusHp(player.Inventory.Xp) : 0;
             Tile playerTile = Nearest(grid, player.transform.position);
-            Unit subject = State.AddUnit(CombatPresets.Subject, Team.Player, playerTile, leader: true);
+            Unit subject = State.AddUnit(CombatPresets.Subject, Team.Player, playerTile, leader: true, bonusHp: bonusHp);
             motor?.SetExternalControl(true);
             player.transform.position = playerTile.World;
             _views.Add(new UnitView(subject, player.transform, owned: false));
@@ -188,7 +204,7 @@ namespace Game.Combat
                 Tile ct = FreeNeighbour(grid, playerTile, -1) ?? FreeNeighbour(grid, playerTile, 1);
                 if (ct != null)
                 {
-                    Unit c = State.AddUnit(companionDef, Team.Player, ct);
+                    Unit c = State.AddUnit(companionDef, Team.Player, ct, bonusHp: bonusHp);
                     _companion.SetPaused(true);
                     _companion.transform.position = ct.World;
                     _views.Add(new UnitView(c, _companion.transform, owned: false));
@@ -254,12 +270,18 @@ namespace Game.Combat
             {
                 motor?.SetExternalControl(false);
                 PlayerInventory inv = _player != null ? _player.Inventory : null;
+                int levelBefore = inv != null ? Progression.Level(inv.Xp) : 1;
                 if (inv != null)
                 {
                     inv.AddScrap(rewardScrap);
+                    inv.AddXp(rewardXp);
                     if (!string.IsNullOrEmpty(clearedFlag)) inv.SetFlag(clearedFlag);
                 }
-                GameMessages.Show($"Encounter cleared. +{rewardScrap} scrap");
+                GameMessages.Show($"Encounter cleared. +{rewardScrap} scrap, +{rewardXp} XP");
+                if (inv != null && Progression.Level(inv.Xp) > levelBefore)
+                {
+                    GameMessages.Show($"Level {Progression.Level(inv.Xp)}: max HP +{Progression.HpPerLevel} for the party.");
+                }
                 if (!string.IsNullOrEmpty(rewardLog)) GameMessages.Show(rewardLog);
                 if (marker != null) CombatVisuals.Tint(marker, new Color(0.15f, 0.15f, 0.17f), emissive: true);
                 Status = EncounterStatus.Cleared;
@@ -531,6 +553,10 @@ namespace Game.Combat
         {
             if (_grid == null) return;
             _grid.PaintAll(GridView.Idle);
+            foreach (Tile t in State.Grid.Tiles)
+            {
+                if (t.Hazard > 0) _grid.Paint(t, GridView.HazardColor);
+            }
             bool playerTurn = State.Phase == Phase.Player && !State.IsOver;
 
             if (playerTurn && Selected != null && Selected.Alive)
@@ -539,7 +565,7 @@ namespace Game.Combat
                 {
                     foreach (KeyValuePair<Tile, int> kv in State.MoveOptions(Selected))
                     {
-                        if (kv.Key != Selected.Tile) _grid.Paint(kv.Key, GridView.Reach);
+                        if (kv.Key != Selected.Tile) _grid.Paint(kv.Key, kv.Key.Hazard > 0 ? GridView.HazardColor : GridView.Reach);
                     }
                 }
                 else if (Mode >= 0)
@@ -597,7 +623,8 @@ namespace Game.Combat
                     string cd = Selected.Cooldowns[i] > 0 ? $" ({Selected.Cooldowns[i]})" : "";
                     skills += $"   {s.Name} {s.Damage}{(s.Knockback > 0 ? $"+push{s.Knockback}" : "")}{cd}";
                 }
-                _help.text = $"{Selected.Name}: {action}{(Selected.Acted ? " / acted" : "")}  |{skills}\n" +
+                string hazard = Cursor != null && Cursor.Hazard > 0 ? $"   [cursor: HAZARD, {Cursor.Hazard} damage if you stop here]" : "";
+                _help.text = $"{Selected.Name}: {action}{(Selected.Acted ? " / acted" : "")}  |{skills}{hazard}\n" +
                              "WASD cursor   Space confirm   1/2 action   C cancel   Shift unit   E end turn";
             }
             else

@@ -242,5 +242,113 @@ namespace Game.Tests
             }
             Assert.AreEqual(Run(), Run());
         }
+
+        // ---------------------------------------------------------------- positioning and hazards
+
+        [Test]
+        public void RangedEnemy_HoldsHighGround_WhenNoTargetInRange()
+        {
+            // Wider room: even dropping down, the Sentry can't get within range this turn.
+            var g = new CombatGrid();
+            for (int c = 0; c < 15; c++) g.AddTile(c, 0f);
+            g.AddTile(11, PlatformY);
+            g.AddTile(12, PlatformY);
+            g.LinkNeighbours();
+            CombatState s = Battle(g);
+            s.AddUnit(CombatPresets.Subject, Team.Player, Floor(g, 0), leader: true);
+            Unit sentry = s.AddUnit(CombatPresets.Sentry, Team.Enemy, High(g, 12));
+            s.Start();
+            Assert.IsNull(sentry.Intent.Skill, "nobody in range yet");
+            Assert.That(sentry.Intent.MoveTo.Y, Is.EqualTo(PlatformY).Within(0.01f), "stays on the platform instead of dropping to close in");
+        }
+
+        [Test]
+        public void Hazard_HurtsUnitEndingMoveThere_ButNotPassingThrough()
+        {
+            CombatGrid g = MakeGrid();
+            Floor(g, 3).Hazard = CombatRules.HazardDamage;
+            CombatState s = Battle(g);
+            Unit me = s.AddUnit(CombatPresets.Subject, Team.Player, Floor(g, 1), leader: true);
+            Unit dace = s.AddUnit(CombatPresets.Guard, Team.Player, Floor(g, 0));
+            s.AddUnit(CombatPresets.Enforcer, Team.Enemy, Floor(g, 9));
+            s.Start();
+
+            Assert.IsTrue(s.TryMove(me, Floor(g, 4)), "walk over the hazard");
+            Assert.AreEqual(me.MaxHp, me.Hp, "passing through is safe");
+            Assert.IsTrue(s.TryMove(dace, Floor(g, 3)), "stop on the hazard");
+            Assert.AreEqual(dace.MaxHp - CombatRules.HazardDamage, dace.Hp, "armour doesn't stop hazards");
+        }
+
+        [Test]
+        public void Knockback_OntoHazard_DealsHazardDamage()
+        {
+            CombatGrid g = MakeGrid();
+            Floor(g, 4).Hazard = CombatRules.HazardDamage;
+            CombatState s = Battle(g);
+            Unit me = s.AddUnit(CombatPresets.Subject, Team.Player, Floor(g, 2), leader: true);
+            Unit foe = s.AddUnit(CombatPresets.Enforcer, Team.Enemy, Floor(g, 3));
+            s.Start();
+
+            Assert.IsTrue(s.TryUseSkill(me, 1, Floor(g, 3)), "Shove");
+            Assert.AreEqual(Floor(g, 5), foe.Tile, "pushed two columns, across the hazard");
+            Assert.AreEqual(CombatPresets.Enforcer.MaxHp - 1 - CombatRules.HazardDamage, foe.Hp, "shove 1 + hazard 2 on the first step");
+        }
+
+        [Test]
+        public void Leader_KilledByHazard_LosesTheFight()
+        {
+            CombatGrid g = MakeGrid();
+            Floor(g, 3).Hazard = CombatRules.HazardDamage;
+            CombatState s = Battle(g);
+            Unit me = s.AddUnit(CombatPresets.Subject, Team.Player, Floor(g, 1), leader: true);
+            s.AddUnit(CombatPresets.Enforcer, Team.Enemy, Floor(g, 9));
+            s.Start();
+            me.Hp = 2;
+            Assert.IsTrue(s.TryMove(me, Floor(g, 3)));
+            Assert.AreEqual(Phase.Defeat, s.Phase);
+        }
+
+        [Test]
+        public void Enemy_PrefersAFiringSpotOffTheHazard()
+        {
+            Tile Pick(bool hazard)
+            {
+                CombatGrid g = MakeGrid();
+                if (hazard) Floor(g, 8).Hazard = CombatRules.HazardDamage;
+                CombatState s = Battle(g);
+                s.AddUnit(CombatPresets.Subject, Team.Player, Floor(g, 3), leader: true);
+                Unit sentry = s.AddUnit(CombatPresets.Sentry, Team.Enemy, Floor(g, 9));
+                s.Start();
+                Assert.IsNotNull(sentry.Intent.Skill, "a shot is available");
+                return sentry.Intent.MoveTo;
+            }
+            CombatGrid probe = MakeGrid();
+            Assert.AreEqual(Floor(probe, 8).Id, Pick(false).Id, "without the hazard it takes the longer, cheaper shot");
+            Assert.AreEqual(Floor(probe, 7).Id, Pick(true).Id, "with it, it steps one further");
+        }
+
+        [Test]
+        public void Progression_LevelsEveryFiftyXp_AndCaps()
+        {
+            Assert.AreEqual(1, Progression.Level(0));
+            Assert.AreEqual(1, Progression.Level(49));
+            Assert.AreEqual(2, Progression.Level(50));
+            Assert.AreEqual(Progression.MaxLevel, Progression.Level(100000));
+            Assert.AreEqual(0, Progression.BonusHp(10));
+            Assert.AreEqual(Progression.HpPerLevel, Progression.BonusHp(50));
+            Assert.AreEqual(25, Progression.ToNext(75));
+            Assert.AreEqual(0, Progression.ToNext(100000));
+        }
+
+        [Test]
+        public void BonusHp_RaisesMaxHpForThatUnitOnly()
+        {
+            CombatGrid g = MakeGrid();
+            CombatState s = Battle(g);
+            Unit me = s.AddUnit(CombatPresets.Subject, Team.Player, Floor(g, 1), leader: true, bonusHp: 4);
+            Assert.AreEqual(CombatPresets.Subject.MaxHp + 4, me.MaxHp);
+            Assert.AreEqual(me.MaxHp, me.Hp);
+            Assert.AreEqual(8, CombatPresets.Subject.MaxHp, "the shared def is untouched");
+        }
     }
 }

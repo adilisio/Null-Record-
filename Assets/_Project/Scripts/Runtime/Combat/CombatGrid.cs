@@ -26,6 +26,8 @@ namespace Game.Combat
         /// <summary>Surface height (world Y).</summary>
         public float Y;
         public Vector3 World;
+        /// <summary>Damage dealt to a unit that ends a move on, or is knocked onto, this tile (0 = safe).</summary>
+        public int Hazard;
         public readonly List<Edge> Edges = new List<Edge>();
 
         public override string ToString() => $"Tile(c{Col}, y{Y:0.##})";

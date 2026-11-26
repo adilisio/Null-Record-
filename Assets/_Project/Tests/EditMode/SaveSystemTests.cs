@@ -36,6 +36,7 @@ namespace Game.Tests
                 keycardLevel = 2,
                 protections = 1,
                 scrap = 30,
+                xp = 75,
                 tools = new[] { "spoofer" },
                 flags = new[] { "companion_guard", "taken_pickup_keycard_l2" },
                 companion = "Guard",
@@ -51,6 +52,7 @@ namespace Game.Tests
             Assert.AreEqual(2, r.keycardLevel);
             Assert.AreEqual(1, r.protections);
             Assert.AreEqual(30, r.scrap);
+            Assert.AreEqual(75, r.xp);
             CollectionAssert.AreEqual(d.tools, r.tools);
             CollectionAssert.AreEqual(d.flags, r.flags);
             Assert.AreEqual("Guard", r.companion);

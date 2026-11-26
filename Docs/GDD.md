@@ -89,13 +89,19 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
   - Guard (companion stand-in): HP 12, Move 3, Armour 1. Baton 3; Shield Bash 1 + push 2.
   - Enforcer (melee): HP 6. Stun Prod 3.
   - Sentry (ranged 2–5): HP 4. Taser Shot 2.
+- **Hazard tiles (2026-11-26, first pass):** a hazard tile deals 2 damage, ignoring armour, to any unit that **ends a move on it or is knocked onto it**. Walking through it is safe. It's a tactical tool: shove enemies onto it. The Security fight has one, an arcing floor grate under the platform's edge that's live only during the fight. It's drawn in lime on the grid, and the help line warns when the cursor is on it. Enemies avoid ending on hazards unless it's their only attack.
+- **Enemy positioning (2026-11-26, first pass):**
+  - Ranged enemies keep high ground while nobody is in range, rather than dropping down to close in.
+  - They prefer firing spots the player's melee units can't reach next turn.
+  - Every enemy weighs where it stands against the damage it can deal (100 points = 1 damage): a hazard costs 150, each threatening melee unit 40, and each column outside its range band 30.
+- **XP (2026-11-26, first pass):** one **shared party XP pool** for now (the full design wants per-unit XP). Each level is 50 XP, up to level 5. Each level gives the Subject and the companion +2 max HP in later fights. The Security encounter awards 50 XP, so the first win reaches level 2. XP is saved and shows on the debug HUD. Skill choices on level-up come later.
 - **Controls:** the existing Player actions, so keyboard, mouse and gamepad all work.
   - Move moves the cursor; Jump or Attack confirms; Crouch cancels.
   - Previous and Next change the action; Sprint switches unit; Interact ends the turn.
 - **Not in yet:**
-  - XP
+  - Per-unit XP and skill choices on level-up
   - Skill upgrades
-  - Hazards inside encounters (steam, wires)
+  - More hazard kinds (steam timing, wires that switch on and off)
   - Full cover
   - Turning units and skills into ScriptableObjects
   - Combat audio
@@ -180,7 +186,7 @@ One region (Intake / Holding), polished enough to show:
 - [ ] Camera rig with follow, room bounds and parallax
 - [ ] 1 hacking tool (keycard tier 1 → tier 2) + 1 environmental hazard (steam / thermal lining)
 - [~] Companion 1: recruit scene, follow AI, banter (prototype: Dace; writing is placeholder, no art)
-- [~] 1 optional encounter: level → grid transition, 2–3 enemy types, win and lose flow, rewards (playable prototype in Security; scrap and log rewards so far, no tool or XP yet)
+- [~] 1 optional encounter: level → grid transition, 2–3 enemy types, win and lose flow, rewards (playable prototype in Security; scrap, log and XP rewards plus a hazard tile; no tool reward yet)
 - [~] Dialogue system with portraits and choices (JSON, placeholder portraits)
 - [~] Autosave and room transitions (autosave, room-entry respawn, title/Continue and pause menus done; single save slot)
 - [~] Lighting pass and audio ambience for the region (lighting and placeholder audio done; real sound assets and music still to come)

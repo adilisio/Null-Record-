@@ -11,6 +11,7 @@ namespace Game.Player
         [SerializeField, Min(0)] private int keycardLevel;
         [SerializeField] private HazardType protections = HazardType.None;
         [SerializeField, Min(0)] private int scrap;
+        [SerializeField, Min(0)] private int xp;
 
         private readonly HashSet<string> _tools = new HashSet<string>();
         private readonly HashSet<string> _flags = new HashSet<string>();
@@ -18,6 +19,8 @@ namespace Game.Player
         public int KeycardLevel => keycardLevel;
         public HazardType Protections => protections;
         public int Scrap => scrap;
+        /// <summary>Party XP from encounters (see <c>Game.Combat.Progression</c>).</summary>
+        public int Xp => xp;
 
         public event Action Changed;
 
@@ -50,12 +53,19 @@ namespace Game.Player
             Changed?.Invoke();
         }
 
+        public void AddXp(int amount)
+        {
+            xp = Mathf.Max(0, xp + amount);
+            Changed?.Invoke();
+        }
+
         public IEnumerable<string> Tools => _tools;
         public IEnumerable<string> Flags => _flags;
 
         /// <summary>Replaces everything at once (save loading). Raises <see cref="Changed"/> once.</summary>
-        public void Restore(int keycard, HazardType hazards, int scrapAmount, IEnumerable<string> tools, IEnumerable<string> flags)
+        public void Restore(int keycard, HazardType hazards, int scrapAmount, IEnumerable<string> tools, IEnumerable<string> flags, int xpAmount = 0)
         {
+            xp = Mathf.Max(0, xpAmount);
             keycardLevel = Mathf.Max(0, keycard);
             protections = hazards;
             scrap = Mathf.Max(0, scrapAmount);
