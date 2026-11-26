@@ -55,7 +55,7 @@ namespace Game.Player
                 Vector3 d = it.Point - probe;
                 d.z = 0f; // side-on: ignore depth
                 float sqr = d.sqrMagnitude;
-                if (sqr <= it.Range * it.Range && sqr < bestSqr && it.IsAvailable(this))
+                if (sqr < bestSqr && it.InReach(probe, sqr) && it.IsAvailable(this))
                 {
                     best = it;
                     bestSqr = sqr;

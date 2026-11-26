@@ -81,6 +81,7 @@ namespace Game.EditorTools
             new GameObject("SaveManager").AddComponent<SaveManager>();
             new GameObject("PauseMenu").AddComponent<PauseMenu>();
             new GameObject("TouchControls").AddComponent<TouchControls>();
+            new GameObject("StoryBeats").AddComponent<Game.Core.StoryBeats>();
             new GameObject("AudioManager").AddComponent<AudioManager>();
 
             // The listener rides with the player (the camera is 16 m back), so world sounds pan and fade sensibly.
@@ -143,12 +144,21 @@ namespace Game.EditorTools
             Material block = Mat("Block", new Color(0.38f, 0.4f, 0.43f));
 
             Box(room, "Crate_Jump", new Vector3(5.75f, 0.5f, 0f), new Vector3(1.5f, 1f, 2f), crate);
-            Box(room, "Block_LedgeClimb", new Vector3(16f, 1.2f, 0f), new Vector3(8f, 2.4f, Depth), block);
+            // The ledge block (x 12..20, top 2.4) has a crawl space underneath its near end: x 12..15, 1.2 m high,
+            // a dead end holding some scrap. Crouched height is 1.0 m and standing is 1.8 m, so only a crouch gets in.
+            Box(room, "Block_LedgeClimb", new Vector3(16f, 1.8f, 0f), new Vector3(8f, 1.2f, Depth), block);
+            Box(room, "Block_LedgeBase", new Vector3(17.5f, 0.6f, 0f), new Vector3(5f, 1.2f, Depth), block);
+            Box(room, "CrawlSpace_Back", new Vector3(13.5f, 0.6f, 1.2f), new Vector3(3f, 1.2f, 0.2f), Mat("CrawlBack", new Color(0.08f, 0.09f, 0.1f)), collider: false);
+            GameObject crawlScrap = Pickup(room, "Pickup_Scrap_Crawl", new Vector3(14.2f, 0.45f, 0f),
+                Mat("Pickup_Scrap", new Color(0.8f, 0.75f, 0.6f), emission: new Color(0.8f, 0.7f, 0.4f) * 0.8f));
+            crawlScrap.GetComponent<ItemPickup>().ConfigureScrap(10);
+            crawlScrap.GetComponent<ItemPickup>().SetSaveId("pickup_scrap_crawl");
             Box(room, "CellBars", new Vector3(-0.5f, 3f, 1.6f), new Vector3(0.1f, 6f, 0.1f), Mat("Metal", new Color(0.5f, 0.52f, 0.55f), metallic: 0.8f), collider: false);
 
             Label(room, "HOLDING 03", new Vector3(2f, 5.5f, 1.9f), new Color(0.75f, 0.8f, 0.85f));
             Hint(Label(room, "jump [Space]", new Vector3(5.75f, 2.2f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.5f), "jump [JUMP]");
             Label(room, "grab the ledge: hold toward it while falling", new Vector3(11f, 3.6f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f);
+            Hint(Label(room, "crawl under [hold C]", new Vector3(10.6f, 1.5f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.45f), "crawl under [tap CROUCH]");
         }
 
         private static void BuildRoomB(Transform level)
@@ -497,7 +507,7 @@ namespace Game.EditorTools
             tm.text = text;
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;
-            tm.characterSize = 0.1f * size;
+            tm.characterSize = 0.1f * Mathf.Max(size, 0.55f); // smaller hint text is unreadable on a phone
             tm.fontSize = 64;
             tm.color = color;
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");

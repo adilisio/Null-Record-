@@ -27,7 +27,7 @@ namespace Game.Player
         [Header("Run")]
         [SerializeField] private float walkSpeed = 4f;
         [SerializeField] private float sprintSpeed = 6.5f;
-        [SerializeField] private float crouchSpeed = 2f;
+        [SerializeField] private float crouchSpeed = 3.2f;
         [SerializeField] private float groundAcceleration = 60f;
         [SerializeField] private float airAcceleration = 30f;
 
@@ -110,6 +110,9 @@ namespace Game.Player
             // Paused (timeScale 0): a zero-length Move reports "not grounded" and would flip the state to Airborne.
             if (dt <= 0f) return;
             Vector2 move = ControlEnabled ? _input.Move : Vector2.zero;
+            if (!ControlEnabled) _input.ClearCrouchLatch();
+            // A thumbstick (on-screen or real) past a third of its travel counts as a full push: phones rarely reach the rim.
+            if (Mathf.Abs(move.x) > 0.35f) move.x = Mathf.Sign(move.x);
 
             switch (State)
             {
@@ -145,6 +148,7 @@ namespace Game.Player
         /// </summary>
         public void SetExternalControl(bool on)
         {
+            if (on) _input.ClearCrouchLatch();
             if (on == ExternallyControlled) return;
             ExternallyControlled = on;
             ControlEnabled = !on;
@@ -178,6 +182,12 @@ namespace Game.Player
             if (ControlEnabled && TryEnterLadder(move, grounded)) return;
 
             bool inCoyote = Time.time - _lastGroundedTime <= coyoteTime;
+            // Jumping from a crouch stands up first (when there's room), so a crouch toggle never traps the jump button.
+            if (ControlEnabled && _input.HasBufferedJump && inCoyote && IsCrouching && HasHeadroom(transform.position, standHeight))
+            {
+                _input.ClearCrouchLatch();
+                SetCrouch(false);
+            }
             if (ControlEnabled && _input.HasBufferedJump && inCoyote && !IsCrouching)
             {
                 _input.ConsumeJump();

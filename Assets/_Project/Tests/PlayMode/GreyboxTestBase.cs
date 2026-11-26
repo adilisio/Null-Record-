@@ -69,6 +69,7 @@ namespace Game.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            Game.Core.StoryBeats.SkipIntro = true;
             // The batch-mode editor never has focus; make keyboard input count anyway.
             // Work on a clone so the project's settings asset is never touched, and never
             // assign the original back: the Input System may have destroyed it by then.

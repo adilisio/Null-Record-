@@ -19,6 +19,8 @@ namespace Game.UI
 
         private GameObject _root;
         private Text _aLabel, _bLabel, _yLabel;
+        private Image _yButton;
+        private static readonly Color YIdle = new Color(1f, 1f, 1f, 0.18f);
         private GameObject _combatRow;
 
         public bool Visible => _root != null && _root.activeSelf;
@@ -49,6 +51,9 @@ namespace Game.UI
             _aLabel.text = inCombat ? "OK" : inDialogue ? "NEXT" : "JUMP";
             _bLabel.text = inCombat ? "BACK" : "CROUCH";
             _yLabel.text = inCombat ? "END TURN" : "USE";
+            // Pulse END TURN once the whole party has acted.
+            bool pulse = inCombat && EncounterController.Active.AllActed;
+            _yButton.color = pulse ? Color.Lerp(YIdle, new Color(1f, 0.74f, 0.45f, 0.6f), 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f)) : YIdle;
         }
 
         private void Build()
@@ -58,10 +63,10 @@ namespace Game.UI
             Transform r = canvas.transform;
 
             // Stick, bottom-left.
-            Image ring = MenuWidgets.Panel(r, "StickRing", new Color(1f, 1f, 1f, 0.06f));
+            Image ring = MenuWidgets.Panel(r, "StickRing", new Color(1f, 1f, 1f, 0.12f));
             ring.sprite = MenuWidgets.Circle;
             MenuWidgets.Anchor(ring.rectTransform, Vector2.zero, Vector2.zero, new Vector2(60f, 50f), new Vector2(280f, 270f));
-            Image knob = MenuWidgets.Panel(ring.transform, "Knob", new Color(1f, 1f, 1f, 0.2f));
+            Image knob = MenuWidgets.Panel(ring.transform, "Knob", new Color(1f, 1f, 1f, 0.32f));
             knob.sprite = MenuWidgets.Circle;
             knob.rectTransform.anchorMin = knob.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             knob.rectTransform.sizeDelta = new Vector2(96f, 96f);
@@ -70,27 +75,27 @@ namespace Game.UI
             stick.movementRange = 80f;
 
             // Face buttons, bottom-right (positions echo a gamepad's diamond).
-            _aLabel = Button(r, "A", "<Gamepad>/buttonSouth", new Vector2(-140f, 50f), 108f, new Color(1f, 0.74f, 0.45f, 0.16f));
-            _bLabel = Button(r, "B", "<Gamepad>/buttonEast", new Vector2(-24f, 150f), 88f, new Color(1f, 1f, 1f, 0.07f));
-            _yLabel = Button(r, "Y", "<Gamepad>/buttonNorth", new Vector2(-256f, 150f), 88f, new Color(1f, 1f, 1f, 0.07f));
+            _aLabel = Button(r, "A", "<Gamepad>/buttonSouth", new Vector2(-140f, 50f), 112f, new Color(1f, 0.74f, 0.45f, 0.3f));
+            _bLabel = Button(r, "B", "<Gamepad>/buttonEast", new Vector2(-24f, 150f), 92f, new Color(1f, 1f, 1f, 0.18f));
+            _yLabel = Button(r, "Y", "<Gamepad>/buttonNorth", new Vector2(-256f, 150f), 88f, YIdle);
+            _yButton = _yLabel.transform.parent.GetComponent<Image>();
 
             // Pause, top-right.
-            Text pause = Button(r, "Pause", "<Gamepad>/start", new Vector2(-30f, 0f), 70f, new Color(1f, 1f, 1f, 0.12f), top: true);
+            Text pause = Button(r, "Pause", "<Gamepad>/start", new Vector2(-30f, 0f), 90f, new Color(1f, 1f, 1f, 0.2f), top: true);
             pause.text = "II";
 
             // Combat-only strip, bottom centre (clear of the grid's right-hand tiles): change action and switch unit.
             _combatRow = new GameObject("CombatRow", typeof(RectTransform));
             _combatRow.transform.SetParent(r, false);
             MenuWidgets.Stretch((RectTransform)_combatRow.transform, Vector2.zero, Vector2.zero);
-            CentreButton(_combatRow.transform, "Prev", "<Gamepad>/dpad/left", -120f, "<");
-            CentreButton(_combatRow.transform, "Next", "<Gamepad>/dpad/right", -40f, ">");
-            CentreButton(_combatRow.transform, "Unit", "<Gamepad>/leftStickPress", 70f, "UNIT");
+            // The encounter's own action bar (MOVE / skills) sits just left of this.
+            CentreButton(_combatRow.transform, "Unit", "<Gamepad>/leftStickPress", 250f, "UNIT");
             _combatRow.SetActive(false);
         }
 
         private static void CentreButton(Transform parent, string name, string controlPath, float x, string label)
         {
-            Image img = MenuWidgets.Panel(parent, name, new Color(1f, 1f, 1f, 0.08f));
+            Image img = MenuWidgets.Panel(parent, name, new Color(1f, 1f, 1f, 0.18f));
             img.sprite = MenuWidgets.Circle;
             RectTransform rt = img.rectTransform;
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
@@ -98,7 +103,7 @@ namespace Game.UI
             rt.anchoredPosition = new Vector2(x, 24f);
             rt.sizeDelta = new Vector2(68f, 68f);
             img.gameObject.AddComponent<OnScreenButton>().controlPath = controlPath;
-            Text t = MenuWidgets.Label(img.transform, "Label", label, 16, new Color(0.86f, 0.88f, 0.9f, 0.8f), TextAnchor.MiddleCenter);
+            Text t = MenuWidgets.Label(img.transform, "Label", label, 18, new Color(0.92f, 0.94f, 0.96f, 0.95f), TextAnchor.MiddleCenter);
             MenuWidgets.Stretch(t.rectTransform, Vector2.zero, Vector2.zero);
         }
 
@@ -115,7 +120,8 @@ namespace Game.UI
             rt.sizeDelta = new Vector2(size, size);
             var b = img.gameObject.AddComponent<OnScreenButton>();
             b.controlPath = controlPath;
-            Text t = MenuWidgets.Label(img.transform, "Label", name, size > 90f ? 20 : 15, new Color(0.86f, 0.88f, 0.9f, 0.75f), TextAnchor.MiddleCenter);
+            Text t = MenuWidgets.Label(img.transform, "Label", name, size > 100f ? 22 : 17, new Color(0.92f, 0.94f, 0.96f, 0.95f), TextAnchor.MiddleCenter);
+            t.gameObject.AddComponent<Shadow>().effectDistance = new Vector2(1.5f, -1.5f);
             MenuWidgets.Stretch(t.rectTransform, Vector2.zero, Vector2.zero);
             return t;
         }

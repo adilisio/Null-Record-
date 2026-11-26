@@ -1,6 +1,7 @@
 using System.Collections;
 using Game.Core;
 using Game.Player;
+using Game.UI;
 using Game.World;
 using NUnit.Framework;
 using UnityEngine;
@@ -102,6 +103,57 @@ namespace Game.Tests
             Release(Key.D);
             yield return Until(() => Mathf.Abs(X - 21f) < 0.2f, 2f, "respawn at checkpoint");
             Assert.Less(X, 30f);
+        }
+
+        [UnityTest]
+        public IEnumerator CrawlSpace_NeedsACrouch_AndHoldsScrap()
+        {
+            _motor.Teleport(new Vector3(10.5f, 0.05f, 0f));
+            yield return Wait(0.3f);
+            Press(Key.D);
+            yield return Wait(1f);
+            Assert.Less(X, 12f, "walked into the crawl space standing up");
+            Press(Key.C);
+            yield return Until(() => X > 13.6f, 2f, "crawl in");
+            Release(Key.D);
+            Assert.IsTrue(_motor.IsCrouching);
+            yield return Shot("05_crawl_space");
+            Release(Key.C);
+            yield return Wait(0.3f);
+            Assert.IsTrue(_motor.IsCrouching, "no headroom to stand inside");
+            int before = _inventory.Scrap;
+            yield return Until(() => _interactor.Current is ItemPickup, 1f, "scrap prompt");
+            yield return Tap(Key.E);
+            yield return Wait(0.2f);
+            Assert.Greater(_inventory.Scrap, before, "picked up the crawl-space scrap");
+            Press(Key.A);
+            yield return Until(() => X < 11.5f && !_motor.IsCrouching, 3f, "back out and stand");
+            Release(Key.A);
+        }
+
+        [UnityTest]
+        public IEnumerator CrouchToggle_OnTouch_TapsOnAndJumpStands()
+        {
+            TouchControls.ForceVisible = true;
+            try
+            {
+                _motor.Teleport(new Vector3(8.5f, 0.05f, 0f));
+                yield return Wait(0.3f);
+                yield return Tap(Key.C);
+                yield return Wait(0.1f);
+                Assert.IsTrue(_motor.IsCrouching, "one tap crouches on touch");
+                yield return Wait(0.3f);
+                Assert.IsTrue(_motor.IsCrouching, "and stays crouched without holding");
+                yield return Tap(Key.Space);
+                yield return Until(() => _motor.State == MotorState.Airborne, 1f, "jump from the crouch");
+                Assert.IsFalse(_motor.IsCrouching, "jumping stands up");
+                yield return Until(() => _motor.State == MotorState.Grounded, 2f, "land");
+                Assert.IsFalse(_motor.IsCrouching, "still standing after landing");
+            }
+            finally
+            {
+                TouchControls.ForceVisible = false;
+            }
         }
 
         [UnityTest]

@@ -77,6 +77,79 @@ namespace Game.Tests
         }
 
         [UnityTest]
+        public IEnumerator FirstTimePlayer_EngagesInsideArena_AndTapsAnEnemyToAttack()
+        {
+            _enc = SecurityEncounter;
+            _motor.Teleport(new Vector3(48.4f, 0.05f, 0f)); // deep in the arena, by the hostiles
+            yield return Until(() => _interactor.Current == _enc, 2f, "fight prompt inside the arena");
+            StringAssert.Contains("Fight", _enc.GetPrompt(_interactor));
+            yield return Tap(Key.E);
+            yield return Until(() => _enc.Status == EncounterStatus.Active, 1f, "encounter starts");
+            yield return Settle("opening events");
+            CombatState st = _enc.State;
+            Unit subject = _enc.Selected;
+            Assert.Less(subject.Tile.World.x, 46f, "takes position at the entrance edge, not beside a hostile");
+            StringAssert.Contains("blue tile", _enc.NextStepText);
+            subject.Hp = subject.MaxHp = 99;
+
+            // A hostile out of reach: confirming on it says why instead of failing silently.
+            Unit far = null;
+            foreach (Unit e in st.Alive(Team.Enemy)) if (far == null || e.Tile.World.x > far.Tile.World.x) far = e;
+            _enc.SetCursor(far.Tile);
+            Assert.IsFalse(_enc.Confirm());
+            yield return null;
+            StringAssert.Contains("reach", _enc.NextStepText);
+
+            // Close in until a hostile is next to a reachable tile, then attack it by confirming on it twice.
+            bool attacked = false;
+            for (int turn = 0; turn < 4 && !attacked && !st.IsOver; turn++)
+            {
+                Tile stand = null;
+                Unit victim = null;
+                foreach (KeyValuePair<Tile, int> kv in st.MoveOptions(subject))
+                {
+                    foreach (Unit e in st.Alive(Team.Enemy))
+                    {
+                        if (Mathf.Abs(kv.Key.Col - e.Tile.Col) == 1 && Mathf.Abs(kv.Key.Y - e.Tile.Y) <= CombatRules.MeleeMaxHeight) { stand = kv.Key; victim = e; }
+                    }
+                }
+                if (stand != null)
+                {
+                    if (stand != subject.Tile)
+                    {
+                        _enc.SetCursor(stand);
+                        Assert.IsTrue(_enc.Confirm(), "move next to the hostile");
+                        yield return Settle("move");
+                    }
+                    _enc.SetCursor(victim.Tile);
+                    Assert.IsTrue(_enc.Confirm(), "first confirm on a hostile picks an attack");
+                    Assert.GreaterOrEqual(_enc.Mode, 0, "now in a skill mode");
+                    yield return null;
+                    StringAssert.Contains("damage", _enc.NextStepText, "damage preview");
+                    yield return Wait(0.2f);
+                    yield return Shot("14_attack_preview");
+                    int hp = victim.Hp;
+                    Assert.IsTrue(_enc.Confirm(), "second confirm attacks");
+                    yield return Settle("attack");
+                    Assert.Less(victim.Hp, hp, "the hostile took damage");
+                    attacked = true;
+                }
+                else
+                {
+                    Tile best = subject.Tile;
+                    foreach (KeyValuePair<Tile, int> kv in st.MoveOptions(subject)) if (kv.Key.World.x > best.World.x) best = kv.Key;
+                    _enc.SetCursor(best);
+                    _enc.Confirm();
+                    yield return Settle("advance");
+                    _enc.EndTurn();
+                    yield return Until(() => st.Phase == Phase.Player || st.IsOver, 10f, "enemy phase");
+                    yield return Settle("enemy phase animation");
+                }
+            }
+            Assert.IsTrue(attacked, "reached and attacked a hostile: " + string.Join(" | ", st.Log));
+        }
+
+        [UnityTest]
         public IEnumerator WithoutCompanion_SubjectFightsAlone()
         {
             yield return EnterSecurity(withDace: false);

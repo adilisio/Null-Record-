@@ -43,6 +43,10 @@ namespace Game.CameraSystem
             SnapToTarget();
         }
 
+        /// <summary>Exploring distance: closer on touch screens, where the character would otherwise be tiny.</summary>
+        public float ExploreDistance => Game.UI.TouchControls.ShouldShow ? distance * TouchDistanceScale : distance;
+        public const float TouchDistanceScale = 0.78f;
+
         private void Awake()
         {
             _camera = GetComponent<Camera>();
@@ -60,7 +64,7 @@ namespace Game.CameraSystem
             _lead = Mathf.SmoothDamp(_lead, desiredLead, ref _leadVelocity, lookAheadSmoothTime, Mathf.Infinity, dt);
 
             Vector2 desired = new Vector2(target.position.x + _lead, target.position.y + heightOffset);
-            float desiredDistance = distance;
+            float desiredDistance = ExploreDistance;
             EncounterController fight = EncounterController.Active;
             if (fight != null && _camera != null)
             {
@@ -129,7 +133,7 @@ namespace Game.CameraSystem
         {
             if (!_hasBounds || _camera == null) return p;
 
-            float halfH = distance * Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            float halfH = ExploreDistance * Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
             float halfW = halfH * _camera.aspect;
 
             p.x = _bounds.width <= halfW * 2f ? _bounds.center.x : Mathf.Clamp(p.x, _bounds.xMin + halfW, _bounds.xMax - halfW);

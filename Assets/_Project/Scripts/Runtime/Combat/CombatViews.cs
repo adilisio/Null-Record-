@@ -118,10 +118,12 @@ namespace Game.Combat
             // Labels live on an unrotated child so they read correctly whichever way the unit faces.
             _labelRoot = new GameObject("CombatLabels").transform;
             _labelRoot.SetParent(root, false);
-            Label = CombatVisuals.Text(_labelRoot, "Label", new Vector3(0f, 2.45f, -0.6f), 0.22f, Color.white);
+            // Enemy labels ride higher than the party's, so neighbours' labels don't overprint each other.
+            float lift = unit.Team == Team.Enemy ? 0.45f : 0f;
+            Label = CombatVisuals.Text(_labelRoot, "Label", new Vector3(0f, 2.5f + lift, -0.6f), 0.36f, Color.white);
             if (unit.Team == Team.Enemy)
             {
-                IntentLabel = CombatVisuals.Text(_labelRoot, "Intent", new Vector3(0f, 2.85f, -0.6f), 0.22f, new Color(1f, 0.45f, 0.4f));
+                IntentLabel = CombatVisuals.Text(_labelRoot, "Intent", new Vector3(0f, 3.0f + lift, -0.6f), 0.34f, new Color(1f, 0.45f, 0.4f));
             }
             if (barMaterial != null)
             {
@@ -158,7 +160,7 @@ namespace Game.Combat
             if (IntentLabel != null)
             {
                 Intent i = Unit.Intent;
-                IntentLabel.text = !Unit.Alive || i == null ? "" : i.Skill == null ? "advance" : $"{i.Skill.Name} ({i.ExpectedDamage})";
+                IntentLabel.text = !Unit.Alive || i == null ? "" : i.Skill == null ? "moving in" : $"next: {i.Skill.Name} {i.ExpectedDamage}";
             }
         }
 
@@ -184,7 +186,7 @@ namespace Game.Combat
     /// <summary>Tile quads, cursor and enemy-intent markers.</summary>
     public sealed class GridView
     {
-        public static readonly Color Idle = new Color(0.75f, 0.8f, 0.9f, 0.12f);
+        public static readonly Color Idle = new Color(0.75f, 0.8f, 0.9f, 0.2f);
         public static readonly Color Reach = new Color(0.2f, 0.75f, 1f, 0.38f);
         public static readonly Color InRange = new Color(1f, 0.6f, 0.15f, 0.28f);
         public static readonly Color Target = new Color(1f, 0.2f, 0.15f, 0.6f);
@@ -239,7 +241,7 @@ namespace Game.Combat
                 if (!e.Alive || i == null || i.Skill == null || i.Target == null) continue;
                 GameObject m = CombatVisuals.Quad(_root, $"Intent_{e.Name}", _mat, i.Target.World + new Vector3(0f, 0.1f, 0f), new Vector3(0.6f, 0.03f, 1.2f));
                 CombatVisuals.Tint(m.GetComponent<Renderer>(), Danger);
-                TextMesh tm = CombatVisuals.Text(m.transform, "Dmg", Vector3.zero, 0.3f, new Color(1f, 0.35f, 0.4f));
+                TextMesh tm = CombatVisuals.Text(m.transform, "Dmg", Vector3.zero, 0.42f, new Color(1f, 0.35f, 0.4f));
                 tm.transform.SetParent(_root, true);
                 tm.transform.position = i.Target.World + new Vector3(0f, 0.35f, -0.9f);
                 tm.transform.localScale = Vector3.one;

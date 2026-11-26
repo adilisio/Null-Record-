@@ -22,6 +22,7 @@ namespace Game.EditorTools
             // Kit meshes over the greybox walkways, blocks and door; the greybox colliders stay.
             foreach (string walkway in new[] { "Catwalk", "Loft", "Mezzanine", "Platform_High" }) Reskin(walkway, "floor-panel");
             FacePanels("Block_LedgeClimb");
+            FacePanels("Block_LedgeBase");
             FacePanels("Block_Archive");
             Reskin("Door_L2/Panel", "door-double-closed", 90f, asChild: true);
             HoldingProps(Group(root, "Holding"));
@@ -41,7 +42,7 @@ namespace Game.EditorTools
                     string piece = row == 1 && Mathf.Abs(x) % 7 == 3 ? "wall-window" : "wall";
                     if (row == 2 && Mathf.Abs(x) % 9 == 4) piece = "wall-banner";
                     if (row >= 4 && Mathf.Abs(x + row) % 11 == 5) piece = "wall-detail";
-                    Prop(parent, piece, new Vector3(x + 0.5f, floorY + row, PanelZ), 0f);
+                    Dim(Prop(parent, piece, new Vector3(x + 0.5f, floorY + row, PanelZ), 0f));
                 }
             }
         }
@@ -118,6 +119,41 @@ namespace Game.EditorTools
                     GameObject p = Prop(group, "wall", new Vector3(b.min.x + (c + 0.5f) * b.size.x / cols, b.min.y + r * b.size.y / rows, b.min.z - 0.02f), 0f);
                     p.transform.localScale = new Vector3(b.size.x / cols, b.size.y / rows, 0.25f);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Back-wall panels use darker, matte copies of the kit materials: lit at full strength their grooves read as
+        /// bright stripes that out-shout the characters in front of them.
+        /// </summary>
+        private static void Dim(GameObject go, float k = 0.5f)
+        {
+            foreach (Renderer r in go.GetComponentsInChildren<Renderer>())
+            {
+                Material[] mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null) continue;
+                    string key = "Dim_" + mats[i].name;
+                    if (!Materials.TryGetValue(key, out Material dim))
+                    {
+                        string path = $"{MaterialDir}/{key}.mat";
+                        dim = AssetDatabase.LoadAssetAtPath<Material>(path);
+                        if (dim == null)
+                        {
+                            dim = new Material(mats[i]);
+                            EnsureFolder(MaterialDir);
+                            AssetDatabase.CreateAsset(dim, path);
+                        }
+                        else dim.CopyPropertiesFromMaterial(mats[i]);
+                        if (dim.HasProperty("_BaseColor")) dim.SetColor("_BaseColor", mats[i].GetColor("_BaseColor") * new Color(k, k, k, 1f));
+                        if (dim.HasProperty("_Smoothness")) dim.SetFloat("_Smoothness", 0.1f);
+                        EditorUtility.SetDirty(dim);
+                        Materials[key] = dim;
+                    }
+                    mats[i] = dim;
+                }
+                r.sharedMaterials = mats;
             }
         }
 

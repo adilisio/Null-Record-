@@ -28,6 +28,9 @@ namespace Game.World
 
         public virtual bool IsAvailable(PlayerInteractor player) => isActiveAndEnabled;
 
+        /// <summary>Whether a player probe at <paramref name="probe"/> (side-on squared distance <paramref name="sqrDistance"/>) can use this.</summary>
+        public virtual bool InReach(Vector3 probe, float sqrDistance) => sqrDistance <= range * range;
+
         public abstract void Interact(PlayerInteractor player);
 
         public void SetInteractionPoint(Vector3 offset, float newRange)

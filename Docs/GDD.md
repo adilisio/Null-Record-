@@ -255,6 +255,35 @@ One region (Intake / Holding), polished enough to show:
 - **Transitions:** lift rides and respawns fade in from black.
 - **Companion HP:** companions are fully healed between fights. That's a deliberate first-pass call, still to revisit after hands-on play.
 
+### Phone polish (2026-11-26, after the owner's first phone play; first pass)
+The owner's feedback was "Crouch barely moves" and "couldn't figure out combat". A Fable review produced the plan below.
+- **Starting a fight:** USE works anywhere inside the arena, not only at the entry point. The prompt reads "Fight (optional): N hostiles". Engaging from deep inside puts the Subject at the entrance edge.
+- **Combat clarity:**
+  - **Next-step line:** one large line says what to do now ("tap a blue tile to move", "Strike the Enforcer: 2 damage (KO). To confirm, tap it again.", "Everyone has acted: tap END TURN").
+  - **Refusals explain themselves:** a refused action says why on that same line ("Out of reach: move next to it first").
+  - **Smaller lines:** the controls line and a turn-1/2 tip about the red `!` tiles sit underneath.
+  - **Action bar:** a bottom-centre bar shows MOVE plus the selected unit's skills, with damage, range and cooldown on each button. Tap or click it. It replaces the `<` `>` buttons.
+  - **Confirming on a hostile:** in MOVE mode this picks the first attack that can reach it. That's a preview; confirm again to use it. On touch, the first tap on a hostile previews the attack. A stray tap never spends an action.
+  - **END TURN:** the touch button pulses once the whole party has acted. Auto end-turn was left out on purpose: it surprises players and collides with tests.
+  - **Bigger labels:** unit labels and enemy intents are bigger. Intents read "next: Taser Shot 2" or "moving in". Idle grid tiles are more visible.
+  - **Mouse echo:** on phones, mouse input is ignored for 1 s after a touch, in case the browser echoes taps as clicks.
+  - **Retreat:** the pause menu offers "Retreat from Fight" during a fight. It resets the fight like a loss.
+- **Crouch and running on touch:**
+  - `crouchSpeed` went from 2 to 3.2.
+  - A thumbstick past 0.35 counts as a full push.
+  - On touch, CROUCH toggles; jumping or leaving player control stands you up. Jumping from a crouch stands up first on every device.
+  - On touch, holding the stick fully for 0.5 s breaks into a run. Sprint was unreachable on a phone. Sprint speed and jump height are unchanged, because the Labs pit is sized from them.
+- **A reason to crouch:** a 1.2 m-high crawl space under the near end of Holding's ledge block holds 10 optional scrap. Crouched height is 1.0 m and standing height is 1.8 m.
+- **Visuals:**
+  - The camera explores at 0.78× distance on touch.
+  - Back-wall panels use darker, matte copies of the kit materials, so their grooves no longer out-shine the characters.
+  - World hint text is at least size 0.55.
+  - Touch buttons are more opaque, with larger labels, and the pause button is bigger.
+- **Story structure:** all wording is PLACEHOLDER until the owner decides (see the open questions).
+  - A non-blocking opening card on a new game: "HOLDING 03 / Subject record: no entry found. / Find a way out."
+  - A top-left objective line driven by progress: keycard → laser grid → freight lift → Labs pit → freight shutter.
+  - An end card past the freight shutter, with fights won, level and scrap, and Back to Title / Keep Exploring (`StoryBeats`).
+
 ### Later milestones (rough)
 2. Greybox all three regions and the gating map
 3. Companions 2 and 3, the full skill sets and the XP/scrap economy

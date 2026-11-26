@@ -28,6 +28,7 @@ namespace Game.UI
         public Button SettingsButton { get; private set; }
         public Button QuitToTitleButton { get; private set; }
         public Button QuitGameButton { get; private set; }
+        public Button RetreatButton { get; private set; }
         public SettingsPanel Settings => _settings;
 
         private void Awake()
@@ -77,6 +78,8 @@ namespace Game.UI
             _root.gameObject.SetActive(true);
             SaveManager saves = SaveManager.Instance;
             _where.text = saves != null && !string.IsNullOrEmpty(saves.CurrentRoomName) ? saves.CurrentRoomName.ToUpperInvariant() : "";
+            RetreatButton.gameObject.SetActive(Game.Combat.EncounterController.Active != null);
+            MenuWidgets.ChainVertical(ResumeButton, RetreatButton, SettingsButton, QuitToTitleButton, QuitGameButton);
             _note.text = _motor != null && _motor.ExternallyControlled
                 ? "Quitting now returns you to just before this fight."
                 : "Progress is saved automatically.";
@@ -131,6 +134,11 @@ namespace Game.UI
             _main = MenuWidgets.Rect(_root, "Main");
             MenuWidgets.Anchor(_main, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(106f, 130f), new Vector2(560f, 400f));
             ResumeButton = MenuWidgets.Button(_main, "Resume", "Resume", Resume);
+            RetreatButton = MenuWidgets.Button(_main, "Retreat", "Retreat from Fight", () =>
+            {
+                Resume();
+                Game.Combat.EncounterController.Active?.Retreat();
+            });
             SettingsButton = MenuWidgets.Button(_main, "Settings", "Settings", ShowSettings);
             QuitToTitleButton = MenuWidgets.Button(_main, "QuitToTitle", "Quit to Title", QuitToTitle);
             QuitGameButton = MenuWidgets.Button(_main, "QuitGame", "Quit Game", () =>
@@ -140,7 +148,7 @@ namespace Game.UI
             });
             if (Application.platform == RuntimePlatform.WebGLPlayer) QuitGameButton.gameObject.SetActive(false);
             MenuWidgets.Stack(_main, 50f, 8f);
-            MenuWidgets.ChainVertical(ResumeButton, SettingsButton, QuitToTitleButton, QuitGameButton);
+            MenuWidgets.ChainVertical(ResumeButton, RetreatButton, SettingsButton, QuitToTitleButton, QuitGameButton);
 
             _note = MenuWidgets.Label(_root, "Note", "", 16, MenuWidgets.Muted);
             MenuWidgets.Anchor(_note.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(124f, 80f), new Vector2(0f, 110f));

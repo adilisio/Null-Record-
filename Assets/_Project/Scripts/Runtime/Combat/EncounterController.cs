@@ -97,6 +97,12 @@ namespace Game.Combat
         private bool _moveHeld;
         private Vector2 _lastMouse;
         private bool _intentsDirty;
+        private UnityEngine.UI.Text _next;
+        private UnityEngine.UI.Text _tip;
+        private string _feedback = "";
+        private float _feedbackUntil;
+        private float _lastTouchTime = -10f;
+        private readonly List<(UnityEngine.UI.Image bg, UnityEngine.UI.Text label, int mode)> _skillButtons = new List<(UnityEngine.UI.Image, UnityEngine.UI.Text, int)>();
 
         private InputAction _aMove, _aConfirm, _aClick, _aCancel, _aNext, _aPrev, _aUnit, _aEnd;
 
@@ -171,7 +177,11 @@ namespace Game.Combat
 
         public override bool IsAvailable(PlayerInteractor player) => Status == EncounterStatus.Idle && base.IsAvailable(player);
 
-        public override string GetPrompt(PlayerInteractor player) => $"Engage hostiles ({enemies.Length}) - optional";
+        public override string GetPrompt(PlayerInteractor player) => $"Fight (optional): {enemies.Length} hostiles";
+
+        /// <summary>The fight can be started from anywhere inside its area, not just at the entrance point.</summary>
+        public override bool InReach(Vector3 probe, float sqrDistance) =>
+            base.InReach(probe, sqrDistance) || area.Contains(new Vector2(probe.x, probe.y));
 
         public override void Interact(PlayerInteractor player) => Engage(player);
 
@@ -223,7 +233,10 @@ namespace Game.Combat
 
             // Player and companion. Party XP raises max HP for both.
             int bonusHp = player.Inventory != null ? Progression.BonusHp(player.Inventory.Xp) : 0;
-            Tile playerTile = Nearest(grid, player.transform.position);
+            // Engaged from inside the arena: take position at the entrance edge rather than next to (or on) a hostile.
+            Vector3 pp = player.transform.position;
+            bool inside = area.Contains(new Vector2(pp.x, pp.y + 0.5f)) && Mathf.Abs(pp.x - transform.position.x) > 1.5f;
+            Tile playerTile = Nearest(grid, inside ? transform.position : pp);
             Unit subject = State.AddUnit(CombatPresets.Subject, Team.Player, playerTile, leader: true, bonusHp: bonusHp);
             motor?.SetExternalControl(true);
             player.transform.position = playerTile.World;
@@ -279,16 +292,26 @@ namespace Game.Combat
             Cursor = subject.Tile;
             Mode = -1;
             _inputBlockedUntilFrame = Time.frameCount + 1; // the Interact press that engaged must not end the turn
-            GameMessages.Show("Hostiles engaged.");
             GameAudio.SetCombat(true);
         }
 
-        private IEnumerator Finish(bool victory)
+        /// <summary>Give up the fight: everything resets to just before engaging, like a loss but without the sting.</summary>
+        public bool Retreat()
+        {
+            if (Status != EncounterStatus.Active || _finishing) return false;
+            StopAllCoroutines();
+            _animating = false;
+            State?.Events.Clear();
+            StartCoroutine(Finish(false, retreated: true));
+            return true;
+        }
+
+        private IEnumerator Finish(bool victory, bool retreated = false)
         {
             _finishing = true;
-            GameAudio.Play(victory ? SoundId.Victory : SoundId.Defeat);
+            if (!retreated) GameAudio.Play(victory ? SoundId.Victory : SoundId.Defeat);
             GameAudio.SetCombat(false);
-            yield return new WaitForSeconds(1.2f);
+            yield return new WaitForSeconds(retreated ? 0.2f : 1.2f);
 
             // Downed player-side bodies get back up.
             foreach ((Transform body, Quaternion upright) in _downed)
@@ -344,7 +367,7 @@ namespace Game.Combat
                 _companion?.WarpBehindPlayer();
                 if (marker != null) CombatVisuals.ClearTint(marker);
                 SetHidden(false);
-                GameMessages.Show("Defeated. The encounter has reset.");
+                GameMessages.Show(retreated ? "You pulled back. The hostiles reset." : "Defeated. The encounter has reset.");
                 Status = EncounterStatus.Idle;
             }
             State = null;
@@ -408,23 +431,77 @@ namespace Game.Combat
         {
             if (State == null || State.Phase != Phase.Player || IsBusy || Selected == null || Cursor == null) return false;
             bool ok;
+            Unit there = State.UnitAt(Cursor);
             if (Mode < 0)
             {
-                Unit there = State.UnitAt(Cursor);
                 if (there != null && there != Selected && there.Team == Team.Player && !there.Done)
                 {
                     SelectUnit(there);
                     return true;
                 }
+                if (there != null && there.Team == Team.Enemy)
+                {
+                    // Confirming on a hostile in MOVE mode picks the skill that can hit it; confirm again to use it.
+                    int skill = SkillFor(Selected, Cursor);
+                    if (skill >= 0)
+                    {
+                        _feedbackUntil = 0f;
+                        Mode = skill;
+                        return true;
+                    }
+                    Feedback(Selected.Acted ? $"{Selected.Name} has already attacked this turn."
+                        : Selected.Moved ? "Out of reach this turn. Try another target, or END TURN."
+                        : "Out of reach: move next to it first (blue tiles).");
+                    return false;
+                }
                 ok = State.TryMove(Selected, Cursor);
+                if (!ok && there != Selected) Feedback(Selected.Moved ? $"{Selected.Name} has already moved this turn." : "Can't move there. Pick a blue tile.");
             }
             else
             {
                 ok = State.TryUseSkill(Selected, Mode, Cursor);
                 if (ok) Mode = -1;
+                else
+                {
+                    int other = there != null && there.Team == Team.Enemy ? SkillFor(Selected, Cursor) : -1;
+                    if (other >= 0) { Mode = other; _feedbackUntil = 0f; return true; }
+                    Feedback($"{Selected.Def.Skills[Mode].Name} can't reach there. Pick a red target, or choose MOVE.");
+                }
             }
+            if (ok) _feedbackUntil = 0f;
             if (ok && Selected.Done) SelectNext();
             return ok;
+        }
+
+        /// <summary>The first ready attack of <paramref name="u"/> that can hit whoever stands on <paramref name="t"/> right now, or -1.</summary>
+        public int SkillFor(Unit u, Tile t)
+        {
+            if (u == null || t == null || u.Acted) return -1;
+            for (int i = 0; i < u.Def.Skills.Length; i++)
+            {
+                if (u.SkillReady(i) && !u.Def.Skills[i].TargetsAllies && State.TargetOptions(u, i).Contains(t)) return i;
+            }
+            return -1;
+        }
+
+        /// <summary>True on the player's turn once every living party member has moved and acted.</summary>
+        public bool AllActed
+        {
+            get
+            {
+                if (State == null || State.Phase != Phase.Player || IsBusy) return false;
+                foreach (Unit u in State.Alive(Team.Player)) if (!u.Done) return false;
+                return true;
+            }
+        }
+
+        /// <summary>The reason an action was refused, shown on the next-step line for a moment.</summary>
+        public string Feedback(string text)
+        {
+            _feedback = text;
+            _feedbackUntil = Time.unscaledTime + 2.5f;
+            GameAudio.Play(SoundId.UiMove);
+            return text;
         }
 
         public void EndTurn()
@@ -487,8 +564,14 @@ namespace Game.Combat
                 Cursor = Mathf.Abs(mv.x) >= Mathf.Abs(mv.y) ? StepColumn(Cursor, mv.x > 0 ? 1 : -1) : StepLevel(Cursor, mv.y > 0 ? 1 : -1);
             }
 
+            // Phones can echo a tap as a mouse click as well: ignore the mouse right after any touch.
+            Touchscreen ts0 = Touchscreen.current;
+            if (ts0 != null && ts0.primaryTouch.press.isPressed) _lastTouchTime = Time.unscaledTime;
+            bool mouseOk = Time.unscaledTime - _lastTouchTime > 1f;
+            bool pointerOverUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+
             Mouse mouse = Mouse.current;
-            if (mouse != null)
+            if (mouse != null && mouseOk)
             {
                 Vector2 mp = mouse.position.ReadValue();
                 if ((mp - _lastMouse).sqrMagnitude > 1f)
@@ -509,7 +592,18 @@ namespace Game.Combat
                 if (tapped != null)
                 {
                     if (tapped == Cursor) Confirm();
-                    else Cursor = tapped;
+                    else
+                    {
+                        Cursor = tapped;
+                        // The first tap previews the obvious action: an attack on a hostile, a move to an empty tile.
+                        Unit u = State.UnitAt(tapped);
+                        if (u != null && u.Team == Team.Enemy)
+                        {
+                            int sk = SkillFor(Selected, tapped);
+                            if (sk >= 0) Mode = sk;
+                        }
+                        else if (u == null && Mode >= 0 && !Selected.Moved) Mode = -1;
+                    }
                 }
             }
 
@@ -518,7 +612,8 @@ namespace Game.Combat
             if (Pressed(_aPrev)) CycleMode(-1, skills);
             if (Pressed(_aCancel)) Mode = -1;
             if (Pressed(_aUnit)) CycleUnit();
-            if (Pressed(_aConfirm) || Pressed(_aClick)) Confirm();
+            bool click = Pressed(_aClick) && mouseOk && !pointerOverUi;
+            if (Pressed(_aConfirm) || click) Confirm();
             else if (Pressed(_aEnd)) EndTurn();
         }
 
@@ -643,7 +738,9 @@ namespace Game.Combat
         /// <summary>The turn banner as shown (tests).</summary>
         public string BannerText => _banner != null ? _banner.text : "";
         /// <summary>The unit/skill/controls bar as shown (tests).</summary>
-        public string HelpText => _help != null ? _help.text : "";
+        public string HelpText => (_next != null ? _next.text + "\n" : "") + (_help != null ? _help.text : "");
+        /// <summary>Just the next-step line (tests).</summary>
+        public string NextStepText => _next != null ? _next.text : "";
 
         /// <summary>Banner, unit/skill bar and log on a screen canvas, so they stay readable at any size (phones included).</summary>
         private void BuildHud()
@@ -656,14 +753,133 @@ namespace Game.Combat
             Game.UI.MenuWidgets.Anchor(_banner.rectTransform, new Vector2(0.2f, 1f), new Vector2(0.8f, 1f), new Vector2(0f, -66f), new Vector2(0f, -22f));
             _banner.gameObject.AddComponent<UnityEngine.UI.Shadow>().effectDistance = new Vector2(2f, -2f);
 
-            UnityEngine.UI.Image panel = Game.UI.MenuWidgets.Panel(r, "HelpPanel", new Color(0.03f, 0.04f, 0.05f, 0.72f));
+            UnityEngine.UI.Image panel = Game.UI.MenuWidgets.Panel(r, "HelpPanel", new Color(0.03f, 0.04f, 0.05f, 0.78f));
             _helpPanel = panel.rectTransform;
-            _help = Game.UI.MenuWidgets.Label(panel.transform, "Help", "", 18, new Color(0.85f, 0.88f, 0.92f), TextAnchor.MiddleCenter);
-            Game.UI.MenuWidgets.Stretch(_help.rectTransform, new Vector2(14f, 4f), new Vector2(-14f, -4f));
+            Game.UI.MenuWidgets.Anchor(_helpPanel, new Vector2(0.1f, 1f), new Vector2(0.9f, 1f), new Vector2(0f, -150f), new Vector2(0f, -70f));
+            // What to do next, in plain words (big), then the device's controls and a tip (small).
+            _next = Game.UI.MenuWidgets.Label(panel.transform, "NextStep", "", 26, new Color(1f, 0.93f, 0.75f), TextAnchor.MiddleCenter);
+            Game.UI.MenuWidgets.Anchor(_next.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -40f), new Vector2(-14f, -4f));
+            _help = Game.UI.MenuWidgets.Label(panel.transform, "Help", "", 16, new Color(0.75f, 0.8f, 0.86f), TextAnchor.MiddleCenter);
+            Game.UI.MenuWidgets.Anchor(_help.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -60f), new Vector2(-14f, -40f));
+            _tip = Game.UI.MenuWidgets.Label(panel.transform, "Tip", "", 15, new Color(1f, 0.55f, 0.6f), TextAnchor.MiddleCenter);
+            Game.UI.MenuWidgets.Anchor(_tip.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -78f), new Vector2(-14f, -60f));
+
+            // Action bar, bottom centre: MOVE plus the selected unit's skills, tap or click to choose.
+            Game.UI.MenuWidgets.EnsureEventSystem();
+            _skillButtons.Clear();
+            for (int i = -1; i < 3; i++)
+            {
+                int mode = i;
+                UnityEngine.UI.Image bg = Game.UI.MenuWidgets.Panel(r, $"Action_{i + 1}", new Color(1f, 1f, 1f, 0.1f));
+                RectTransform rt = bg.rectTransform;
+                rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
+                rt.pivot = new Vector2(0.5f, 0f);
+                rt.sizeDelta = new Vector2(150f, 64f);
+                rt.anchoredPosition = new Vector2(-50f + i * 160f, 22f);
+                var b = bg.gameObject.AddComponent<UnityEngine.UI.Button>();
+                b.targetGraphic = bg;
+                b.transition = UnityEngine.UI.Selectable.Transition.None;
+                b.navigation = new UnityEngine.UI.Navigation { mode = UnityEngine.UI.Navigation.Mode.None };
+                b.onClick.AddListener(() => ChooseAction(mode));
+                UnityEngine.UI.Text t = Game.UI.MenuWidgets.Label(bg.transform, "Label", "", 18, Color.white, TextAnchor.MiddleCenter);
+                t.horizontalOverflow = HorizontalWrapMode.Wrap;
+                Game.UI.MenuWidgets.Stretch(t.rectTransform, new Vector2(4f, 2f), new Vector2(-4f, -2f));
+                _skillButtons.Add((bg, t, mode));
+            }
 
             _logText = Game.UI.MenuWidgets.Label(r, "Log", "", 14, new Color(0.85f, 0.85f, 0.8f), TextAnchor.UpperRight);
             Game.UI.MenuWidgets.Anchor(_logText.rectTransform, new Vector2(0.76f, 1f), new Vector2(1f, 1f), new Vector2(0f, -250f), new Vector2(-16f, -150f));
             _logText.gameObject.AddComponent<UnityEngine.UI.Shadow>().effectDistance = new Vector2(1.5f, -1.5f);
+        }
+
+        /// <summary>The action bar: MOVE (-1) or a skill index. Refused choices say why.</summary>
+        public void ChooseAction(int mode)
+        {
+            if (State == null || State.Phase != Phase.Player || IsBusy || Selected == null) return;
+            if (mode >= Selected.Def.Skills.Length) return;
+            if (mode < 0)
+            {
+                if (Selected.Moved) Feedback($"{Selected.Name} has already moved this turn.");
+                Mode = -1;
+                return;
+            }
+            if (Selected.Acted) { Feedback($"{Selected.Name} has already attacked this turn."); return; }
+            if (!Selected.SkillReady(mode)) { Feedback($"{Selected.Def.Skills[mode].Name} is recharging ({Selected.Cooldowns[mode]} more turn{(Selected.Cooldowns[mode] == 1 ? "" : "s")})."); return; }
+            Mode = mode;
+            _feedbackUntil = 0f;
+            GameAudio.Play(SoundId.UiConfirm);
+        }
+
+        private static string SkillSummary(SkillDef s)
+        {
+            if (s.TargetsAllies) return $"heal {s.Heal}";
+            string r = s.Ranged ? $"range {s.MinRange}-{s.MaxRange}" : "melee";
+            return $"{s.Damage} dmg{(s.Knockback > 0 ? " +push" : "")}, {r}";
+        }
+
+        /// <summary>One plain sentence: what the player should do now.</summary>
+        private string NextStep()
+        {
+            bool touch = Game.UI.InputHints.Touch;
+            string pick = touch ? "Tap" : "Select";
+            string again = touch ? "tap it again" : "press Space";
+            string end = touch ? "tap END TURN" : "press E to end the turn";
+            if (Selected == null) return "";
+            bool allDone = true;
+            foreach (Unit u in State.Alive(Team.Player)) allDone &= u.Done;
+            if (allDone) return $"Everyone has acted: {end}.";
+            if (Selected.Done) return $"{Selected.Name} is done. {end.Substring(0, 1).ToUpperInvariant() + end.Substring(1)}, or switch unit.";
+
+            if (Mode >= 0)
+            {
+                SkillDef s = Selected.Def.Skills[Mode];
+                Unit victim = State.UnitAt(Cursor);
+                if (victim != null && State.TargetOptions(Selected, Mode).Contains(Cursor))
+                {
+                    if (s.TargetsAllies) return $"{s.Name} {victim.Name}: +{Mathf.Min(s.Heal, victim.MaxHp - victim.Hp)} HP. To confirm, {again}.";
+                    int dmg = State.PreviewDamage(Selected.Tile, s, Cursor, victim);
+                    string ko = dmg >= victim.Hp ? "  KNOCKOUT" : $" ({victim.Hp - dmg} HP left)";
+                    return $"{s.Name} the {victim.Name}: {dmg} damage{ko}. To confirm, {again}.";
+                }
+                if (State.TargetOptions(Selected, Mode).Count == 0)
+                    return Selected.Moved ? $"{s.Name}: nothing in reach. {end.Substring(0, 1).ToUpperInvariant() + end.Substring(1)}." : $"{s.Name}: nothing in reach. Choose MOVE and get closer.";
+                return $"{s.Name}: {pick.ToLowerInvariant()} a red {(s.TargetsAllies ? "ally" : "target")}.";
+            }
+
+            bool canHit = false;
+            for (int i = 0; i < Selected.Def.Skills.Length; i++) canHit |= !Selected.Acted && Selected.SkillReady(i) && !Selected.Def.Skills[i].TargetsAllies && State.TargetOptions(Selected, i).Count > 0;
+            if (!Selected.Moved && canHit) return $"{Selected.Name}: {pick.ToLowerInvariant()} an enemy next to you to attack, or a blue tile to move.";
+            if (!Selected.Moved) return $"{Selected.Name}: {pick.ToLowerInvariant()} a blue tile to move{(Selected.Acted ? "" : " toward an enemy")}.";
+            if (canHit) return $"{Selected.Name}: {pick.ToLowerInvariant()} an enemy to attack it.";
+            return $"{Selected.Name}: no enemy in reach. {end.Substring(0, 1).ToUpperInvariant() + end.Substring(1)}.";
+        }
+
+        private void UpdateActionBar()
+        {
+            bool show = State.Phase == Phase.Player && Selected != null && !IsBusy;
+            for (int k = 0; k < _skillButtons.Count; k++)
+            {
+                (UnityEngine.UI.Image bg, UnityEngine.UI.Text label, int mode) = _skillButtons[k];
+                bool exists = show && mode < Selected.Def.Skills.Length;
+                bg.gameObject.SetActive(exists);
+                if (!exists) continue;
+                bool usable;
+                if (mode < 0)
+                {
+                    usable = !Selected.Moved;
+                    label.text = Selected.Moved ? "MOVE\n<size=13>done</size>" : "MOVE\n<size=13>up to " + Selected.Def.Move + " tiles</size>";
+                }
+                else
+                {
+                    SkillDef s = Selected.Def.Skills[mode];
+                    usable = !Selected.Acted && Selected.SkillReady(mode);
+                    string sub = Selected.Cooldowns[mode] > 0 ? $"recharging ({Selected.Cooldowns[mode]})" : SkillSummary(s);
+                    label.text = $"{s.Name.ToUpperInvariant()}\n<size=13>{sub}</size>";
+                }
+                bool current = Mode == mode;
+                bg.color = current ? new Color(1f, 0.74f, 0.45f, 0.55f) : usable ? new Color(1f, 1f, 1f, 0.16f) : new Color(1f, 1f, 1f, 0.05f);
+                label.color = usable || current ? Color.white : new Color(1f, 1f, 1f, 0.4f);
+            }
         }
 
         private void UpdateHud()
@@ -680,25 +896,22 @@ namespace Game.Combat
 
             if (State.Phase == Phase.Player && Selected != null)
             {
-                string action = Mode < 0 ? (Selected.Moved ? "moved" : "MOVE") : Selected.Def.Skills[Mode].Name.ToUpperInvariant();
-                string skills = "";
-                for (int i = 0; i < Selected.Def.Skills.Length; i++)
-                {
-                    SkillDef s = Selected.Def.Skills[i];
-                    string cd = Selected.Cooldowns[i] > 0 ? $" ({Selected.Cooldowns[i]})" : "";
-                    skills += s.TargetsAllies ? $"   {s.Name} heal+{s.Heal}{cd}" : $"   {s.Name} {s.Damage}{(s.Knockback > 0 ? $"+push{s.Knockback}" : "")}{cd}";
-                }
-                string hazard = Cursor != null && Cursor.Hazard > 0 ? $"   [cursor: HAZARD, {Cursor.Hazard} damage if you stop here]" : "";
-                _help.text = $"{Selected.Name}: {action}{(Selected.Acted ? " / acted" : "")}  |{skills}{hazard}\n" + Game.UI.InputHints.CombatControls;
+                bool fresh = Time.unscaledTime < _feedbackUntil;
+                _next.text = fresh ? _feedback : NextStep();
+                _next.color = fresh ? new Color(1f, 0.55f, 0.45f) : new Color(1f, 0.93f, 0.75f);
+                _help.text = Game.UI.InputHints.CombatControls;
+                _tip.text = Cursor != null && Cursor.Hazard > 0 ? $"Arcing floor: {Cursor.Hazard} damage to anyone who stops here."
+                    : State.Turn <= 2 ? "Red ! tiles show where enemies will hit next turn. Step off them." : "";
             }
             else
             {
+                _next.text = "";
                 _help.text = "";
+                _tip.text = "";
             }
 
-            // Under the banner: clear of the grid (bottom) and the touch controls.
-            Game.UI.MenuWidgets.Anchor(_helpPanel, new Vector2(0.14f, 1f), new Vector2(0.86f, 1f), new Vector2(0f, -132f), new Vector2(0f, -70f));
             _helpPanel.gameObject.SetActive(_help.text.Length > 0);
+            UpdateActionBar();
 
             int from = Mathf.Max(0, _log.Count - 3);
             _logText.text = string.Join("\n", _log.GetRange(from, _log.Count - from));

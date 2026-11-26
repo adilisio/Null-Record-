@@ -19,12 +19,16 @@ namespace Game.Core
             SceneManager.LoadScene(save != null && !string.IsNullOrEmpty(save.scene) ? save.scene : GameScene);
         }
 
+        /// <summary>Set by <see cref="NewGame"/>; the game scene's opening card plays once and clears it.</summary>
+        public static bool StartedNewGame { get; set; }
+
         /// <summary>Discards the save and starts from the beginning.</summary>
         public static void NewGame()
         {
             Time.timeScale = 1f;
             AudioListener.pause = false;
             SaveSystem.Delete();
+            StartedNewGame = true;
             SceneManager.LoadScene(GameScene);
         }
 
