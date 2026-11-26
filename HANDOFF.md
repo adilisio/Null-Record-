@@ -2,9 +2,9 @@
 
 _Last updated 2026-11-26, end of a long session. A new session should read this first, then `CLAUDE.md` (conventions) and `Docs/GDD.md` (design, and every first-pass decision with its reasons)._
 
-- **Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls). It's live and current as of commit `b7d44dd`.
+- **Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls). It's live and current as of commit `ef2eac6`.
 - **Repo:** https://github.com/adilisio/Null-Record- (public). `main` holds the source and everything is pushed; `gh-pages` holds only the web build.
-- **Status:** 157 automated tests passing (95 EditMode, 62 PlayMode). The working tree is clean.
+- **Status:** 160 automated tests passing (97 EditMode, 63 PlayMode). The working tree is clean.
 
 ---
 
@@ -134,6 +134,7 @@ All commits are on `main`.
 | Region 2 | Research Wing, freight lift, remote override and bridge, companion 2 with heals, swap terminal, save roster |
 | Fable polish review | Touch tap fix, device hints, screen HUDs, HP bars, downed companions, cover height rule, enemy cooldown fix, fuller framing, solid blocks, fades |
 | Phone polish (`b7d44dd`) | After the owner's first phone play ("crouch barely moves", "couldn't figure out combat"): next-step combat line, action bar, tap-an-enemy-to-attack, engage anywhere in the arena, END TURN pulse, Retreat; crouch 3.2 and a toggle on touch, auto-run on touch, crawl space in Holding; closer touch camera, dimmer back wall; opening card, objective line, end card (`StoryBeats`, placeholder text). See GDD "Phone polish" |
+| Story pass (`ef2eac6`) | Owner's answers: the escape goes **up**, the opening uses the **intercom** (Site PA barks), logs come from **staff and earlier subjects** (5 `LogTerminal`s, text in `Dialogue/logs.json`), and **someone is waiting** past the shutter (a silhouette; end card "Someone was waiting"). Names stay placeholder. See GDD "Story decisions" |
 
 **Decisions and lessons worth keeping:**
 - **Cover stays a tile.** In a one-lane side view, removing it split the grid and stalemated melee, so the fix was "no height bonus from cover" instead.
@@ -152,6 +153,6 @@ All commits are on `main`.
 ## 8. Suggested next steps (offer 2–3; the owner picks)
 
 1. **Tune combat:** balance the three fights (ideally after a hands-on play), skill choices on level-up, a tool reward from a fight.
-2. **Expand further:** the third region (Security Core) past the freight shutter, the drone link tool, companion 3 (ranged), a story beat to close region 2.
-3. **Phone pass 2:** fix whatever the owner hits when they replay the phone polish. Also still open: readable log terminals, combat camera closer on phones, crouch-walk animation (the pose is a frozen jump frame).
+2. **Expand further:** the third region (Security Core) past the freight shutter, the drone link tool, companion 3 (ranged), who the figure past the shutter is (owner's call).
+3. **Phone pass 2:** fix whatever the owner hits when they replay the phone polish. Also still open: combat camera closer on phones, crouch-walk animation (the pose is a frozen jump frame).
 4. **Rewrite the companions** once the owner gives names and voices.
