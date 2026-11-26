@@ -77,6 +77,9 @@ namespace Game.Player
         /// <summary>When false, the motor still applies gravity but ignores player input.</summary>
         public bool ControlEnabled { get; set; } = true;
 
+        /// <summary>True while another system (combat) moves the transform directly. The motor does nothing.</summary>
+        public bool ExternallyControlled { get; private set; }
+
         public event Action<MotorState> StateChanged;
 
         private float JumpVelocity => Mathf.Sqrt(2f * jumpHeight * -gravity);
@@ -94,6 +97,7 @@ namespace Game.Player
 
         private void Update()
         {
+            if (ExternallyControlled) return;
             float dt = Time.deltaTime;
             Vector2 move = ControlEnabled ? _input.Move : Vector2.zero;
 
@@ -120,10 +124,27 @@ namespace Game.Player
             position.z = laneZ;
             _cc.enabled = false;
             transform.position = position;
-            _cc.enabled = true;
+            _cc.enabled = !ExternallyControlled;
             if (resetVelocity) _velocity = Vector3.zero;
             SetState(MotorState.Airborne);
         }
+
+        /// <summary>
+        /// Hands the transform to another system (e.g. an encounter): disables the CharacterController and input.
+        /// Turning it off returns control and lets the player fall onto whatever is below.
+        /// </summary>
+        public void SetExternalControl(bool on)
+        {
+            if (on == ExternallyControlled) return;
+            ExternallyControlled = on;
+            ControlEnabled = !on;
+            _velocity = Vector3.zero;
+            _cc.enabled = !on;
+            if (!on) SetState(MotorState.Airborne);
+        }
+
+        /// <summary>Turns to face +X (1) or -X (-1).</summary>
+        public void Face(int dir) => SetFacing(dir >= 0 ? 1 : -1);
 
         // ---------------------------------------------------------------- ground / air
 

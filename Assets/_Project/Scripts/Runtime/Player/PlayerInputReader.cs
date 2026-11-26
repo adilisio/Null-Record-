@@ -21,6 +21,8 @@ namespace Game.Player
         private InputAction _interact;
         private float _jumpBufferedUntil = -1f;
 
+        /// <summary>The "Player" action map, for systems that read their own actions (e.g. combat).</summary>
+        public InputActionMap Map { get; private set; }
         public Vector2 Move { get; private set; }
         public bool JumpHeld => _jump != null && _jump.IsPressed();
         public bool CrouchHeld => _crouch != null && _crouch.IsPressed();
@@ -41,6 +43,7 @@ namespace Game.Player
             }
 
             InputActionMap map = asset.FindActionMap("Player", throwIfNotFound: true);
+            Map = map;
             _move = map.FindAction("Move", true);
             _jump = map.FindAction("Jump", true);
             _crouch = map.FindAction("Crouch", true);

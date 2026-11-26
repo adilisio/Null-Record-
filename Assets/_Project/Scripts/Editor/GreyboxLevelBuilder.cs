@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Game.CameraSystem;
+using Game.Combat;
 using Game.Core;
 using Game.Player;
 using Game.UI;
@@ -20,7 +21,7 @@ namespace Game.EditorTools
     /// Layout (left → right, floor at y = 0):
     ///   A  Holding    x -2..20   crate (jump), tall block (ledge climb)
     ///   B  Maintenance x 20..40  ladder → catwalk with Thermal Lining, steam vent, Level 2 keycard
-    ///   C  Security   x 40..56   behind a Level 2 door; encounter placeholder
+    ///   C  Security   x 40..56   behind a Level 2 door; optional grid-combat encounter
     /// </summary>
     public static class GreyboxLevelBuilder
     {
@@ -170,12 +171,37 @@ namespace Game.EditorTools
 
             Checkpoint(room, "Checkpoint_C", new Vector3(41.5f, 0f, 0f));
 
-            Box(room, "EncounterZone_Marker", new Vector3(49f, 0.02f, 0f), new Vector3(10f, 0.04f, 2.5f), encounter, collider: false);
-            Box(room, "Cover_Low", new Vector3(47f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f)));
+            // Props sit on the 1 m combat lattice (tile edges at whole numbers from x = 42).
+            GameObject zoneMarker = Box(room, "EncounterZone_Marker", new Vector3(49f, 0.02f, 0f), new Vector3(14f, 0.04f, 2.5f), encounter, collider: false);
+            Box(room, "Cover_Low", new Vector3(47.5f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f)));
             Box(room, "Platform_High", new Vector3(51.5f, 2f, 0f), new Vector3(3f, 0.3f, 2f), Mat("Metal", new Color(0.5f, 0.52f, 0.55f), metallic: 0.8f));
 
+            GameObject engageSign = Label(room, "[ optional encounter: E to engage ]", new Vector3(49f, 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f);
+            GameObject encGo = new GameObject("Encounter_Security");
+            encGo.transform.SetParent(room, false);
+            encGo.transform.position = new Vector3(44.5f, 0f, 0f);
+            EncounterController enc = encGo.AddComponent<EncounterController>();
+            enc.SetInteractionPoint(new Vector3(0f, 0.9f, 0f), 1.2f);
+            enc.Configure(
+                new Rect(42f, -0.2f, 14f, 6.2f),
+                "Guard",
+                new[]
+                {
+                    new EncounterController.EnemySpawn { unit = "Enforcer", position = new Vector2(49.5f, 0f) },
+                    new EncounterController.EnemySpawn { unit = "Sentry", position = new Vector2(51.5f, 2.2f) },
+                    new EncounterController.EnemySpawn { unit = "Sentry", position = new Vector2(54.5f, 0f) },
+                },
+                30,
+                "encounter_security_cleared",
+                "Recovered: security incident report (fragment).",
+                TransparentMat("GridTile", new Color(1f, 1f, 1f, 0.3f)),
+                Mat("Enemy", new Color(0.5f, 0.16f, 0.14f)),
+                Mat("Companion", new Color(0.32f, 0.42f, 0.55f)),
+                Mat("EnemyVisor", new Color(1f, 0.25f, 0.2f), emission: new Color(1f, 0.2f, 0.15f) * 2f),
+                zoneMarker.GetComponent<Renderer>(),
+                engageSign);
+
             Label(room, "SECURITY", new Vector3(44f, 6.5f, 1.9f), new Color(1f, 0.35f, 0.3f));
-            Label(room, "[ optional encounter: grid combat coming next ]", new Vector3(49f, 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f);
             PointLight(room, "Light_Security", new Vector3(48f, 7f, -1f), new Color(1f, 0.2f, 0.15f), 6f, 14f);
             PointLight(room, "Light_Door", new Vector3(41f, 4f, -1.5f), new Color(0.8f, 0.85f, 1f), 2f, 6f);
         }
@@ -357,7 +383,7 @@ namespace Game.EditorTools
             l.shadows = LightShadows.Soft;
         }
 
-        private static void Label(Transform parent, string text, Vector3 position, Color color, float size = 1f)
+        private static GameObject Label(Transform parent, string text, Vector3 position, Color color, float size = 1f)
         {
             GameObject go = new GameObject("Label_" + text);
             go.transform.SetParent(parent, true);
@@ -375,6 +401,7 @@ namespace Game.EditorTools
                 tm.font = font;
                 go.GetComponent<MeshRenderer>().sharedMaterial = font.material;
             }
+            return go;
         }
 
         private static void AddSteamParticles(Transform parent)
@@ -445,6 +472,30 @@ namespace Game.EditorTools
 
             mat.SetColor("_BaseColor", color);
             // URP transparent, alpha-blended.
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", 0f);
+            mat.SetOverrideTag("RenderType", "Transparent");
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            mat.SetInt("_ZWrite", 0);
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        private static Material TransparentMat(string name, Color color)
+        {
+            string path = $"{MaterialDir}/{name}.mat";
+            Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+                EnsureFolder(MaterialDir);
+                AssetDatabase.CreateAsset(mat, path);
+            }
+
+            mat.SetColor("_BaseColor", color);
             mat.SetFloat("_Surface", 1f);
             mat.SetFloat("_Blend", 0f);
             mat.SetOverrideTag("RenderType", "Transparent");

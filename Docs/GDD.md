@@ -71,6 +71,35 @@ Base movement is fixed from the start: walk, run, jump, crouch, ledge-climb, lad
   - **Story info:** logs, alternate companion dialogue, reveals about the black site
   - **XP:** levels raise HP and unlock skill choices for the protagonist and each companion
 
+### Prototype decisions (2026-11-26)
+These are first-pass calls made to get the prototype playable. Revisit them after hands-on play.
+- **Tiles:** 1 m columns. A tile is any surface in a column with standing headroom, so multi-floor encounters work: a platform and the floor under it are separate tiles. Level props in encounter rooms should sit on whole-metre edges.
+- **Moving between tiles:** walking to a neighbouring tile costs 1, and so does dropping down (up to 4.5 m). Climbing a ledge up to 2.5 m costs 2, which matches the player's ledge climb.
+- **Enemy intents target a tile, not a unit.** At the start of each player phase every enemy shows where it will move and which tile it will hit, with the expected damage. Stepping off that tile dodges the attack, and an enemy standing on it gets hit instead.
+- **Damage:**
+  - Height advantage (attacking from 0.9 m or more above) adds +1.
+  - Half cover halves ranged damage.
+  - Armour subtracts flat damage, but a hit always deals at least 1.
+  - Knockback into a wall or another unit deals 1 to each; knockback off a drop of 1.5 m or more deals 2.
+  - Melee reaches the adjacent column with a height difference of up to 1.2 m.
+- **Outcome:** losing the protagonist loses the fight, but losing the companion doesn't. On defeat, the encounter resets to the moment before you engaged.
+- **No randomness.** Results are fully predictable, which keeps the shown intents honest.
+- **Prototype roster:**
+  - Subject: HP 8, Move 4. Strike 2; Shove 1 + push 2, cooldown 2.
+  - Guard (companion stand-in): HP 12, Move 3, Armour 1. Baton 3; Shield Bash 1 + push 2.
+  - Enforcer (melee): HP 6. Stun Prod 3.
+  - Sentry (ranged 2–5): HP 4. Taser Shot 2.
+- **Controls:** the existing Player actions, so keyboard, mouse and gamepad all work.
+  - Move moves the cursor; Jump or Attack confirms; Crouch cancels.
+  - Previous and Next change the action; Sprint switches unit; Interact ends the turn.
+- **Not in yet:**
+  - XP
+  - Skill upgrades
+  - Hazards inside encounters (steam, wires)
+  - Full cover
+  - Turning units and skills into ScriptableObjects
+  - Combat audio
+
 ## 8. Save, death and flow
 - **Frequent autosave:** on room transitions, after dialogue and before and after encounters.
 - Dying outside combat (falls, hazards) respawns you at the last room entry.
@@ -98,11 +127,11 @@ Base movement is fixed from the start: walk, run, jump, crouch, ledge-climb, lad
 
 ### Milestone 1: vertical slice
 One region (Intake / Holding), polished enough to show:
-- [ ] Side-on character controller (run, jump, crouch, ledge-climb, ladders, interact)
+- [x] Side-on character controller (run, jump, crouch, ledge-climb, ladders, interact)
 - [ ] Camera rig with follow, room bounds and parallax
 - [ ] 1 hacking tool (keycard tier 1 → tier 2) + 1 environmental hazard (steam / thermal lining)
 - [ ] Companion 1: recruit scene, follow AI, banter
-- [ ] 1 optional encounter: level → grid transition, 2–3 enemy types, win and lose flow, rewards
+- [~] 1 optional encounter: level → grid transition, 2–3 enemy types, win and lose flow, rewards (playable prototype in Security; scrap and log rewards so far, no tool or XP yet)
 - [ ] Dialogue system with portraits and choices
 - [ ] Autosave and room transitions
 - [ ] Lighting pass and audio ambience for the region
@@ -128,5 +157,5 @@ One region (Intake / Holding), polished enough to show:
 - Should the black site go **down** (escape by descending to the truth) or **up** (climbing toward the surface)?
 - How many endings? (Suggestion: 2, shaped by which companions you kept close and whether you expose the site.)
 - Dialogue tooling: Ink vs. a custom ScriptableObject graph?
-- Grid tile size relative to the character, and whether multi-floor encounters are allowed
+- ~~Grid tile size and multi-floor encounters~~ (prototype: 1 m tiles, multi-floor allowed; see §7)
 - What the protagonist's subject ID is and why they were erased (the central reveal)
