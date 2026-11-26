@@ -158,7 +158,14 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
     - **Subject:** pale jumpsuit with cyan piping and a blank ID tag.
     - **Dace:** navy security uniform with an orange armband.
     - **Enforcer and Sentry:** full helmets with red visors, so no faces. The Enforcer wears dark red armour; the Sentry is gunmetal with a red band.
-  - `CharacterAnimator` drives the animation from actual movement, so it works for the player, the follower and combat units alike. The pack has no crouch clip, so crouching holds the jump's knees-bent wind-up as a pose. It also has no attack clip, so attacks are still the procedural lunge.
+  - `CharacterAnimator` drives the animation from actual movement, so it works for the player, the follower and combat units alike. The pack has no crouch clip, so crouching holds the jump's knees-bent wind-up as a pose. Combat actions are our own keyframed clips (`CharacterActions`, built on the Kenney rig), mapped by each skill's `Anim` field. Each one holds the idle pose and animates the arms and spine:
+    - **Strike:** a punch (Subject's Strike).
+    - **Shove:** a two-handed push (Shove, Shield Bash).
+    - **Swing:** an overhead chop (Baton, Stun Prod, Maul).
+    - **Shoot:** a two-handed aim with recoil (Taser Shot).
+    - **Hit:** a flinch, played on whoever takes damage.
+
+    The combat lunge waits for the wind-up so the hit lands on the swing.
   - **Set dressing:** Space Station Kit panels along the back wall, kit floor tiles over the whole floor, kit meshes over the walkways (catwalk, loft, mezzanine, Security platform), the climb blocks, the crates and cover, and the Security door panel, which slides with the door. It's all visual: the greybox boxes keep their colliders with their renderers hidden, so collision and the combat grid are unchanged.
   - **Portraits:** each speaking character's head is rendered from their model into `Resources/Portraits/<speaker>.png` when the scenes are built.
   - **Recorded sounds:** Kenney impact and sci-fi sounds replace the synth for footsteps, ladder clanks, hits, hurt, knockback, unit down, landing, door open and the zap. Every other sound, and the music, is still synthesised. **Mix:** when the scenes are built, the editor measures each recording's loudness against the synth sound it replaces and saves a per-clip gain to `Resources/Sounds/gains.json`. The game applies it, so the tuned mix levels still hold. It's only been checked by measurement, not by ear.

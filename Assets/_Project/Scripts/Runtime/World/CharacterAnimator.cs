@@ -19,6 +19,7 @@ namespace Game.World
         [SerializeField] private float teleportDistance = 1.5f;
 
         private PlayerMotor _motor;
+        private float _holdUntil;
         private Vector3 _last;
         private float _speed;
 
@@ -27,6 +28,21 @@ namespace Game.World
         public float Speed => _speed;
 
         public void Configure(Animator target) => animator = target;
+
+        /// <summary>The last action fired with <see cref="Play"/> (for tests and debugging).</summary>
+        public string LastAction { get; private set; } = "";
+
+        /// <summary>
+        /// Fires a one-shot action clip (Strike, Shove, Swing, Shoot, Hit). Movement is ignored while it plays,
+        /// so a combat lunge doesn't flip the character into Run.
+        /// </summary>
+        public void Play(string action, float hold = 0.5f)
+        {
+            if (string.IsNullOrEmpty(action) || animator == null || animator.runtimeAnimatorController == null) return;
+            animator.SetTrigger(action);
+            LastAction = action;
+            _holdUntil = Time.time + hold;
+        }
 
         private void Awake()
         {
@@ -44,7 +60,7 @@ namespace Game.World
             if (dt > 0f)
             {
                 float moved = Mathf.Abs(p.x - _last.x);
-                float v = moved > teleportDistance ? 0f : moved / dt;
+                float v = moved > teleportDistance || Time.time < _holdUntil ? 0f : moved / dt;
                 _speed = Mathf.Lerp(_speed, v, 1f - Mathf.Exp(-dt * 14f));
             }
             _last = p;

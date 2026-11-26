@@ -31,7 +31,8 @@ namespace Game.EditorTools
             AnimationClip idle = ConfigureClip("idle", "Idle", true);
             AnimationClip run = ConfigureClip("run", "Run", true);
             AnimationClip jump = ConfigureClip("jump", "Jump", false);
-            AnimatorController controller = BuildController(idle, run, jump);
+            var actions = CharacterActions.Build(AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath), idle, $"{Dir}/Actions");
+            AnimatorController controller = BuildController(idle, run, jump, actions);
             Directory.CreateDirectory($"{Dir}/Materials");
             foreach (string name in Roster) BuildPrefab(name, controller);
             AssetDatabase.SaveAssets();
@@ -144,7 +145,8 @@ namespace Game.EditorTools
             return AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>().First(c => c.name == clipName);
         }
 
-        private static AnimatorController BuildController(AnimationClip idle, AnimationClip run, AnimationClip jump)
+        private static AnimatorController BuildController(AnimationClip idle, AnimationClip run, AnimationClip jump,
+            System.Collections.Generic.Dictionary<string, AnimationClip> actions)
         {
             Directory.CreateDirectory(Dir);
             string path = $"{Dir}/Character.controller";
@@ -170,6 +172,23 @@ namespace Game.EditorTools
             Link(sIdle, sCrouch, 0.1f).AddCondition(AnimatorConditionMode.If, 0f, "Crouch");
             Link(sRun, sCrouch, 0.1f).AddCondition(AnimatorConditionMode.If, 0f, "Crouch");
             Link(sCrouch, sIdle, 0.12f).AddCondition(AnimatorConditionMode.IfNot, 0f, "Crouch");
+
+            // Combat actions: fired by trigger from any state, then back to Idle when the clip ends.
+            foreach (string action in CharacterActions.Names)
+            {
+                c.AddParameter(action, AnimatorControllerParameterType.Trigger);
+                AnimatorState s = sm.AddState(action);
+                s.motion = actions[action];
+                AnimatorStateTransition into = sm.AddAnyStateTransition(s);
+                into.hasExitTime = false;
+                into.duration = 0.05f;
+                into.canTransitionToSelf = true;
+                into.AddCondition(AnimatorConditionMode.If, 0f, action);
+                AnimatorStateTransition back = s.AddTransition(sIdle);
+                back.hasExitTime = true;
+                back.exitTime = 0.95f;
+                back.duration = 0.1f;
+            }
 
             Link(sIdle, sRun, 0.12f).AddCondition(AnimatorConditionMode.Greater, 0.4f, "Speed");
             Link(sRun, sIdle, 0.15f).AddCondition(AnimatorConditionMode.Less, 0.4f, "Speed");

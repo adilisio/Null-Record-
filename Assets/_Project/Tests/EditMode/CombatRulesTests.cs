@@ -343,6 +343,18 @@ namespace Game.Tests
         }
 
         [Test]
+        public void EverySkill_HasAnActionClip()
+        {
+            var clips = new[] { "Strike", "Shove", "Swing", "Shoot" };
+            foreach (string unit in new[] { "Subject", "Guard", "Enforcer", "Sentry", "Warden" })
+            {
+                foreach (SkillDef s in CombatPresets.Find(unit).Skills) CollectionAssert.Contains(clips, s.Anim, $"{unit} {s.Name}");
+            }
+            Assert.AreEqual("Shoot", CombatPresets.TaserShot.Anim);
+            Assert.AreEqual("Swing", CombatPresets.Maul.Anim);
+        }
+
+        [Test]
         public void Progression_LevelsEveryFiftyXp_AndCaps()
         {
             Assert.AreEqual(1, Progression.Level(0));

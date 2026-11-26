@@ -20,6 +20,8 @@ namespace Game.Combat
         public int Knockback;
         /// <summary>Turns before it can be used again (0 = every turn).</summary>
         public int Cooldown;
+        /// <summary>Character action clip played when it's used: Strike, Shove, Swing or Shoot.</summary>
+        public string Anim = "Strike";
     }
 
     public sealed class UnitDef
@@ -54,12 +56,12 @@ namespace Game.Combat
     public static class CombatPresets
     {
         public static readonly SkillDef Strike = new SkillDef { Name = "Strike", Damage = 2 };
-        public static readonly SkillDef Shove = new SkillDef { Name = "Shove", Damage = 1, Knockback = 2, Cooldown = 2 };
-        public static readonly SkillDef Baton = new SkillDef { Name = "Baton", Damage = 3 };
-        public static readonly SkillDef ShieldBash = new SkillDef { Name = "Shield Bash", Damage = 1, Knockback = 2, Cooldown = 2 };
-        public static readonly SkillDef StunProd = new SkillDef { Name = "Stun Prod", Damage = 3 };
-        public static readonly SkillDef Maul = new SkillDef { Name = "Maul", Damage = 3, Knockback = 1 };
-        public static readonly SkillDef TaserShot = new SkillDef { Name = "Taser Shot", Ranged = true, MinRange = 2, MaxRange = 5, Damage = 2 };
+        public static readonly SkillDef Shove = new SkillDef { Name = "Shove", Damage = 1, Knockback = 2, Cooldown = 2, Anim = "Shove" };
+        public static readonly SkillDef Baton = new SkillDef { Name = "Baton", Damage = 3, Anim = "Swing" };
+        public static readonly SkillDef ShieldBash = new SkillDef { Name = "Shield Bash", Damage = 1, Knockback = 2, Cooldown = 2, Anim = "Shove" };
+        public static readonly SkillDef StunProd = new SkillDef { Name = "Stun Prod", Damage = 3, Anim = "Swing" };
+        public static readonly SkillDef Maul = new SkillDef { Name = "Maul", Damage = 3, Knockback = 1, Anim = "Swing" };
+        public static readonly SkillDef TaserShot = new SkillDef { Name = "Taser Shot", Ranged = true, MinRange = 2, MaxRange = 5, Damage = 2, Anim = "Shoot" };
 
         /// <summary>The protagonist. Losing them loses the encounter.</summary>
         public static readonly UnitDef Subject = new UnitDef { Name = "Subject", MaxHp = 8, Move = 4, Skills = new[] { Strike, Shove } };

@@ -44,7 +44,7 @@ _Last updated 2026-11-26. Read this first in a new session, then `CLAUDE.md` (co
 - **Full verification** (about 6–8 min; builds scenes, lighting shots, WAVs, then EditMode and PlayMode tests):
   `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 test`
   - Results go to `Logs/batch/{edit,play}.xml`; screenshots go to `Screenshots/`.
-  - Current status: **133 tests passing** (90 EditMode, 43 PlayMode).
+  - Current status: **135 tests passing** (91 EditMode, 44 PlayMode).
 - **Publish the web build:** run `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 web` (about 2 min after the first build), then `sh Tools/publish-web.sh`. Then check the live URL in the built-in browser.
 - **Scenes are generated.** Build All also rebuilds the character prefabs, skin materials and portraits (`CharacterArt`); rerun `python Tools/Art/make_skins.py` first if you change the skins.
 - **Scenes (detail):** `MainMenu.unity` and `Greybox_Intake.unity` are rebuilt by **Null Record → Build All Scenes**, so edit `MainMenuBuilder.cs` and `GreyboxLevelBuilder*.cs`, never the `.unity` files.
@@ -71,7 +71,7 @@ All of it is greybox. "Placeholder" means it's meant to be replaced.
 | Menus | Title (Continue with save summary, New Game confirmation, Settings, Quit), pause menu, settings (master, effects and ambience volume, fullscreen, debug HUD) |
 | Look | URP post-processing, fog, mood lighting per room (flicker, rotating alarm beacon), player key light |
 | Sound | 28 sounds. Recorded Kenney CC0 clips cover 10 of them (footsteps, hits, ladder, door, zap and others) from `Resources/Sounds/<SoundId>_<variant>.ogg`. The rest are synthesised in code (`Game.Audio.Synth`), including the room ambience, the combat loop and a 32 s exploration music bed with its own volume slider |
-| Art | Kenney CC0 packs (see `CREDITS.md`): animated character models with our own skins (`Tools/Art/make_skins.py`), Space Station Kit dressing (back wall, floor, and meshes over the walkways, blocks, crates and the Security door; the greybox keeps the colliders), a crouch pose, loudness-matched recorded sounds (`SoundTuning`, `gains.json`), and portraits rendered from the models. All are placeholder picks |
+| Art | Kenney CC0 packs (see `CREDITS.md`): animated character models with our own skins (`Tools/Art/make_skins.py`), Space Station Kit dressing (back wall, floor, and meshes over the walkways, blocks, crates and the Security door; the greybox keeps the colliders), a crouch pose, keyframed combat actions (Strike, Shove, Swing, Shoot, Hit; `CharacterActions`), loudness-matched recorded sounds (`SoundTuning`, `gains.json`), and portraits rendered from the models. All are placeholder picks |
 | Platforms | Windows editor, WebGL (live on GitHub Pages), touch controls; no Android APK |
 
 Code is under `Assets/_Project/Scripts/Runtime/{Player,World,Combat,Companions,Dialogue,Save,Audio,UI,Core,CameraSystem}`, with editor tools in `Scripts/Editor`.
@@ -104,5 +104,5 @@ Code is under `Assets/_Project/Scripts/Runtime/{Player,World,Combat,Companions,D
 1. **Tune combat further:** balance after a hands-on play, skill choices on level-up, a tool reward once hacking tools exist.
 2. **Rewrite Dace** once the owner gives the name and voice; add the rest of the companion arc.
 3. **Expand further:** a second region past the freight lift, the remote override or drone link tools, and companion 2.
-4. **More art:** attack and hit animations (would need a richer CC0 animation set on a compatible rig), a ceiling and side-wall pass, and checking the mix by ear.
+4. **More art:** a death animation (defeated enemies still squash flat and vanish), weapon props in hands, a ceiling and side-wall pass, and checking the mix by ear.
 5. **Phone polish** once someone tries the web build on a real Android phone.

@@ -1,5 +1,6 @@
 using System.Collections;
 using Game.Audio;
+using Game.Combat;
 using Game.Companions;
 using Game.Dialogue;
 using Game.World;
@@ -119,6 +120,39 @@ namespace Game.Tests
                 Assert.IsNotNull(GameObject.Find(name + "_Model"), $"{name}_Model");
             }
             Assert.IsNotNull(GameObject.Find("Door_L2/Panel/Panel_Model"), "the door mesh rides on the sliding panel");
+        }
+
+        [UnityTest]
+        public IEnumerator Combat_PlaysAttackClips_AndTheTargetFlinches()
+        {
+            EncounterController enc = SecurityEncounter;
+            _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
+            yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
+            enc.Engage(_interactor);
+            yield return Until(() => !enc.IsBusy, 5f, "opening");
+            CombatState st = enc.State;
+            Unit me = enc.Selected;
+            // Put an enemy right next to the Subject so Strike is in reach.
+            Unit foe = null;
+            foreach (Unit e in st.Alive(Team.Enemy)) { foe = e; break; }
+            foreach (Tile t in st.Grid.Tiles)
+            {
+                if (t.Col == me.Tile.Col + 1 && Mathf.Abs(t.Y - me.Tile.Y) < 0.3f && !st.Occupied(t)) { foe.Tile = t; break; }
+            }
+            ((UnitView)foe.View).Root.position = foe.Tile.World;
+            foe.Hp = 50; // survive the hit, so the flinch shows
+            yield return null;
+
+            CharacterAnimator mine = ((UnitView)me.View).Root.GetComponentInChildren<CharacterAnimator>();
+            CharacterAnimator theirs = ((UnitView)foe.View).Root.GetComponentInChildren<CharacterAnimator>();
+            Assert.IsTrue(st.TryUseSkill(me, 0, foe.Tile), "Strike");
+            yield return Until(() => mine.Animator.GetCurrentAnimatorStateInfo(0).IsName("Strike"), 1f, "Subject plays Strike");
+            yield return Wait(0.15f);
+            yield return Shot("18_attack");
+            yield return Until(() => theirs.LastAction == "Hit", 2f, "target flinches");
+            yield return Until(() => !enc.IsBusy, 3f, "events done");
+            yield return Wait(0.8f);
+            Assert.IsTrue(mine.Animator.GetCurrentAnimatorStateInfo(0).IsName("Idle"), "back to Idle after the clip");
         }
 
         [UnityTest]

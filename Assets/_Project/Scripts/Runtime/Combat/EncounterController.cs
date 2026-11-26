@@ -739,6 +739,13 @@ namespace Game.Combat
             if (v == null) yield break;
             if (ev.To.Col != ev.From.Col) v.SetFacing(ev.To.Col > ev.From.Col ? 1 : -1);
             Vector3 home = v.Root.position;
+            // Character action clip; wait out its wind-up so the hit lands on the swing.
+            CharacterAnimator anim = v.Root.GetComponentInChildren<CharacterAnimator>();
+            if (anim != null)
+            {
+                anim.Play(ev.Skill.Anim, 0.6f);
+                yield return new WaitForSeconds(0.12f);
+            }
             if (ev.Skill.Ranged)
             {
                 GameObject bolt = CombatVisuals.Quad(null, "Bolt", tileMaterial, home + Vector3.up * 1.3f, new Vector3(0.25f, 0.06f, 0.06f));
@@ -765,6 +772,7 @@ namespace Game.Combat
             UnitView v = ViewOf(ev.Target);
             if (v == null) yield break;
             v.Refresh(false);
+            v.Root.GetComponentInChildren<CharacterAnimator>()?.Play("Hit", 0.35f);
             TextMesh pop = CombatVisuals.Text(null, "DamagePop", v.Root.position + new Vector3(0.4f, 2f, -0.8f), 0.5f, new Color(1f, 0.3f, 0.25f));
             pop.text = $"-{ev.Amount}";
             StartCoroutine(FloatAway(pop));
