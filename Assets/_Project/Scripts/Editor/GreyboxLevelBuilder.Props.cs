@@ -21,12 +21,13 @@ namespace Game.EditorTools
             HoldingProps(Group(root, "Holding"));
             MaintenanceProps(Group(root, "Maintenance"));
             SecurityProps(Group(root, "Security"));
+            ExpansionProps(root);
         }
 
         private static void BackWallPanels(Transform parent)
         {
             // Three rows of 1 m panels along the whole level, with a little deterministic variety.
-            for (int x = -2; x < 56; x++)
+            for (int x = -2; x < (int)SliceEndX; x++)
             {
                 for (int row = 0; row < 3; row++)
                 {

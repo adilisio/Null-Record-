@@ -44,7 +44,7 @@ _Last updated 2026-11-26. Read this first in a new session, then `CLAUDE.md` (co
 - **Full verification** (about 6–8 min; builds scenes, lighting shots, WAVs, then EditMode and PlayMode tests):
   `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 test`
   - Results go to `Logs/batch/{edit,play}.xml`; screenshots go to `Screenshots/`.
-  - Current status: **127 tests passing** (89 EditMode, 38 PlayMode).
+  - Current status: **130 tests passing** (90 EditMode, 40 PlayMode).
 - **Publish the web build:** run `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 web` (about 2 min after the first build), then `sh Tools/publish-web.sh`. Then check the live URL in the built-in browser.
 - **Scenes are generated.** Build All also rebuilds the character prefabs, skin materials and portraits (`CharacterArt`); rerun `python Tools/Art/make_skins.py` first if you change the skins.
 - **Scenes (detail):** `MainMenu.unity` and `Greybox_Intake.unity` are rebuilt by **Null Record → Build All Scenes**, so edit `MainMenuBuilder.cs` and `GreyboxLevelBuilder*.cs`, never the `.unity` files.
@@ -63,7 +63,7 @@ All of it is greybox. "Placeholder" means it's meant to be replaced.
 | Area | State |
 |---|---|
 | Player | Run, sprint, jump (coyote time and buffer), crouch, ladders, ledge grab/climb, interact; footsteps and other sounds |
-| Level | 3 rooms: Holding (crate, ledge), Maintenance (ladder, catwalk, Thermal Lining, steam hazard, L2 keycard, Dace), Security (L2 door, optional fight) |
+| Level | 5 rooms: Holding (crate, ledge), Maintenance (ladder, catwalk, Thermal Lining, steam hazard, L2 keycard, Dace), Security (L2 door, optional fight), Records (ladder to a loft with the signal spoofer, optional scrap), Server Hall (behind a laser grid the spoofer opens; second optional fight with the armoured Warden; freight lift marks the end of the slice) |
 | Combat | Optional grid tactics in Security. 1 m tiles, multi-floor, move plus one action, cooldowns, height bonus, cover, armour, knockback, telegraphed enemy attacks that target a tile, no randomness; win and lose flow. A hazard tile (arc grate) you can shove enemies onto. Ranged AI holds high ground and avoids melee reach. Wins give scrap and party XP (50 XP per level, +2 max HP per level) |
 | Companion | **Dace** (working name, placeholder writing): recruit conversation with a tone choice, follows you (catches up across floors), joins fights, 3 banter lines |
 | Dialogue | JSON in `Assets/_Project/Dialogue`, flags and conditions, text box with portraits rendered from the character models, barks |
@@ -103,6 +103,6 @@ Code is under `Assets/_Project/Scripts/Runtime/{Player,World,Combat,Companions,D
 
 1. **Tune combat further:** balance after a hands-on play, skill choices on level-up, a tool reward once hacking tools exist.
 2. **Rewrite Dace** once the owner gives the name and voice; add the rest of the companion arc.
-3. **Expand the slice:** another room or two, a hacking-tool gate, a second encounter with a third enemy type.
+3. **Expand further:** a second region past the freight lift, the remote override or drone link tools, and companion 2.
 4. **More art:** environment meshes for the greybox geometry itself (floors, platforms, doors), crouch and attack animations, and retuning the mix for the recorded sounds.
 5. **Phone polish** once someone tries the web build on a real Android phone.

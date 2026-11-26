@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Game.Combat;
 using Game.Core;
 using Game.Player;
 using Game.Save;
@@ -37,6 +38,20 @@ namespace Game.Tests
 
         protected float X => _motor.transform.position.x;
         protected float Y => _motor.transform.position.y;
+
+        /// <summary>The optional fight in Security (the level now has more than one encounter).</summary>
+        protected static EncounterController SecurityEncounter => GameObject.Find("Encounter_Security").GetComponent<EncounterController>();
+
+        /// <summary>Idle hostile figures (unparented "Hostile_*" roots) standing between two x positions.</summary>
+        protected static int IdleHostilesBetween(float x0, float x1)
+        {
+            int n = 0;
+            foreach (Transform t in UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            {
+                if (t.parent == null && t.name.StartsWith("Hostile_") && t.gameObject.activeInHierarchy && t.position.x >= x0 && t.position.x <= x1) n++;
+            }
+            return n;
+        }
 
         [UnitySetUp]
         public IEnumerator SetUp()

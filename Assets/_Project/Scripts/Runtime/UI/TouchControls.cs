@@ -20,7 +20,6 @@ namespace Game.UI
         private GameObject _root;
         private Text _aLabel, _bLabel, _yLabel;
         private GameObject _combatRow;
-        private EncounterController _encounter;
 
         public bool Visible => _root != null && _root.activeSelf;
 
@@ -32,7 +31,6 @@ namespace Game.UI
         private void Start()
         {
             Build();
-            _encounter = FindAnyObjectByType<EncounterController>();
         }
 
         private void Update()
@@ -42,7 +40,7 @@ namespace Game.UI
             if (_root.activeSelf != show) _root.SetActive(show);
             if (!show) return;
 
-            bool inCombat = _encounter != null && _encounter.Status == EncounterStatus.Active;
+            bool inCombat = EncounterController.Active != null;
             bool inDialogue = DialogueUI.Instance != null && DialogueUI.Instance.IsOpen;
             _combatRow.SetActive(inCombat);
             _aLabel.text = inCombat ? "OK" : inDialogue ? "NEXT" : "JUMP";

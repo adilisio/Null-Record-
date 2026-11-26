@@ -89,6 +89,7 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
   - Guard (companion stand-in): HP 12, Move 3, Armour 1. Baton 3; Shield Bash 1 + push 2.
   - Enforcer (melee): HP 6. Stun Prod 3.
   - Sentry (ranged 2–5): HP 4. Taser Shot 2.
+- **Third enemy, the Warden (2026-11-26, first pass):** HP 9, Move 2, Armour 2. Its only skill is Maul (3 damage, push 1). Armour lowers normal hits to 1 (Strike 2 → 1, Dace's Baton 3 → 1), but knockback impacts, falls and hazards ignore armour. So it's a puzzle enemy: shove it into walls, onto arc grates or off the mezzanine.
 - **Hazard tiles (2026-11-26, first pass):** a hazard tile deals 2 damage, ignoring armour, to any unit that **ends a move on it or is knocked onto it**. Walking through it is safe. It's a tactical tool: shove enemies onto it. The Security fight has one, an arcing floor grate under the platform's edge that's live only during the fight. It's drawn in lime on the grid, and the help line warns when the cursor is on it. Enemies avoid ending on hazards unless it's their only attack.
 - **Enemy positioning (2026-11-26, first pass):**
   - Ranged enemies keep high ground while nobody is in range, rather than dropping down to close in.
@@ -200,6 +201,18 @@ One region (Intake / Holding), polished enough to show:
 - [~] Dialogue system with portraits and choices (JSON; portraits rendered from the models)
 - [~] Autosave and room transitions (autosave, room-entry respawn, title/Continue and pause menus done; single save slot)
 - [~] Lighting pass and audio ambience for the region (lighting and placeholder audio done; a synthesised music bed done; real sound assets still to come)
+
+### Slice expansion (2026-11-26, first pass)
+- **Records (x 56–72):**
+  - A ladder up to an archive loft holds the **signal spoofer**, the first hacking tool. The main path reaches it without a fight.
+  - An optional 15 scrap sits on top of the archive block, reached by a ledge climb.
+- **Laser grid (x 72):** a solid barrier until you use the spoofer on it. It stays open after loading (flag `opened_grid_servers`).
+- **Server Hall (x 72–90):**
+  - **Second optional fight:** the Enforcer, the Sentry and the Warden, with a mezzanine (Sentry perch), low cover and two arc grates.
+  - **Rewards:** 40 scrap, 50 XP and a log fragment.
+  - An out-of-service freight lift marks the end of the slice.
+- **Combat camera:** during a fight the camera frames the whole encounter area, pulling back if needed, rather than following the player.
+- Room names, the lift and the log fragments are placeholders until the story is set.
 
 ### Later milestones (rough)
 2. Greybox all three regions and the gating map

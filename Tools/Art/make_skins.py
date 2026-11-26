@@ -116,9 +116,25 @@ def sentry():
     return im
 
 
+def warden():
+    im = Image.open(f"{SRC}/criminalMaleA.png").convert("RGBA")
+    d = ImageDraw.Draw(im)
+    shell = (38, 38, 42)
+    helmet(d, shell, (255, 60, 45))
+    uniform(d, shell, None, (24, 24, 26), (14, 14, 16))
+    # Heavy plating with yellow hazard bands.
+    d.rectangle((160, 520, 482, 940), fill=shade(shell, 1.35))
+    for i, y in enumerate(range(540, 920, 60)):
+        if i % 2 == 0:
+            d.rectangle((160, y, 482, y + 22), fill=(230, 180, 30))
+    d.rectangle((640, 560, 1024, 590), fill=(230, 180, 30))
+    d.rectangle(HANDS, fill=(20, 20, 22))
+    return im
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
-    for name, fn in (("Subject", subject), ("Dace", dace), ("Enforcer", enforcer), ("Sentry", sentry)):
+    for name, fn in (("Subject", subject), ("Dace", dace), ("Enforcer", enforcer), ("Sentry", sentry), ("Warden", warden)):
         fn().convert("RGB").save(f"{OUT}/{name}.png", optimize=True)
         print("wrote", f"{OUT}/{name}.png")
 

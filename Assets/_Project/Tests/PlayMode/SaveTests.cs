@@ -89,7 +89,7 @@ namespace Game.Tests
         [UnityTest]
         public IEnumerator Encounter_SavesBeforeTheFight_AndStaysClearedAfterReload()
         {
-            EncounterController enc = Object.FindAnyObjectByType<EncounterController>();
+            EncounterController enc = SecurityEncounter;
             _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
             yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
             int before = Saves.SaveCount;
@@ -111,11 +111,11 @@ namespace Game.Tests
             yield return Until(() => SavedFlag("encounter_security_cleared"), 3f, "autosave after the win");
 
             yield return LoadScene();
-            enc = Object.FindAnyObjectByType<EncounterController>();
+            enc = SecurityEncounter;
             Assert.AreEqual(EncounterStatus.Cleared, enc.Status, "a won fight stays won");
             Assert.IsFalse(enc.IsAvailable(_interactor));
             Assert.AreEqual(30, _inventory.Scrap);
-            Assert.IsNull(GameObject.Find("Hostile_Enforcer"), "no hostiles come back");
+            Assert.AreEqual(0, IdleHostilesBetween(42f, 56f), "no hostiles come back in Security");
         }
 
         private static bool SavedFlag(string flag)

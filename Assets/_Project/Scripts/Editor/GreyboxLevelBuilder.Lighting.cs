@@ -60,6 +60,7 @@ namespace Game.EditorTools
             HoldingLights(lights);
             MaintenanceLights(lights);
             SecurityLights(lights);
+            ExpansionLights(lights);
         }
 
         // ---------------------------------------------------------------- rooms
@@ -158,6 +159,8 @@ namespace Game.EditorTools
                 ("lighting_holding", new Vector2(8f, 4f)),
                 ("lighting_maintenance", new Vector2(29f, 4f)),
                 ("lighting_security", new Vector2(48f, 4f)),
+                ("lighting_records", new Vector2(64f, 4f)),
+                ("lighting_servers", new Vector2(81f, 4f)),
             };
             const int w = 1280, h = 720;
             foreach ((string name, Vector2 focus) in shots)

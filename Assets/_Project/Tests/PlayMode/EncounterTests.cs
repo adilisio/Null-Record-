@@ -16,7 +16,7 @@ namespace Game.Tests
 
         private IEnumerator EnterSecurity(bool withDace = true)
         {
-            _enc = Object.FindAnyObjectByType<EncounterController>();
+            _enc = SecurityEncounter;
             Assert.IsNotNull(_enc, "Encounter_Security missing from the scene (rebuild the greybox level)");
             if (withDace) Object.FindAnyObjectByType<CompanionNPC>().Recruit(_interactor);
             _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
@@ -173,19 +173,10 @@ namespace Game.Tests
 
             Assert.IsFalse(_motor.ExternallyControlled);
             Assert.That(Vector3.Distance(_motor.transform.position, before), Is.LessThan(0.3f), "player back where they engaged");
-            Assert.AreEqual(3, CountIdleHostiles(), "three idle hostiles respawned");
+            Assert.AreEqual(3, IdleHostilesBetween(42f, 56f), "three idle hostiles respawned");
             yield return Until(() => _interactor.Current == _enc, 2f, "encounter can be engaged again");
         }
 
-        private static int CountIdleHostiles()
-        {
-            int n = 0;
-            foreach (Transform t in Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
-            {
-                if (t.parent == null && t.name.StartsWith("Hostile_") && t.gameObject.activeInHierarchy) n++;
-            }
-            return n;
-        }
 
         /// <summary>Move to a tile from which the first skill hits an enemy and use it; otherwise close distance.</summary>
         private IEnumerator ActTowardEnemies(CombatState st, Unit u)

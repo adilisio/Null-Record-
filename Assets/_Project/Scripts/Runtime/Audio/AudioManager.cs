@@ -40,6 +40,8 @@ namespace Game.Audio
             { "Holding", SoundId.AmbHolding },
             { "Maintenance", SoundId.AmbMaintenance },
             { "Security", SoundId.AmbSecurity },
+            { "Records", SoundId.AmbHolding },
+            { "Server Hall", SoundId.AmbMaintenance },
         };
 
         private readonly List<AudioSource> _pool = new List<AudioSource>();

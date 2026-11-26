@@ -83,7 +83,7 @@ namespace Game.Tests
         [UnityTest]
         public IEnumerator Combat_PlaysItsLoopAndStingers()
         {
-            EncounterController enc = Object.FindAnyObjectByType<EncounterController>();
+            EncounterController enc = SecurityEncounter;
             _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
             yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
             yield return Wait(0.3f);

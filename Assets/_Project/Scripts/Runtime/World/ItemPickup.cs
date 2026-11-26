@@ -43,6 +43,20 @@ namespace Game.World
             displayName = hazard.ProtectionName();
         }
 
+        public void ConfigureScrap(int value)
+        {
+            kind = PickupKind.Scrap;
+            amount = value;
+            displayName = $"{value} scrap";
+        }
+
+        public void ConfigureTool(string id, string name)
+        {
+            kind = PickupKind.Tool;
+            toolId = id;
+            displayName = name;
+        }
+
         public string SaveId => saveId;
         private string TakenFlag => $"taken_{saveId}";
 

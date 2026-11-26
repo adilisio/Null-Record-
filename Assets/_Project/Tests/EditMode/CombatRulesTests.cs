@@ -328,6 +328,21 @@ namespace Game.Tests
         }
 
         [Test]
+        public void Warden_ArmourBluntsHits_ButNotImpactsOrHazards()
+        {
+            CombatGrid g = MakeGrid();
+            Floor(g, 4).Hazard = CombatRules.HazardDamage;
+            CombatState s = Battle(g);
+            Unit me = s.AddUnit(CombatPresets.Subject, Team.Player, Floor(g, 2), leader: true);
+            Unit warden = s.AddUnit(CombatPresets.Warden, Team.Enemy, Floor(g, 3));
+            s.Start();
+            Assert.AreEqual(1, s.PreviewDamage(me.Tile, CombatPresets.Strike, warden.Tile, warden), "Strike 2 - armour 2 = minimum 1");
+            Assert.IsTrue(s.TryUseSkill(me, 1, warden.Tile), "Shove");
+            // Shove 1 (armour floors it at 1), then the hazard on the first push step: 2, armour ignored.
+            Assert.AreEqual(CombatPresets.Warden.MaxHp - 1 - CombatRules.HazardDamage, warden.Hp);
+        }
+
+        [Test]
         public void Progression_LevelsEveryFiftyXp_AndCaps()
         {
             Assert.AreEqual(1, Progression.Level(0));

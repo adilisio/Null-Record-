@@ -1,3 +1,4 @@
+using Game.Combat;
 using Game.Player;
 using UnityEngine;
 
@@ -6,6 +7,7 @@ namespace Game.CameraSystem
     /// <summary>
     /// Side-on follow camera. Looks down +Z at the play lane, leads in the facing direction,
     /// and keeps the visible area inside the active <see cref="CameraZone"/>.
+    /// During an encounter it frames the whole encounter area instead, pulling back if needed.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class SideCameraRig : MonoBehaviour
@@ -29,6 +31,8 @@ namespace Game.CameraSystem
         private Rect _bounds;
         private bool _hasBounds;
         private CameraZone _zone;
+        private float _distance;
+        private float _distanceVelocity;
 
         public CameraZone ActiveZone => _zone;
 
@@ -42,6 +46,7 @@ namespace Game.CameraSystem
         private void Awake()
         {
             _camera = GetComponent<Camera>();
+            _distance = distance;
             transform.rotation = Quaternion.identity;
             SetTarget(target);
         }
@@ -55,8 +60,24 @@ namespace Game.CameraSystem
             _lead = Mathf.SmoothDamp(_lead, desiredLead, ref _leadVelocity, lookAheadSmoothTime, Mathf.Infinity, dt);
 
             Vector2 desired = new Vector2(target.position.x + _lead, target.position.y + heightOffset);
-            UpdateBounds(desired, dt);
-            desired = Clamp(desired);
+            float desiredDistance = distance;
+            EncounterController fight = EncounterController.Active;
+            if (fight != null && _camera != null)
+            {
+                // Frame the encounter area with a little margin, centred on it.
+                Rect a = fight.Area;
+                float tan = Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+                float fitW = (a.width * 0.5f + 1f) / (tan * _camera.aspect);
+                float fitH = (a.height * 0.5f + 1f) / tan;
+                desiredDistance = Mathf.Max(distance, fitW, fitH);
+                desired = a.center + new Vector2(0f, 0.5f);
+            }
+            else
+            {
+                UpdateBounds(desired, dt);
+                desired = Clamp(desired);
+            }
+            _distance = Mathf.SmoothDamp(_distance, desiredDistance, ref _distanceVelocity, 0.4f, Mathf.Infinity, dt);
 
             _focus.x = Mathf.SmoothDamp(_focus.x, desired.x, ref _velocity.x, followSmoothTimeX, Mathf.Infinity, dt);
             _focus.y = Mathf.SmoothDamp(_focus.y, desired.y, ref _velocity.y, followSmoothTimeY, Mathf.Infinity, dt);
@@ -118,7 +139,7 @@ namespace Game.CameraSystem
         private void Apply()
         {
             float laneZ = _motor != null ? _motor.LaneZ : 0f;
-            transform.position = new Vector3(_focus.x, _focus.y, laneZ - distance);
+            transform.position = new Vector3(_focus.x, _focus.y, laneZ - (_distance > 0f ? _distance : distance));
         }
     }
 }

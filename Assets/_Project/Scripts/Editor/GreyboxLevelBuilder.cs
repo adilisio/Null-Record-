@@ -66,6 +66,8 @@ namespace Game.EditorTools
             BuildRoomA(level);
             BuildRoomB(level);
             BuildRoomC(level);
+            BuildRoomD(level);
+            BuildRoomE(level);
             BuildDressing(level);
             BuildCameraZones(level);
 
@@ -116,15 +118,17 @@ namespace Game.EditorTools
             Material concrete = Mat("Concrete", new Color(0.32f, 0.33f, 0.35f));
             Material backWall = Mat("BackWall", new Color(0.18f, 0.19f, 0.21f));
 
-            Box(shell, "Floor", new Vector3(27f, -0.5f, 0f), new Vector3(59f, 1f, Depth), concrete);
-            Box(shell, "Ceiling", new Vector3(27f, 8.25f, 0f), new Vector3(59f, 0.5f, Depth), concrete);
+            // Shell spans x -2.5 .. SliceEndX + 0.5.
+            float cx = (SliceEndX - 2f) * 0.5f, w = SliceEndX + 3f;
+            Box(shell, "Floor", new Vector3(cx, -0.5f, 0f), new Vector3(w, 1f, Depth), concrete);
+            Box(shell, "Ceiling", new Vector3(cx, 8.25f, 0f), new Vector3(w, 0.5f, Depth), concrete);
             Box(shell, "WallLeft", new Vector3(-2.25f, 4f, 0f), new Vector3(0.5f, 8f, Depth), concrete);
-            Box(shell, "WallRight", new Vector3(56.25f, 4f, 0f), new Vector3(0.5f, 8f, Depth), concrete);
-            Box(shell, "BackWall", new Vector3(27f, 4f, Depth * 0.5f + 0.25f), new Vector3(59f, 9f, 0.5f), backWall, collider: false);
+            Box(shell, "WallRight", new Vector3(SliceEndX + 0.25f, 4f, 0f), new Vector3(0.5f, 8f, Depth), concrete);
+            Box(shell, "BackWall", new Vector3(cx, 4f, Depth * 0.5f + 0.25f), new Vector3(w, 9f, 0.5f), backWall, collider: false);
 
             // Pillars between rooms for visual separation (background only).
             Material pillar = Mat("Pillar", new Color(0.24f, 0.25f, 0.27f));
-            foreach (float x in new[] { 20f, 40f })
+            foreach (float x in new[] { 20f, 40f, 56f, 72f })
             {
                 Box(shell, "Pillar", new Vector3(x, 4f, Depth * 0.5f - 0.2f), new Vector3(0.8f, 8f, 0.4f), pillar, collider: false);
             }
@@ -263,6 +267,8 @@ namespace Game.EditorTools
             CameraZoneAt(zones, "Zone_A", new Vector3(9f, 4f, 0f), new Vector2(22f, 8.5f), "Holding");
             CameraZoneAt(zones, "Zone_B", new Vector3(30f, 4f, 0f), new Vector2(20f, 8.5f), "Maintenance");
             CameraZoneAt(zones, "Zone_C", new Vector3(48f, 4f, 0f), new Vector2(16f, 8.5f), "Security");
+            CameraZoneAt(zones, "Zone_D", new Vector3(64f, 4f, 0f), new Vector2(16f, 8.5f), "Records");
+            CameraZoneAt(zones, "Zone_E", new Vector3(81f, 4f, 0f), new Vector2(18f, 8.5f), "Server Hall");
         }
 
         // ------------------------------------------------------------------ actors

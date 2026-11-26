@@ -51,7 +51,7 @@ namespace Game.Tests
                 Assert.IsNotNull(t.GetComponentInChildren<SkinnedMeshRenderer>(), $"{t.name} has a model");
                 Assert.IsNotNull(t.GetComponentInChildren<CharacterAnimator>(), $"{t.name} animates");
             }
-            Assert.AreEqual(3, hostiles, "three idle hostiles in Security");
+            Assert.AreEqual(6, hostiles, "three idle hostiles each in Security and the Server Hall");
         }
 
         [UnityTest]

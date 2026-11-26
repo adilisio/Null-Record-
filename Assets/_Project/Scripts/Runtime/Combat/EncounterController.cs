@@ -97,6 +97,10 @@ namespace Game.Combat
         private InputAction _aMove, _aConfirm, _aClick, _aCancel, _aNext, _aPrev, _aUnit, _aEnd;
 
         public EncounterStatus Status { get; private set; } = EncounterStatus.Idle;
+        /// <summary>The encounter being fought right now, if any (the level can hold several).</summary>
+        public static EncounterController Active { get; private set; }
+        /// <summary>Side-on area (world X/Y) that becomes the grid.</summary>
+        public Rect Area => area;
         public CombatState State { get; private set; }
         public Unit Selected { get; private set; }
         /// <summary>-1 = move, otherwise the selected unit's skill index.</summary>
@@ -138,6 +142,11 @@ namespace Game.Combat
         public IReadOnlyList<Vector2> Hazards => hazards;
 
         // ---------------------------------------------------------------- exploration side
+
+        private void OnDestroy()
+        {
+            if (Active == this) Active = null;
+        }
 
         private void Start()
         {
@@ -254,6 +263,7 @@ namespace Game.Combat
             BindInput();
 
             Status = EncounterStatus.Active;
+            Active = this;
             StatusChanged?.Invoke(Status);
             _log.Clear();
             State.Start();
@@ -324,6 +334,7 @@ namespace Game.Combat
             State = null;
             _companion = null;
             _finishing = false;
+            if (Active == this) Active = null;
             StatusChanged?.Invoke(Status);
         }
 

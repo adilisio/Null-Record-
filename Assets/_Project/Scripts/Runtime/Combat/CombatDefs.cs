@@ -58,6 +58,7 @@ namespace Game.Combat
         public static readonly SkillDef Baton = new SkillDef { Name = "Baton", Damage = 3 };
         public static readonly SkillDef ShieldBash = new SkillDef { Name = "Shield Bash", Damage = 1, Knockback = 2, Cooldown = 2 };
         public static readonly SkillDef StunProd = new SkillDef { Name = "Stun Prod", Damage = 3 };
+        public static readonly SkillDef Maul = new SkillDef { Name = "Maul", Damage = 3, Knockback = 1 };
         public static readonly SkillDef TaserShot = new SkillDef { Name = "Taser Shot", Ranged = true, MinRange = 2, MaxRange = 5, Damage = 2 };
 
         /// <summary>The protagonist. Losing them loses the encounter.</summary>
@@ -69,6 +70,9 @@ namespace Game.Combat
         public static readonly UnitDef Enforcer = new UnitDef { Name = "Enforcer", MaxHp = 6, Move = 3, Skills = new[] { StunProd } };
         public static readonly UnitDef Sentry = new UnitDef { Name = "Sentry", MaxHp = 4, Move = 2, Skills = new[] { TaserShot } };
 
+        /// <summary>Heavy melee. Armour 2 shrugs off most hits, so knockback, hazards and falls are the way in.</summary>
+        public static readonly UnitDef Warden = new UnitDef { Name = "Warden", MaxHp = 9, Move = 2, Armor = 2, Skills = new[] { Maul } };
+
         public static UnitDef Find(string name)
         {
             switch (name)
@@ -77,6 +81,7 @@ namespace Game.Combat
                 case "Guard": return Guard;
                 case "Enforcer": return Enforcer;
                 case "Sentry": return Sentry;
+                case "Warden": return Warden;
                 default: return null;
             }
         }

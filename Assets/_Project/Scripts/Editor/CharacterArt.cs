@@ -18,7 +18,7 @@ namespace Game.EditorTools
         public const string Dir = "Assets/_Project/Art/Characters";
         /// <summary>Scales the imported model to about 1.6 m (its T-pose bounds overstate its height).</summary>
         public const float ModelScale = 0.62f;
-        public static readonly string[] Roster = { "Subject", "Dace", "Enforcer", "Sentry" };
+        public static readonly string[] Roster = { "Subject", "Dace", "Enforcer", "Sentry", "Warden" };
 
         private const string ModelPath = KenneyDir + "/Model/characterMedium.fbx";
 
@@ -206,7 +206,7 @@ namespace Game.EditorTools
             PrefabUtility.UnpackPrefabInstance(model, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
             model.name = "Model";
             model.transform.SetParent(root.transform, false);
-            model.transform.localScale = Vector3.one * ModelScale;
+            model.transform.localScale = Vector3.one * ModelScale * (name == "Warden" ? 1.15f : 1f); // the Warden is bulkier
 
             Material mat = SkinMaterial(name);
             foreach (SkinnedMeshRenderer r in model.GetComponentsInChildren<SkinnedMeshRenderer>())

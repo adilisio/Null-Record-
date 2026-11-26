@@ -27,7 +27,7 @@ namespace Game.Tests
                 yield return Wait(0.2f);
                 yield return Shot("50_touch_explore");
 
-                EncounterController enc = Object.FindAnyObjectByType<EncounterController>();
+                EncounterController enc = SecurityEncounter;
                 _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
                 yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
                 enc.Engage(_interactor);
