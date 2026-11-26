@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoStdLib>false</NoStdLib>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>CS0649;CS0414</NoWarn>
+    <UnityEditorDir Condition="'$(UnityEditorDir)'==''">C:\Program Files\Unity\Hub\Editor\6000.6.7f1\Editor</UnityEditorDir>
+    <!-- Package DLLs compiled by another project on the same editor version (this project's Library/ once Unity has opened it) -->
+    <PackageAsmDir Condition="'$(PackageAsmDir)'=='' And Exists('$(MSBuildThisFileDirectory)..\..\Library\ScriptAssemblies\Unity.InputSystem.dll')">$(MSBuildThisFileDirectory)..\..\Library\ScriptAssemblies</PackageAsmDir>
+    <PackageAsmDir Condition="'$(PackageAsmDir)'==''">C:\Projects\caromancer\Library\ScriptAssemblies</PackageAsmDir>
+    <ProjectRoot>$(MSBuildThisFileDirectory)..\..\</ProjectRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="$(UnityEditorDir)\Data\Managed\UnityEngine\UnityEngine*.dll" Exclude="$(UnityEditorDir)\Data\Managed\UnityEngine\UnityEditor*.dll" Private="false" />
+    <Reference Include="$(PackageAsmDir)\Unity.InputSystem.dll" Private="false" />
+  </ItemGroup>
+</Project>

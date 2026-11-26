@@ -1,0 +1,11 @@
+{
+  "name": "Game.Editor",
+  "rootNamespace": "Game.EditorTools",
+  "references": [
+    "Game.Runtime",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

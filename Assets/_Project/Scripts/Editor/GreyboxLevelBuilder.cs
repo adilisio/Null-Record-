@@ -1,0 +1,493 @@
+using System.Collections.Generic;
+using System.IO;
+using Game.CameraSystem;
+using Game.Core;
+using Game.Player;
+using Game.UI;
+using Game.World;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+
+namespace Game.EditorTools
+{
+    /// <summary>
+    /// Generates the Intake greybox scene used to test movement, gating and hazards.
+    /// Re-run it any time; it overwrites the scene file.
+    ///
+    /// Layout (left → right, floor at y = 0):
+    ///   A  Holding    x -2..20   crate (jump), tall block (ledge climb)
+    ///   B  Maintenance x 20..40  ladder → catwalk with Thermal Lining, steam vent, Level 2 keycard
+    ///   C  Security   x 40..56   behind a Level 2 door; encounter placeholder
+    /// </summary>
+    public static class GreyboxLevelBuilder
+    {
+        private const string ScenePath = "Assets/_Project/Scenes/Greybox_Intake.unity";
+        private const string MaterialDir = "Assets/_Project/Art/Materials/Greybox";
+        private const string InputActionsPath = "Assets/InputSystem_Actions.inputactions";
+        private const float Depth = 4f; // z thickness of level geometry
+
+        private static readonly Dictionary<string, Material> Materials = new Dictionary<string, Material>();
+
+        [MenuItem("Null Record/Build Greybox Test Level", priority = 0)]
+        public static void Build()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
+            Materials.Clear();
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            SetupLighting();
+            Transform level = new GameObject("Level").transform;
+            BuildShell(level);
+            BuildRoomA(level);
+            BuildRoomB(level);
+            BuildRoomC(level);
+            BuildCameraZones(level);
+
+            GameObject player = BuildPlayer(new Vector3(1f, 0.05f, 0f));
+            BuildCamera(player.transform);
+            BuildHud(player.GetComponent<PlayerInteractor>());
+            new GameObject("Bootstrap").AddComponent<Bootstrap>();
+
+            AssetDatabase.SaveAssets();
+            Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AddToBuildSettings(ScenePath);
+            Debug.Log($"[Null Record] Built greybox level at {ScenePath}. Press Play to test.");
+        }
+
+        // ------------------------------------------------------------------ level
+
+        private static void BuildShell(Transform level)
+        {
+            Transform shell = Group(level, "Shell");
+            Material concrete = Mat("Concrete", new Color(0.32f, 0.33f, 0.35f));
+            Material backWall = Mat("BackWall", new Color(0.18f, 0.19f, 0.21f));
+
+            Box(shell, "Floor", new Vector3(27f, -0.5f, 0f), new Vector3(59f, 1f, Depth), concrete);
+            Box(shell, "Ceiling", new Vector3(27f, 8.25f, 0f), new Vector3(59f, 0.5f, Depth), concrete);
+            Box(shell, "WallLeft", new Vector3(-2.25f, 4f, 0f), new Vector3(0.5f, 8f, Depth), concrete);
+            Box(shell, "WallRight", new Vector3(56.25f, 4f, 0f), new Vector3(0.5f, 8f, Depth), concrete);
+            Box(shell, "BackWall", new Vector3(27f, 4f, Depth * 0.5f + 0.25f), new Vector3(59f, 9f, 0.5f), backWall, collider: false);
+
+            // Pillars between rooms for visual separation (background only).
+            Material pillar = Mat("Pillar", new Color(0.24f, 0.25f, 0.27f));
+            foreach (float x in new[] { 20f, 40f })
+            {
+                Box(shell, "Pillar", new Vector3(x, 4f, Depth * 0.5f - 0.2f), new Vector3(0.8f, 8f, 0.4f), pillar, collider: false);
+            }
+        }
+
+        private static void BuildRoomA(Transform level)
+        {
+            Transform room = Group(level, "A_Holding");
+            Material crate = Mat("Crate", new Color(0.45f, 0.4f, 0.32f));
+            Material block = Mat("Block", new Color(0.38f, 0.4f, 0.43f));
+
+            Box(room, "Crate_Jump", new Vector3(5.75f, 0.5f, 0f), new Vector3(1.5f, 1f, 2f), crate);
+            Box(room, "Block_LedgeClimb", new Vector3(16f, 1.2f, 0f), new Vector3(8f, 2.4f, Depth), block);
+            Box(room, "CellBars", new Vector3(-0.5f, 3f, 1.6f), new Vector3(0.1f, 6f, 0.1f), Mat("Metal", new Color(0.5f, 0.52f, 0.55f), metallic: 0.8f), collider: false);
+
+            Label(room, "HOLDING 03", new Vector3(2f, 5.5f, 1.9f), new Color(0.75f, 0.8f, 0.85f));
+            Label(room, "jump [Space]", new Vector3(5.75f, 2.2f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.5f);
+            Label(room, "grab the ledge: hold toward it while falling", new Vector3(11f, 3.6f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f);
+
+            PointLight(room, "Light_Cell", new Vector3(3f, 7f, -1f), new Color(0.75f, 0.85f, 1f), 6f, 14f);
+            PointLight(room, "Light_Block", new Vector3(15f, 6.5f, -1.5f), new Color(0.7f, 0.8f, 1f), 4f, 12f);
+        }
+
+        private static void BuildRoomB(Transform level)
+        {
+            Transform room = Group(level, "B_Maintenance");
+            Material metal = Mat("Metal", new Color(0.5f, 0.52f, 0.55f), metallic: 0.8f);
+            Material grate = Mat("SteamGrate", new Color(0.25f, 0.12f, 0.05f), emission: new Color(1f, 0.35f, 0.05f) * 2f);
+
+            Checkpoint(room, "Checkpoint_B", new Vector3(21f, 0f, 0f));
+
+            // Ladder up to the catwalk.
+            GameObject ladderGo = new GameObject("Ladder");
+            ladderGo.transform.SetParent(room, false);
+            ladderGo.transform.position = new Vector3(22.5f, 0f, 0f);
+            ladderGo.AddComponent<Ladder>().Configure(4f, 1);
+            for (int i = -1; i <= 1; i += 2)
+            {
+                Box(ladderGo.transform, "Rail", new Vector3(22.5f + i * 0.3f, 2.1f, 0.6f), new Vector3(0.08f, 4.2f, 0.08f), metal, collider: false);
+            }
+            for (float y = 0.3f; y < 4f; y += 0.4f)
+            {
+                Box(ladderGo.transform, "Rung", new Vector3(22.5f, y, 0.6f), new Vector3(0.6f, 0.05f, 0.05f), metal, collider: false);
+            }
+
+            Box(room, "Catwalk", new Vector3(26f, 3.85f, 0f), new Vector3(6f, 0.3f, 2f), metal);
+            Box(room, "Catwalk_Rail", new Vector3(26f, 4.6f, -0.9f), new Vector3(6f, 0.05f, 0.05f), metal, collider: false);
+
+            GameObject lining = Pickup(room, "Pickup_ThermalLining", new Vector3(27.5f, 4.6f, 0f), Mat("Pickup_Gear", new Color(1f, 0.5f, 0.1f), emission: new Color(1f, 0.45f, 0.1f)));
+            lining.GetComponent<ItemPickup>().ConfigureProtection(HazardType.Heat);
+
+            // Steam vent spanning floor to ceiling; impassable without Thermal Lining.
+            Box(room, "SteamGrate", new Vector3(31.5f, 0.02f, 0f), new Vector3(3f, 0.05f, 2.5f), grate, collider: false);
+            GameObject hazard = new GameObject("Hazard_Steam");
+            hazard.transform.SetParent(room, false);
+            hazard.transform.position = new Vector3(31.5f, 4f, 0f);
+            BoxCollider hz = hazard.AddComponent<BoxCollider>();
+            hz.isTrigger = true;
+            hz.size = new Vector3(2.6f, 8f, Depth);
+            hazard.AddComponent<HazardVolume>().Configure(HazardType.Heat, "Scalded by venting steam.");
+            AddSteamParticles(hazard.transform);
+            PointLight(room, "Light_Steam", new Vector3(31.5f, 1f, -1f), new Color(1f, 0.45f, 0.1f), 5f, 8f);
+
+            GameObject card = Pickup(room, "Pickup_Keycard_L2", new Vector3(36f, 1f, 0f), Mat("Pickup_Keycard", new Color(0.2f, 0.6f, 1f), emission: new Color(0.2f, 0.6f, 1f) * 1.5f));
+            card.GetComponent<ItemPickup>().ConfigureKeycard(2);
+
+            Label(room, "MAINTENANCE", new Vector3(24f, 6.5f, 1.9f), new Color(1f, 0.7f, 0.3f));
+            Label(room, "climb [W]", new Vector3(22.5f, 1.8f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f);
+            SpotLight(room, "Light_Maint", new Vector3(26f, 7.8f, -1f), new Color(1f, 0.7f, 0.35f), 25f, 14f, 70f);
+            SpotLight(room, "Light_Keycard", new Vector3(36f, 7.8f, -1f), new Color(1f, 0.7f, 0.35f), 15f, 12f, 55f);
+        }
+
+        private static void BuildRoomC(Transform level)
+        {
+            Transform room = Group(level, "C_Security");
+            Material concrete = Mat("Concrete", new Color(0.32f, 0.33f, 0.35f));
+            Material doorMat = Mat("Door", new Color(0.55f, 0.57f, 0.6f), metallic: 0.6f);
+            Material status = Mat("StatusLight", Color.white, emission: Color.white);
+            Material encounter = Mat("EncounterMarker", new Color(0.3f, 0.02f, 0.02f), emission: new Color(1f, 0.05f, 0.05f) * 1.5f);
+
+            // Wall above the doorway; the panel slides up into it.
+            Box(room, "Door_Header", new Vector3(40f, 5.5f, 0f), new Vector3(0.6f, 5f, Depth), concrete);
+
+            GameObject doorGo = new GameObject("Door_L2");
+            doorGo.transform.SetParent(room, false);
+            doorGo.transform.position = new Vector3(40f, 0f, 0f);
+            GameObject panel = Box(doorGo.transform, "Panel", new Vector3(40f, 1.5f, 0f), new Vector3(0.4f, 3f, Depth), doorMat);
+            GameObject light = Box(doorGo.transform, "StatusLight", new Vector3(39.55f, 3.3f, -0.8f), new Vector3(0.3f, 0.15f, 0.1f), status, collider: false);
+            Door door = doorGo.AddComponent<Door>();
+            door.Configure(2, panel.transform, light.GetComponent<Renderer>(), 3f);
+            door.SetInteractionPoint(new Vector3(-0.6f, 1.2f, 0f), 1.5f);
+
+            Checkpoint(room, "Checkpoint_C", new Vector3(41.5f, 0f, 0f));
+
+            Box(room, "EncounterZone_Marker", new Vector3(49f, 0.02f, 0f), new Vector3(10f, 0.04f, 2.5f), encounter, collider: false);
+            Box(room, "Cover_Low", new Vector3(47f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f)));
+            Box(room, "Platform_High", new Vector3(51.5f, 2f, 0f), new Vector3(3f, 0.3f, 2f), Mat("Metal", new Color(0.5f, 0.52f, 0.55f), metallic: 0.8f));
+
+            Label(room, "SECURITY", new Vector3(44f, 6.5f, 1.9f), new Color(1f, 0.35f, 0.3f));
+            Label(room, "[ optional encounter: grid combat coming next ]", new Vector3(49f, 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f);
+            PointLight(room, "Light_Security", new Vector3(48f, 7f, -1f), new Color(1f, 0.2f, 0.15f), 6f, 14f);
+            PointLight(room, "Light_Door", new Vector3(41f, 4f, -1.5f), new Color(0.8f, 0.85f, 1f), 2f, 6f);
+        }
+
+        private static void BuildCameraZones(Transform level)
+        {
+            Transform zones = Group(level, "CameraZones");
+            CameraZoneAt(zones, "Zone_A", new Vector3(9f, 4f, 0f), new Vector2(22f, 8.5f));
+            CameraZoneAt(zones, "Zone_B", new Vector3(30f, 4f, 0f), new Vector2(20f, 8.5f));
+            CameraZoneAt(zones, "Zone_C", new Vector3(48f, 4f, 0f), new Vector2(16f, 8.5f));
+        }
+
+        // ------------------------------------------------------------------ actors
+
+        private static GameObject BuildPlayer(Vector3 position)
+        {
+            GameObject player = new GameObject("Player");
+            player.transform.position = position;
+            player.tag = "Player";
+
+            CharacterController cc = player.AddComponent<CharacterController>();
+            cc.radius = 0.35f;
+            cc.height = 1.8f;
+            cc.center = new Vector3(0f, 0.9f, 0f);
+            cc.stepOffset = 0.3f;
+            cc.slopeLimit = 50f;
+            cc.skinWidth = 0.03f;
+
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.name = "Body";
+            Object.DestroyImmediate(body.GetComponent<Collider>());
+            body.transform.SetParent(player.transform, false);
+            body.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
+            body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+            body.GetComponent<Renderer>().sharedMaterial = Mat("Player", new Color(0.85f, 0.85f, 0.8f));
+
+            // Visor shows which way the player faces (local +Z is turned toward ±X by the motor).
+            GameObject visor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            visor.name = "Visor";
+            Object.DestroyImmediate(visor.GetComponent<Collider>());
+            visor.transform.SetParent(player.transform, false);
+            visor.transform.localPosition = new Vector3(0f, 1.5f, 0.3f);
+            visor.transform.localScale = new Vector3(0.4f, 0.12f, 0.12f);
+            visor.GetComponent<Renderer>().sharedMaterial = Mat("Visor", new Color(0.1f, 0.8f, 0.9f), emission: new Color(0.1f, 0.8f, 0.9f) * 2f);
+
+            PlayerInputReader input = player.AddComponent<PlayerInputReader>();
+            InputActionAsset actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputActionsPath);
+            if (actions != null) SetRef(input, "actions", actions);
+            else Debug.LogWarning($"[Null Record] {InputActionsPath} not found; falling back to project-wide actions.");
+
+            PlayerMotor motor = player.AddComponent<PlayerMotor>();
+            SetRef(motor, "body", body.transform);
+            player.AddComponent<PlayerInventory>();
+            player.AddComponent<PlayerInteractor>();
+            player.AddComponent<PlayerRespawn>();
+            return player;
+        }
+
+        private static void BuildCamera(Transform target)
+        {
+            GameObject camGo = new GameObject("Main Camera");
+            camGo.tag = "MainCamera";
+            Camera cam = camGo.AddComponent<Camera>();
+            cam.fieldOfView = 35f;
+            cam.nearClipPlane = 0.3f;
+            cam.farClipPlane = 100f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.02f, 0.02f, 0.03f);
+            camGo.AddComponent<AudioListener>();
+            camGo.transform.position = target.position + new Vector3(0f, 1.5f, -16f);
+
+            SideCameraRig rig = camGo.AddComponent<SideCameraRig>();
+            SetRef(rig, "target", target);
+        }
+
+        private static void BuildHud(PlayerInteractor player)
+        {
+            GreyboxHUD hud = new GameObject("HUD").AddComponent<GreyboxHUD>();
+            SetRef(hud, "player", player);
+        }
+
+        // ------------------------------------------------------------------ helpers
+
+        private static void SetupLighting()
+        {
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.07f, 0.08f, 0.1f);
+            RenderSettings.skybox = null;
+            RenderSettings.fog = false;
+
+            GameObject sun = new GameObject("Directional Light (fill)");
+            Light l = sun.AddComponent<Light>();
+            l.type = LightType.Directional;
+            l.color = new Color(0.55f, 0.65f, 0.85f);
+            l.intensity = 0.25f;
+            l.shadows = LightShadows.Soft;
+            sun.transform.rotation = Quaternion.Euler(40f, -25f, 0f);
+        }
+
+        private static Transform Group(Transform parent, string name)
+        {
+            Transform t = new GameObject(name).transform;
+            t.SetParent(parent, false);
+            return t;
+        }
+
+        private static GameObject Box(Transform parent, string name, Vector3 center, Vector3 size, Material mat, bool collider = true)
+        {
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = name;
+            go.transform.SetParent(parent, true);
+            go.transform.position = center;
+            go.transform.localScale = size;
+            go.GetComponent<Renderer>().sharedMaterial = mat;
+            if (!collider) Object.DestroyImmediate(go.GetComponent<Collider>());
+            return go;
+        }
+
+        private static GameObject Pickup(Transform parent, string name, Vector3 position, Material mat)
+        {
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = name;
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.transform.SetParent(parent, true);
+            go.transform.position = position;
+            go.transform.localScale = new Vector3(0.4f, 0.25f, 0.05f);
+            go.GetComponent<Renderer>().sharedMaterial = mat;
+            ItemPickup pickup = go.AddComponent<ItemPickup>();
+            pickup.SetInteractionPoint(Vector3.zero, 1.4f);
+            PointLight(go.transform, "Glow", position + new Vector3(0f, 0f, -0.5f), mat.GetColor("_BaseColor"), 1.5f, 2.5f, shadows: false);
+            return go;
+        }
+
+        private static void Checkpoint(Transform parent, string name, Vector3 position)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = position + new Vector3(0f, 0.05f, 0f);
+            BoxCollider c = go.AddComponent<BoxCollider>();
+            c.isTrigger = true;
+            c.center = new Vector3(0f, 4f, 0f);
+            c.size = new Vector3(1f, 8f, Depth);
+            go.AddComponent<Game.World.Checkpoint>();
+        }
+
+        private static void CameraZoneAt(Transform parent, string name, Vector3 center, Vector2 size)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = center;
+            go.AddComponent<CameraZone>().Configure(size);
+        }
+
+        private static void PointLight(Transform parent, string name, Vector3 position, Color color, float intensity, float range, bool shadows = true)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, true);
+            go.transform.position = position;
+            Light l = go.AddComponent<Light>();
+            l.type = LightType.Point;
+            l.color = color;
+            l.intensity = intensity;
+            l.range = range;
+            l.shadows = shadows ? LightShadows.Soft : LightShadows.None;
+        }
+
+        private static void SpotLight(Transform parent, string name, Vector3 position, Color color, float intensity, float range, float angle)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, true);
+            go.transform.position = position;
+            go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            Light l = go.AddComponent<Light>();
+            l.type = LightType.Spot;
+            l.color = color;
+            l.intensity = intensity;
+            l.range = range;
+            l.spotAngle = angle;
+            l.shadows = LightShadows.Soft;
+        }
+
+        private static void Label(Transform parent, string text, Vector3 position, Color color, float size = 1f)
+        {
+            GameObject go = new GameObject("Label_" + text);
+            go.transform.SetParent(parent, true);
+            go.transform.position = position;
+            TextMesh tm = go.AddComponent<TextMesh>();
+            tm.text = text;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.alignment = TextAlignment.Center;
+            tm.characterSize = 0.1f * size;
+            tm.fontSize = 64;
+            tm.color = color;
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font != null)
+            {
+                tm.font = font;
+                go.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+            }
+        }
+
+        private static void AddSteamParticles(Transform parent)
+        {
+            GameObject go = new GameObject("Steam");
+            go.transform.SetParent(parent, false);
+            go.transform.position = new Vector3(parent.position.x, 0.1f, 0f);
+            go.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
+
+            ParticleSystem ps = go.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = ps.main;
+            main.startLifetime = 1.6f;
+            main.startSpeed = 5f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.8f, 1.6f);
+            main.startColor = new Color(1f, 0.92f, 0.85f, 0.25f);
+            main.maxParticles = 400;
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = 120f;
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(2.6f, 1.5f, 0.1f);
+            ParticleSystem.SizeOverLifetimeModule sol = ps.sizeOverLifetime;
+            sol.enabled = true;
+            sol.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.6f, 1f, 1.6f));
+
+            go.GetComponent<ParticleSystemRenderer>().sharedMaterial = ParticleMat("Steam", new Color(1f, 0.95f, 0.9f, 0.3f));
+        }
+
+        private static Material Mat(string name, Color color, float metallic = 0f, Color? emission = null)
+        {
+            if (Materials.TryGetValue(name, out Material cached)) return cached;
+
+            string path = $"{MaterialDir}/{name}.mat";
+            Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                mat = new Material(shader);
+                EnsureFolder(MaterialDir);
+                AssetDatabase.CreateAsset(mat, path);
+            }
+
+            mat.SetColor("_BaseColor", color);
+            mat.SetFloat("_Metallic", metallic);
+            mat.SetFloat("_Smoothness", metallic > 0f ? 0.6f : 0.25f);
+            if (emission.HasValue)
+            {
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", emission.Value);
+                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            }
+            EditorUtility.SetDirty(mat);
+            Materials[name] = mat;
+            return mat;
+        }
+
+        private static Material ParticleMat(string name, Color color)
+        {
+            string path = $"{MaterialDir}/{name}.mat";
+            Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit") ?? Shader.Find("Particles/Standard Unlit");
+                mat = new Material(shader);
+                EnsureFolder(MaterialDir);
+                AssetDatabase.CreateAsset(mat, path);
+            }
+
+            mat.SetColor("_BaseColor", color);
+            // URP transparent, alpha-blended.
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", 0f);
+            mat.SetOverrideTag("RenderType", "Transparent");
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            mat.SetInt("_ZWrite", 0);
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        private static void EnsureFolder(string assetPath)
+        {
+            string[] parts = assetPath.Split('/');
+            string current = parts[0];
+            for (int i = 1; i < parts.Length; i++)
+            {
+                string next = current + "/" + parts[i];
+                if (!AssetDatabase.IsValidFolder(next)) AssetDatabase.CreateFolder(current, parts[i]);
+                current = next;
+            }
+        }
+
+        private static void SetRef(Object target, string field, Object value)
+        {
+            SerializedObject so = new SerializedObject(target);
+            SerializedProperty prop = so.FindProperty(field);
+            if (prop == null)
+            {
+                Debug.LogError($"[Null Record] {target.GetType().Name} has no serialized field '{field}'.");
+                return;
+            }
+            prop.objectReferenceValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void AddToBuildSettings(string path)
+        {
+            var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            if (scenes.Exists(s => s.path == path)) return;
+            scenes.Insert(0, new EditorBuildSettingsScene(path, true));
+            EditorBuildSettings.scenes = scenes.ToArray();
+        }
+    }
+}
