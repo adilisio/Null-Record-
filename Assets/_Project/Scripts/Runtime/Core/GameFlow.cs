@@ -53,6 +53,7 @@ namespace Game.Core
         private const string DebugHudKey = "settings.debugHud";
         private const string EffectsKey = "settings.effectsVolume";
         private const string AmbienceKey = "settings.ambienceVolume";
+        private const string MusicKey = "settings.musicVolume";
 
         public static float EffectsVolume
         {
@@ -65,6 +66,13 @@ namespace Game.Core
         {
             get => PlayerPrefs.GetFloat(AmbienceKey, 0.8f);
             set => PlayerPrefs.SetFloat(AmbienceKey, Mathf.Clamp01(value));
+        }
+
+        /// <summary>The exploration music bed.</summary>
+        public static float MusicVolume
+        {
+            get => PlayerPrefs.GetFloat(MusicKey, 0.7f);
+            set => PlayerPrefs.SetFloat(MusicKey, Mathf.Clamp01(value));
         }
 
         public static float MasterVolume

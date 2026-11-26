@@ -37,6 +37,8 @@ namespace Game.Audio
         AmbMaintenance,
         AmbSecurity,
         CombatPulse,
+        // Music
+        MusicExplore,
     }
 
     /// <summary>
@@ -49,7 +51,8 @@ namespace Game.Audio
         public const int Rate = 44100;
 
         public static bool IsLoop(SoundId id) =>
-            id == SoundId.SteamLoop || id == SoundId.AmbHolding || id == SoundId.AmbMaintenance || id == SoundId.AmbSecurity || id == SoundId.CombatPulse;
+            id == SoundId.SteamLoop || id == SoundId.AmbHolding || id == SoundId.AmbMaintenance || id == SoundId.AmbSecurity || id == SoundId.CombatPulse
+            || id == SoundId.MusicExplore;
 
         /// <summary>How many variants are generated (played at random to avoid repetition).</summary>
         public static int Variants(SoundId id) => id == SoundId.Footstep || id == SoundId.LadderClank || id == SoundId.CombatStep || id == SoundId.Hit ? 4 : 1;
@@ -94,6 +97,7 @@ namespace Game.Audio
                 SoundId.AmbMaintenance => AmbMaintenance(rng),
                 SoundId.AmbSecurity => AmbSecurity(rng),
                 SoundId.CombatPulse => CombatPulse(rng),
+                SoundId.MusicExplore => MusicExplore(),
                 _ => new float[Rate / 10],
             };
             Sanitize(s, IsLoop(id) ? 0.7f : 0.9f);
@@ -463,6 +467,112 @@ namespace Game.Audio
                 s[i] = kick + hat + cl;
             }
             return s;
+        }
+
+        // ---------------------------------------------------------------- music
+
+        /// <summary>
+        /// Exploration music bed: a slow, dark D-minor loop (32 s, four 8 s chords: Dm, Bb, Gm, Am).
+        /// Detuned wavetable pad, a soft bass pulse every 2 s, a sub drone and a sparse bell motif.
+        /// Every voice takes its phase from loop-local time, so the seam is click-free.
+        /// </summary>
+        private static float[] MusicExplore()
+        {
+            const float loop = 32f;
+            const float bar = 8f;
+            float[] s = Buf(loop);
+
+            float[][] chords =
+            {
+                new[] { 146.83f, 174.61f, 220.00f }, // Dm
+                new[] { 116.54f, 146.83f, 174.61f }, // Bb
+                new[] { 98.00f, 116.54f, 146.83f },  // Gm
+                new[] { 110.00f, 130.81f, 164.81f }, // Am
+            };
+            float[] roots = { 73.42f, 58.27f, 49.00f, 55.00f };
+            float[] detune = { 0.9985f, 1f, 1.0015f };
+
+            // Bell motif: (time, frequency). Sparse, mostly D-minor pentatonic.
+            float[,] bells =
+            {
+                { 1.0f, 440.00f }, { 2.5f, 587.33f }, { 4.0f, 698.46f },
+                { 9.0f, 587.33f }, { 11.5f, 523.25f },
+                { 17.0f, 392.00f }, { 18.5f, 466.16f }, { 20.0f, 587.33f },
+                { 25.0f, 659.25f }, { 27.0f, 523.25f }, { 29.5f, 440.00f },
+            };
+
+            // Saw-like wavetable (6 harmonics) so the pad costs one lookup per voice.
+            const int tableSize = 2048;
+            var table = new float[tableSize];
+            for (int i = 0; i < tableSize; i++)
+            {
+                float x = i / (float)tableSize * 2f * Mathf.PI;
+                for (int h = 1; h <= 6; h++) table[i] += Mathf.Sin(x * h) / h;
+            }
+
+            const float drone = 36.71875f; // D1, rounded to a whole number of cycles per loop
+            var pad = new float[s.Length];
+            for (int i = 0; i < s.Length; i++)
+            {
+                float t = T(i);
+
+                // Pad: each chord fades in over 1.5 s and out over 1.5 s past its bar, overlapping the next.
+                float p = 0f;
+                for (int c = 0; c < 4; c++)
+                {
+                    float u = Mathf.Repeat(t - c * bar, loop);
+                    if (u > bar + 1.5f) continue;
+                    float w = Mathf.SmoothStep(0f, 1f, u / 1.5f) * (u > bar ? 1f - Mathf.SmoothStep(0f, 1f, (u - bar) / 1.5f) : 1f);
+                    foreach (float f in chords[c])
+                    {
+                        foreach (float d in detune)
+                        {
+                            float ph = f * d * u;
+                            p += table[(int)((ph - Mathf.Floor(ph)) * tableSize) & (tableSize - 1)] * w;
+                        }
+                    }
+                }
+                pad[i] = p * 0.05f;
+
+                // Bass: the chord root, a soft swell every 2 s.
+                int chord = Mathf.Min(3, (int)(t / bar));
+                float bt = Mathf.Repeat(t, 2f);
+                float bass = (Mathf.Sin(2f * Mathf.PI * roots[chord] * bt) + 0.3f * Mathf.Sin(4f * Mathf.PI * roots[chord] * bt))
+                             * Env(bt, 0.04f, 0.7f) * 0.32f;
+
+                float sub = Mathf.Sin(2f * Mathf.PI * drone * t) * 0.12f;
+
+                float bell = 0f;
+                for (int n = 0; n < bells.GetLength(0); n++)
+                {
+                    float dt = Mathf.Repeat(t - bells[n, 0], loop);
+                    if (dt > 4f) continue;
+                    float f = bells[n, 1];
+                    bell += (Mathf.Sin(2f * Mathf.PI * f * dt) + 0.35f * Mathf.Sin(2f * Mathf.PI * f * 2.76f * dt) * Env(dt, 0.001f, 0.25f))
+                            * Env(dt, 0.004f, 1.4f) * 0.11f;
+                }
+
+                s[i] = bass + sub + bell;
+            }
+
+            LowpassLoop(pad, 1100f);
+            LowpassLoop(pad, 1800f);
+            for (int i = 0; i < s.Length; i++) s[i] += pad[i];
+            return s;
+        }
+
+        /// <summary>One-pole lowpass over a loop: pre-rolls through the tail first so the head starts settled.</summary>
+        private static void LowpassLoop(float[] a, float cutoff)
+        {
+            float rc = 1f / (2f * Mathf.PI * cutoff);
+            float alpha = (1f / Rate) / (rc + 1f / Rate);
+            float y = 0f;
+            for (int i = Mathf.Max(0, a.Length - Rate / 10); i < a.Length; i++) y += alpha * (a[i] - y);
+            for (int i = 0; i < a.Length; i++)
+            {
+                y += alpha * (a[i] - y);
+                a[i] = y;
+            }
         }
 
         // ---------------------------------------------------------------- DSP helpers

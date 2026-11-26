@@ -32,6 +32,7 @@ namespace Game.Audio
             { SoundId.Hit, 0.7f }, { SoundId.Knockback, 0.55f }, { SoundId.UnitDown, 0.6f }, { SoundId.PhasePlayer, 0.4f },
             { SoundId.PhaseEnemy, 0.5f }, { SoundId.Victory, 0.55f }, { SoundId.Defeat, 0.55f },
             { SoundId.AmbHolding, 0.35f }, { SoundId.AmbMaintenance, 0.55f }, { SoundId.AmbSecurity, 0.45f }, { SoundId.CombatPulse, 0.4f },
+            { SoundId.MusicExplore, 0.5f },
         };
 
         private static readonly Dictionary<string, SoundId> RoomBeds = new Dictionary<string, SoundId>
@@ -43,7 +44,7 @@ namespace Game.Audio
 
         private readonly List<AudioSource> _pool = new List<AudioSource>();
         private readonly Dictionary<SoundId, int> _counts = new Dictionary<SoundId, int>();
-        private AudioSource _ambA, _ambB, _combat;
+        private AudioSource _ambA, _ambB, _combat, _music;
         private float _ambBlend = 1f; // 1 = A fully audible
         private SoundId? _ambCurrent;
         private bool _currentOnA = true;
@@ -54,11 +55,14 @@ namespace Game.Audio
 
         public string CurrentAmbience => _ambCurrent?.ToString() ?? "";
         public bool CombatMusicOn => _combatOn;
+        public bool MusicPlaying => _music != null && _music.isPlaying;
+        public float MusicVolume => _music != null ? _music.volume : 0f;
         public int PlayCount(SoundId id) => _counts.TryGetValue(id, out int n) ? n : 0;
         public static float EffectsGain => GameSettings.EffectsVolume;
 
         public void Configure(string roomWhenNoPlayer) => defaultRoom = roomWhenNoPlayer;
         public static float AmbienceGain => GameSettings.AmbienceVolume;
+        public static float MusicGain => GameSettings.MusicVolume;
 
         private void Awake()
         {
@@ -74,6 +78,9 @@ namespace Game.Audio
             _ambB = NewSource("AmbienceB", true);
             _combat = NewSource("CombatLoop", true);
             _combat.clip = Clip(SoundId.CombatPulse);
+            _music = NewSource("Music", true);
+            _music.clip = Clip(SoundId.MusicExplore);
+            _music.ignoreListenerPause = true; // keeps playing, quietly, in the pause menu
             GameSettings.Apply();
         }
 
@@ -180,6 +187,10 @@ namespace Game.Audio
             _ambA.volume = (_ambA.clip != null ? MixLevel(BedOf(_ambA.clip)) : 0f) * amb * _ambBlend;
             _ambB.volume = (_ambB.clip != null ? MixLevel(BedOf(_ambB.clip)) : 0f) * amb * (1f - _ambBlend);
             _combat.volume = MixLevel(SoundId.CombatPulse) * AmbienceGain * _combatLevel;
+            // The exploration bed steps back under the combat loop and while paused.
+            float musicDuck = (1f - 0.75f * _combatLevel) * (AudioListener.pause ? 0.4f : 1f);
+            _music.volume = MixLevel(SoundId.MusicExplore) * MusicGain * musicDuck;
+            if (!_music.isPlaying && _music.volume > 0f) _music.Play();
             if (_ambBlend >= 1f && _ambB.isPlaying) _ambB.Stop();
             if (_ambBlend <= 0f && _ambA.isPlaying) _ambA.Stop();
         }

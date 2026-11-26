@@ -86,8 +86,13 @@ namespace Game.Tests
             EncounterController enc = Object.FindAnyObjectByType<EncounterController>();
             _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
             yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
+            yield return Wait(0.3f);
+            float musicBefore = Audio.MusicVolume;
+            Assert.Greater(musicBefore, 0f, "exploration music is up before the fight");
             enc.Engage(_interactor);
             Assert.IsTrue(Audio.CombatMusicOn, "combat loop on");
+            yield return Wait(1.2f);
+            Assert.Less(Audio.MusicVolume, musicBefore * 0.5f, "music ducks under the combat loop");
             yield return Until(() => !enc.IsBusy, 5f, "opening");
             Assert.GreaterOrEqual(Audio.PlayCount(SoundId.PhasePlayer), 1);
 
@@ -133,6 +138,20 @@ namespace Game.Tests
             title.Settings.Effects.value = 0.25f;
             Assert.That(AudioManager.EffectsGain, Is.EqualTo(0.25f).Within(0.01f), "effects slider drives the gain");
             GameSettings.EffectsVolume = before;
+        }
+
+        [UnityTest]
+        public IEnumerator Music_FollowsItsSlider()
+        {
+            float before = GameSettings.MusicVolume;
+            GameSettings.MusicVolume = 1f;
+            yield return null;
+            float full = Audio.MusicVolume;
+            Assert.Greater(full, 0f, "music bed playing in game");
+            GameSettings.MusicVolume = 0.5f;
+            yield return null;
+            Assert.That(Audio.MusicVolume, Is.EqualTo(full * 0.5f).Within(0.01f), "music slider scales it");
+            GameSettings.MusicVolume = before;
         }
     }
 }

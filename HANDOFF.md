@@ -69,7 +69,7 @@ All of it is greybox. "Placeholder" means it's meant to be replaced.
 | Saving | Autosave on room entry, any progress, and before and after fights; room-entry respawn; one slot; PlayerPrefs on the web |
 | Menus | Title (Continue with save summary, New Game confirmation, Settings, Quit), pause menu, settings (master, effects and ambience volume, fullscreen, debug HUD) |
 | Look | URP post-processing, fog, mood lighting per room (flicker, rotating alarm beacon), player key light |
-| Sound | All 27 sounds synthesised in code (`Game.Audio.Synth`), room ambience beds, combat loop; no music |
+| Sound | All 28 sounds synthesised in code (`Game.Audio.Synth`): effects, room ambience beds, combat loop, and a 32 s exploration music bed with its own volume slider |
 | Platforms | Windows editor, WebGL (live on GitHub Pages), touch controls; no Android APK |
 
 Code is under `Assets/_Project/Scripts/Runtime/{Player,World,Combat,Companions,Dialogue,Save,Audio,UI,Core,CameraSystem}`, with editor tools in `Scripts/Editor`.
@@ -92,7 +92,7 @@ Code is under `Assets/_Project/Scripts/Runtime/{Player,World,Combat,Companions,D
   - Tool rewards from fights (wait for the hacking-tool design)
   - More hazard kinds (timed steam, switchable wires)
   - Units and skills as data assets (ScriptableObjects)
-  - Music
+  - Composed or per-region music
   - Real art and audio assets
   - Room transitions beyond camera zones
   - More rooms or regions
@@ -102,5 +102,5 @@ Code is under `Assets/_Project/Scripts/Runtime/{Player,World,Combat,Companions,D
 1. **Tune combat further:** balance after a hands-on play, skill choices on level-up, a tool reward once hacking tools exist.
 2. **Rewrite Dace** once the owner gives the name and voice; add the rest of the companion arc.
 3. **Expand the slice:** another room or two, a hacking-tool gate, a second encounter with a third enemy type.
-4. **Real assets:** low-poly models, portraits, recorded sound and a music bed.
+4. **Real assets:** low-poly models, portraits and recorded sound (a synthesised music bed exists).
 5. **Phone polish** once someone tries the web build on a real Android phone.

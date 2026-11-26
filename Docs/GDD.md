@@ -169,7 +169,8 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
   - **UI:** menu move and confirm clicks (these still play while paused), and dialogue blips for each line and bark.
   - **Mixing:** master × effects or ambience volume (both in Settings) × a mix level per sound. The audio listener follows the player rather than sitting with the camera 16 m back. Pausing freezes world audio.
   - **Listening outside Unity:** **Null Record → Export Placeholder Sounds** writes every sound to `Screenshots/audio/*.wav`.
-  - **Not in yet:** real recordings, music, reverb per room, footstep surface types, and an AudioMixer with snapshots.
+  - **Music (2026-11-26, first pass):** one exploration bed, synthesised in code like the effects (`SoundId.MusicExplore`). It's a 32 s D-minor loop with four 8 s chords (Dm, Bb, Gm, Am): a detuned pad, a soft bass swell every 2 s, a sub drone and a sparse bell motif. It plays on the title and in game. It ducks to a quarter under the combat loop and to 40% in the pause menu, and it has its own Music slider in Settings. It's meant to be replaced or joined by composed tracks per region later.
+  - **Not in yet:** real recordings, per-region music, reverb per room, footstep surface types, and an AudioMixer with snapshots.
 
 ## 11. Platform and controls
 - PC (Steam). Keyboard and mouse plus controller, through the Input System (`InputSystem_Actions`).
@@ -189,7 +190,7 @@ One region (Intake / Holding), polished enough to show:
 - [~] 1 optional encounter: level → grid transition, 2–3 enemy types, win and lose flow, rewards (playable prototype in Security; scrap, log and XP rewards plus a hazard tile; no tool reward yet)
 - [~] Dialogue system with portraits and choices (JSON, placeholder portraits)
 - [~] Autosave and room transitions (autosave, room-entry respawn, title/Continue and pause menus done; single save slot)
-- [~] Lighting pass and audio ambience for the region (lighting and placeholder audio done; real sound assets and music still to come)
+- [~] Lighting pass and audio ambience for the region (lighting and placeholder audio done; a synthesised music bed done; real sound assets still to come)
 
 ### Later milestones (rough)
 2. Greybox all three regions and the gating map
