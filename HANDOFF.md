@@ -2,9 +2,9 @@
 
 _Last updated 2026-11-26, end of a long session. A new session should read this first, then `CLAUDE.md` (conventions) and `Docs/GDD.md` (design, and every first-pass decision with its reasons)._
 
-- **Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls). It's live and current as of commit `40c022e`.
+- **Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls). It's live and current as of commit `b7d44dd`.
 - **Repo:** https://github.com/adilisio/Null-Record- (public). `main` holds the source and everything is pushed; `gh-pages` holds only the web build.
-- **Status:** 152 automated tests passing (95 EditMode, 57 PlayMode). The working tree is clean.
+- **Status:** 157 automated tests passing (95 EditMode, 62 PlayMode). The working tree is clean.
 
 ---
 
@@ -116,7 +116,8 @@ Everything below is greybox plus CC0 placeholder art. "Placeholder" means it's m
   - The protagonist's subject ID and why they were erased.
   - Whether the facility goes up or down. Lift signs are deliberately direction-neutral.
   - The endings.
-- **Untested by hand:** nobody has played a build with real hands or on a real phone. Feel, balance, touch and phone performance are all unknown.
+- **Hand-tested once:** the owner played on a phone once (2026-11-26). The phone polish pass answers that, but it hasn't been replayed by hand yet. Next, ask them to retry crouch and fight 1.
+- **Story wording:** the opening card, objective lines and end card are placeholders (`StoryBeats.cs`). They avoid naming anyone, and say nothing about the facility's direction or why the Subject was erased.
 
 ## 6. This session, in order
 
@@ -132,6 +133,7 @@ All commits are on `main`.
 | Animation | Keyframed attack, hit and knockout clips, hand weapons, filmstrip timing test |
 | Region 2 | Research Wing, freight lift, remote override and bridge, companion 2 with heals, swap terminal, save roster |
 | Fable polish review | Touch tap fix, device hints, screen HUDs, HP bars, downed companions, cover height rule, enemy cooldown fix, fuller framing, solid blocks, fades |
+| Phone polish (`b7d44dd`) | After the owner's first phone play ("crouch barely moves", "couldn't figure out combat"): next-step combat line, action bar, tap-an-enemy-to-attack, engage anywhere in the arena, END TURN pulse, Retreat; crouch 3.2 and a toggle on touch, auto-run on touch, crawl space in Holding; closer touch camera, dimmer back wall; opening card, objective line, end card (`StoryBeats`, placeholder text). See GDD "Phone polish" |
 
 **Decisions and lessons worth keeping:**
 - **Cover stays a tile.** In a one-lane side view, removing it split the grid and stalemated melee, so the fix was "no height bonus from cover" instead.
@@ -151,5 +153,5 @@ All commits are on `main`.
 
 1. **Tune combat:** balance the three fights (ideally after a hands-on play), skill choices on level-up, a tool reward from a fight.
 2. **Expand further:** the third region (Security Core) past the freight shutter, the drone link tool, companion 3 (ranged), a story beat to close region 2.
-3. **Phone pass:** once the owner tries the web build on a real phone, fix what they hit.
+3. **Phone pass 2:** fix whatever the owner hits when they replay the phone polish. Also still open: readable log terminals, combat camera closer on phones, crouch-walk animation (the pose is a frozen jump frame).
 4. **Rewrite the companions** once the owner gives names and voices.
