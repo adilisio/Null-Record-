@@ -58,3 +58,6 @@ desktop.ini
 # Play-test captures
 /Screenshots/
 /Assets/InitTestScene*.unity*
+
+# Player builds
+/Builds/

@@ -35,7 +35,7 @@ namespace Game.UI
             var s = go.AddComponent<CanvasScaler>();
             s.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             s.referenceResolution = new Vector2(1280f, 720f);
-            s.matchWidthOrHeight = 0.5f;
+            s.matchWidthOrHeight = 1f; // scale by height: menus keep their vertical spacing on wide phone screens
             go.AddComponent<GraphicRaycaster>();
             return c;
         }

@@ -29,6 +29,7 @@ namespace Game.UI
         public Button ConfirmNewGameButton { get; private set; }
         public Button CancelNewGameButton { get; private set; }
         public SettingsPanel Settings => _settings;
+        private static bool CanQuit => Application.platform != RuntimePlatform.WebGLPlayer;
         public bool ConfirmVisible => _confirm != null && _confirm.gameObject.activeSelf;
         public bool SettingsVisible => _settings != null && _settings.Root.gameObject.activeSelf;
         public string SaveInfo => _saveInfo != null ? _saveInfo.text : "";
@@ -168,6 +169,7 @@ namespace Game.UI
             NewGameButton = MenuWidgets.Button(_main, "NewGame", "New Game", OnNewGame);
             SettingsButton = MenuWidgets.Button(_main, "Settings", "Settings", OnSettings);
             QuitButton = MenuWidgets.Button(_main, "Quit", "Quit", GameFlow.QuitGame);
+            if (!CanQuit) QuitButton.gameObject.SetActive(false); // browsers can't quit; the tab does that
             MenuWidgets.Stack(_main, 50f, 8f);
             MenuWidgets.ChainVertical(ContinueButton, NewGameButton, SettingsButton, QuitButton);
 

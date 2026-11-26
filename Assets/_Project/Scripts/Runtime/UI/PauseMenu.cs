@@ -138,6 +138,7 @@ namespace Game.UI
                 QuitToTitleSave();
                 GameFlow.QuitGame();
             });
+            if (Application.platform == RuntimePlatform.WebGLPlayer) QuitGameButton.gameObject.SetActive(false);
             MenuWidgets.Stack(_main, 50f, 8f);
             MenuWidgets.ChainVertical(ResumeButton, SettingsButton, QuitToTitleButton, QuitGameButton);
 

@@ -45,6 +45,37 @@ namespace Game.Save
 
         public static string Folder => string.IsNullOrEmpty(DirectoryOverride) ? Application.persistentDataPath : DirectoryOverride;
         public static string FilePath => Path.Combine(Folder, FileName);
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Browsers: keep the save in PlayerPrefs (IndexedDB-backed and flushed reliably by PlayerPrefs.Save).
+        private const string PrefsKey = "save_0";
+        public static bool Exists => PlayerPrefs.HasKey(PrefsKey);
+
+        public static void Write(SaveData data)
+        {
+            PlayerPrefs.SetString(PrefsKey, JsonUtility.ToJson(data));
+            PlayerPrefs.Save();
+        }
+
+        public static SaveData Read()
+        {
+            if (!Exists) return null;
+            SaveData d = JsonUtility.FromJson<SaveData>(PlayerPrefs.GetString(PrefsKey));
+            if (d == null || d.version <= 0)
+            {
+                Delete();
+                return null;
+            }
+            d.tools ??= Array.Empty<string>();
+            d.flags ??= Array.Empty<string>();
+            return d;
+        }
+
+        public static void Delete()
+        {
+            PlayerPrefs.DeleteKey(PrefsKey);
+            PlayerPrefs.Save();
+        }
+#else
         public static bool Exists => File.Exists(FilePath);
 
         public static void Write(SaveData data)
@@ -83,5 +114,6 @@ namespace Game.Save
             if (File.Exists(FilePath)) File.Delete(FilePath);
             if (File.Exists(FilePath + ".tmp")) File.Delete(FilePath + ".tmp");
         }
+#endif
     }
 }

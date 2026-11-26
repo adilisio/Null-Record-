@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
+  <meta name="theme-color" content="#090a0d">
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #090a0d; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
+    #game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; outline: none; }
+    #loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; color: #dfe2e6; font: 300 clamp(18px, 4vw, 34px) system-ui, sans-serif; letter-spacing: 0.5em; }
+    #bar { width: min(260px, 60vw); height: 3px; background: #1d2027; }
+    #fill { height: 100%; width: 0; background: #ffbd73; transition: width 0.2s; }
+    #hint { font-size: 12px; letter-spacing: 0.15em; color: #6f757e; }
+    #rotate { display: none; position: fixed; inset: 0; background: #090a0d; color: #dfe2e6; font: 16px system-ui, sans-serif; letter-spacing: 0.1em; align-items: center; justify-content: center; text-align: center; padding: 24px; z-index: 10; }
+    @media (orientation: portrait) and (max-width: 900px) { #rotate { display: flex; } }
+  </style>
+</head>
+<body>
+  <canvas id="game" tabindex="-1"></canvas>
+  <div id="loading">
+    <div>NULL RECORD</div>
+    <div id="bar"><div id="fill"></div></div>
+    <div id="hint">keyboard, gamepad or touch</div>
+  </div>
+  <div id="rotate">Turn your device sideways to play.</div>
+  <script>
+    var canvas = document.querySelector("#game");
+    var config = {
+      dataUrl: "Build/{{{ DATA_FILENAME }}}",
+      frameworkUrl: "Build/{{{ FRAMEWORK_FILENAME }}}",
+      codeUrl: "Build/{{{ CODE_FILENAME }}}",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      // Cap the resolution on high-DPI phones to keep the frame rate up.
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+    };
+    var script = document.createElement("script");
+    script.src = "Build/{{{ LOADER_FILENAME }}}";
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (p) {
+        document.querySelector("#fill").style.width = (100 * p) + "%";
+      }).then(function () {
+        document.querySelector("#loading").remove();
+        canvas.focus();
+      }).catch(function (message) {
+        document.querySelector("#hint").textContent = "Couldn't start: " + message;
+      });
+    };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

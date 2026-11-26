@@ -89,7 +89,7 @@ namespace Game.Core
 
         public static bool DebugHud
         {
-            get => PlayerPrefs.GetInt(DebugHudKey, 1) == 1;
+            get => PlayerPrefs.GetInt(DebugHudKey, Application.isEditor ? 1 : 0) == 1;
             set => PlayerPrefs.SetInt(DebugHudKey, value ? 1 : 0);
         }
 

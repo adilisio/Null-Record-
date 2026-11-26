@@ -7,6 +7,7 @@ using Game.Player;
 using Game.Save;
 using Game.World;
 using Game.Audio;
+using UnityEngine.EventSystems;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -426,6 +427,20 @@ namespace Game.Combat
                     _lastMouse = mp;
                     Tile hovered = PickTile(mp);
                     if (hovered != null) Cursor = hovered;
+                }
+            }
+
+            // Touch: tap a tile to put the cursor there, tap it again to confirm.
+            Touchscreen touch = Touchscreen.current;
+            if (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
+            {
+                int id = touch.primaryTouch.touchId.ReadValue();
+                bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(id);
+                Tile tapped = overUi ? null : PickTile(touch.primaryTouch.position.ReadValue());
+                if (tapped != null)
+                {
+                    if (tapped == Cursor) Confirm();
+                    else Cursor = tapped;
                 }
             }
 

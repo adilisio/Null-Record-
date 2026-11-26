@@ -74,6 +74,7 @@ namespace Game.EditorTools
             new GameObject("DialogueUI").AddComponent<DialogueUI>();
             new GameObject("SaveManager").AddComponent<SaveManager>();
             new GameObject("PauseMenu").AddComponent<PauseMenu>();
+            new GameObject("TouchControls").AddComponent<TouchControls>();
             new GameObject("AudioManager").AddComponent<AudioManager>();
 
             // The listener rides with the player (the camera is 16 m back), so world sounds pan and fade sensibly.
