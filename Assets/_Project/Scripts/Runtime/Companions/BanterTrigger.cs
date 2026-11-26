@@ -16,6 +16,8 @@ namespace Game.Companions
         [SerializeField] private string node;
         [Tooltip("Only plays while this flag is set (e.g. the companion is recruited).")]
         [SerializeField] private string requireFlag = "companion_guard";
+        [Tooltip("Only plays while this companion (combat roster key) is the one following. Empty = any.")]
+        [SerializeField] private string speakerUnit = "Guard";
 
         private DialogueScript _script;
         private PlayerInventory _player;
@@ -42,6 +44,7 @@ namespace Game.Companions
             if (_script == null || _player == null || _player.HasFlag(PlayedFlag)) return;
             if (!string.IsNullOrEmpty(requireFlag) && !_player.HasFlag(requireFlag)) return;
             if (CompanionFollower.Active == null || !CompanionFollower.Active.IsFollowing) return;
+            if (!string.IsNullOrEmpty(speakerUnit) && CompanionFollower.Active.CombatUnit != speakerUnit) return;
 
             Vector3 pos = _player.transform.position;
             if (!area.Contains(new Vector2(pos.x, pos.y + 0.5f))) return;

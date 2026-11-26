@@ -41,7 +41,7 @@ namespace Game.Tests
         public IEnumerator Dace_AndHostiles_UseCharacterModels()
         {
             yield return null;
-            CompanionNPC dace = Object.FindAnyObjectByType<CompanionNPC>();
+            CompanionNPC dace = DaceNpc;
             Assert.IsNotNull(dace.GetComponentInChildren<SkinnedMeshRenderer>(), "Dace has a model");
 
             int hostiles = 0;
@@ -159,7 +159,7 @@ namespace Game.Tests
         public IEnumerator Filmstrip_BatonSwing_ThenAKnockout()
         {
             EncounterController enc = SecurityEncounter;
-            Object.FindAnyObjectByType<CompanionNPC>().Recruit(_interactor);
+            DaceNpc.Recruit(_interactor);
             _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
             yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
             enc.Engage(_interactor);
@@ -218,7 +218,7 @@ namespace Game.Tests
             yield return null;
             foreach ((string who, string name) in new[] { ("Dace", "Weapon_Dace") })
             {
-                CompanionNPC dace = Object.FindAnyObjectByType<CompanionNPC>();
+                CompanionNPC dace = DaceNpc;
                 Assert.IsNotNull(dace.transform.Find("Body/Model/Root/HipsCtrl/Hips/Spine/Chest/UpperChest/RightShoulder/RightArm/RightForeArm/RightHand/" + name), $"{who} holds {name}");
             }
             int armed = 0;

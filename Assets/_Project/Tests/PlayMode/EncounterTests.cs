@@ -18,7 +18,7 @@ namespace Game.Tests
         {
             _enc = SecurityEncounter;
             Assert.IsNotNull(_enc, "Encounter_Security missing from the scene (rebuild the greybox level)");
-            if (withDace) Object.FindAnyObjectByType<CompanionNPC>().Recruit(_interactor);
+            if (withDace) DaceNpc.Recruit(_interactor);
             _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
             yield return Until(() => _interactor.Current == _enc, 2f, "encounter prompt");
         }

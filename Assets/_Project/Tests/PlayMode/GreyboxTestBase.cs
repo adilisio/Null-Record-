@@ -42,6 +42,19 @@ namespace Game.Tests
         /// <summary>The optional fight in Security (the level now has more than one encounter).</summary>
         protected static EncounterController SecurityEncounter => GameObject.Find("Encounter_Security").GetComponent<EncounterController>();
 
+        /// <summary>Dace, companion 1 (the level can hold more than one companion).</summary>
+        protected static Game.Companions.CompanionNPC DaceNpc
+        {
+            get
+            {
+                foreach (Game.Companions.CompanionNPC n in UnityEngine.Object.FindObjectsByType<Game.Companions.CompanionNPC>(FindObjectsSortMode.None))
+                {
+                    if (n.name == "Dace") return n;
+                }
+                return null;
+            }
+        }
+
         /// <summary>Idle hostile figures (unparented "Hostile_*" roots) standing between two x positions.</summary>
         protected static int IdleHostilesBetween(float x0, float x1)
         {

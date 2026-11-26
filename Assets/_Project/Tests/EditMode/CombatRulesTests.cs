@@ -346,12 +346,52 @@ namespace Game.Tests
         public void EverySkill_HasAnActionClip()
         {
             var clips = new[] { "Strike", "Shove", "Swing", "Shoot" };
-            foreach (string unit in new[] { "Subject", "Guard", "Enforcer", "Sentry", "Warden" })
+            foreach (string unit in new[] { "Subject", "Guard", "Researcher", "Enforcer", "Sentry", "Warden" })
             {
                 foreach (SkillDef s in CombatPresets.Find(unit).Skills) CollectionAssert.Contains(clips, s.Anim, $"{unit} {s.Name}");
             }
             Assert.AreEqual("Shoot", CombatPresets.TaserShot.Anim);
             Assert.AreEqual("Swing", CombatPresets.Maul.Anim);
+        }
+
+        [Test]
+        public void Patch_HealsAnAlly_CappedAtMax_AndCantTargetEnemiesOrSelf()
+        {
+            CombatGrid g = MakeGrid();
+            CombatState s = Battle(g);
+            Unit me = s.AddUnit(CombatPresets.Subject, Team.Player, Floor(g, 2), leader: true);
+            Unit doc = s.AddUnit(CombatPresets.Researcher, Team.Player, Floor(g, 4));
+            Unit foe = s.AddUnit(CombatPresets.Enforcer, Team.Enemy, Floor(g, 6));
+            s.Start();
+            int patch = System.Array.IndexOf(CombatPresets.Researcher.Skills, CombatPresets.Patch);
+            Assert.AreEqual(0, CombatPresets.Researcher.Skills[0].TargetsAllies ? 1 : 0, "a damaging skill stays first");
+
+            CollectionAssert.AreEquivalent(new[] { me.Tile }, s.TargetOptions(doc, patch), "only allies, never self or enemies");
+            Assert.IsFalse(s.TryUseSkill(doc, patch, foe.Tile), "can't heal an enemy");
+            Assert.IsFalse(s.TryUseSkill(doc, patch, doc.Tile), "can't target self");
+
+            me.Hp = 3;
+            Assert.IsTrue(s.TryUseSkill(doc, patch, me.Tile));
+            Assert.AreEqual(6, me.Hp, "+3");
+            Assert.IsFalse(doc.SkillReady(patch), "on cooldown");
+            s.EndPlayerTurn();
+            s.EndPlayerTurn();
+            me.Hp = me.MaxHp - 1;
+            Assert.IsTrue(s.TryUseSkill(doc, patch, me.Tile));
+            Assert.AreEqual(me.MaxHp, me.Hp, "capped at max HP");
+        }
+
+        [Test]
+        public void StaticDart_IsTheResearchersAttack()
+        {
+            CombatGrid g = MakeGrid();
+            CombatState s = Battle(g);
+            s.AddUnit(CombatPresets.Subject, Team.Player, Floor(g, 0), leader: true);
+            Unit doc = s.AddUnit(CombatPresets.Researcher, Team.Player, Floor(g, 2));
+            Unit foe = s.AddUnit(CombatPresets.Enforcer, Team.Enemy, Floor(g, 5));
+            s.Start();
+            Assert.IsTrue(s.TryUseSkill(doc, 0, foe.Tile), "range 3 dart");
+            Assert.AreEqual(CombatPresets.Enforcer.MaxHp - 1, foe.Hp);
         }
 
         [Test]

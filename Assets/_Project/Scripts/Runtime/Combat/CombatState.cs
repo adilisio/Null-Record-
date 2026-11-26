@@ -66,6 +66,7 @@ namespace Game.Combat
         Damage,
         Knockback,
         Death,
+        Heal,
         Phase,
         Log,
     }
@@ -186,7 +187,9 @@ namespace Game.Combat
             SkillDef s = u.Def.Skills[skillIndex];
             foreach (Unit other in Units)
             {
-                if (other.Alive && other.Team != u.Team && InRange(u.Tile, s, other.Tile)) result.Add(other.Tile);
+                if (!other.Alive || other == u) continue;
+                bool wanted = s.TargetsAllies ? other.Team == u.Team : other.Team != u.Team;
+                if (wanted && InRange(u.Tile, s, other.Tile)) result.Add(other.Tile);
             }
             return result;
         }
@@ -208,8 +211,9 @@ namespace Game.Combat
         {
             if (Phase != Phase.Player || u == null || u.Team != Team.Player || !u.Alive || u.Acted || !u.SkillReady(skillIndex)) return false;
             Unit victim = UnitAt(target);
-            if (victim == null || victim.Team == u.Team) return false;
             SkillDef s = u.Def.Skills[skillIndex];
+            if (victim == null || victim == u) return false;
+            if (s.TargetsAllies ? victim.Team != u.Team : victim.Team == u.Team) return false;
             if (!InRange(u.Tile, s, target)) return false;
 
             Resolve(u, skillIndex, target);
@@ -251,6 +255,15 @@ namespace Game.Combat
             if (target.Col != attacker.Tile.Col) attacker.Facing = target.Col > attacker.Tile.Col ? 1 : -1;
 
             Unit victim = UnitAt(target);
+            if (s.TargetsAllies)
+            {
+                if (victim == null) return;
+                int before = victim.Hp;
+                victim.Hp = Mathf.Min(victim.MaxHp, victim.Hp + s.Heal);
+                Emit(new CombatEvent { Kind = CombatEventKind.Heal, Actor = attacker, Target = victim, Skill = s, Amount = victim.Hp - before, From = attacker.Tile, To = target });
+                Say($"{attacker.Name} uses {s.Name} on {victim.Name}: +{victim.Hp - before} HP.");
+                return;
+            }
             Emit(new CombatEvent { Kind = CombatEventKind.Attack, Actor = attacker, Target = victim, Skill = s, From = attacker.Tile, To = target });
             if (victim == null)
             {
@@ -412,7 +425,7 @@ namespace Game.Combat
                 int place = PlaceScore(opt.Key, opt.Value, threat);
                 for (int si = 0; si < e.Def.Skills.Length; si++)
                 {
-                    if (!e.SkillReady(si)) continue;
+                    if (!e.SkillReady(si) || e.Def.Skills[si].TargetsAllies) continue;
                     SkillDef s = e.Def.Skills[si];
                     foreach (Unit p in players)
                     {

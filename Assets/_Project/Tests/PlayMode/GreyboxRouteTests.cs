@@ -77,7 +77,7 @@ namespace Game.Tests
             yield return Until(() => _interactor.Current is Door, 1f, "door prompt");
             yield return Shot("08_door");
             yield return Tap(Key.E);
-            Door door = (Door)UnityEngine.Object.FindAnyObjectByType(typeof(Door));
+            Door door = GameObject.Find("Door_L2").GetComponent<Door>();
             Assert.IsTrue(door.IsOpen, "Door did not open with L2 keycard");
             yield return Wait(0.6f);
             Press(Key.D);
@@ -110,7 +110,7 @@ namespace Game.Tests
             _motor.Teleport(new Vector3(38.9f, 0.05f, 0f));
             yield return Until(() => _interactor.Current is Door, 1f, "door prompt");
             yield return Tap(Key.E);
-            Door door = (Door)UnityEngine.Object.FindAnyObjectByType(typeof(Door));
+            Door door = GameObject.Find("Door_L2").GetComponent<Door>();
             Assert.IsFalse(door.IsOpen, "Door opened without a keycard");
 
             Press(Key.D);

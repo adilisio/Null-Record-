@@ -16,7 +16,7 @@ namespace Game.Tests
         [UnityTest]
         public IEnumerator Records_LadderToLoft_PickUpSpoofer_ThenSpoofTheGrid()
         {
-            LaserGrid grid = Object.FindAnyObjectByType<LaserGrid>();
+            LaserGrid grid = GameObject.Find("LaserGrid_Servers")?.GetComponent<LaserGrid>();
             Assert.IsNotNull(grid, "LaserGrid_Servers missing (rebuild scenes)");
 
             // The grid blocks without the spoofer.

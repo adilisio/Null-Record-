@@ -652,7 +652,7 @@ namespace Game.Combat
                 {
                     SkillDef s = Selected.Def.Skills[i];
                     string cd = Selected.Cooldowns[i] > 0 ? $" ({Selected.Cooldowns[i]})" : "";
-                    skills += $"   {s.Name} {s.Damage}{(s.Knockback > 0 ? $"+push{s.Knockback}" : "")}{cd}";
+                    skills += s.TargetsAllies ? $"   {s.Name} heal+{s.Heal}{cd}" : $"   {s.Name} {s.Damage}{(s.Knockback > 0 ? $"+push{s.Knockback}" : "")}{cd}";
                 }
                 string hazard = Cursor != null && Cursor.Hazard > 0 ? $"   [cursor: HAZARD, {Cursor.Hazard} damage if you stop here]" : "";
                 _help.text = $"{Selected.Name}: {action}{(Selected.Acted ? " / acted" : "")}  |{skills}{hazard}\n" +
@@ -684,6 +684,9 @@ namespace Game.Combat
                     case CombatEventKind.Attack:
                         GameAudio.Play(ev.Skill.Ranged ? SoundId.Zap : SoundId.Swing, ev.From.World + Vector3.up);
                         yield return AnimateAttack(ev);
+                        break;
+                    case CombatEventKind.Heal:
+                        yield return AnimateHeal(ev);
                         break;
                     case CombatEventKind.Damage:
                         if (ViewOf(ev.Target) != null) GameAudio.Play(SoundId.Hit, ViewOf(ev.Target).Root.position + Vector3.up);
@@ -764,6 +767,30 @@ namespace Game.Combat
                 Vector3 lunge = Vector3.Lerp(home, ev.To.World, 0.35f);
                 yield return Slide(v, lunge, 0.08f);
                 yield return Slide(v, home, 0.1f);
+            }
+        }
+
+        private IEnumerator AnimateHeal(CombatEvent ev)
+        {
+            UnitView healer = ViewOf(ev.Actor);
+            UnitView v = ViewOf(ev.Target);
+            if (healer != null)
+            {
+                if (ev.To.Col != ev.From.Col) healer.SetFacing(ev.To.Col > ev.From.Col ? 1 : -1);
+                healer.Root.GetComponentInChildren<CharacterAnimator>()?.Play(ev.Skill.Anim, 0.5f);
+            }
+            GameAudio.Play(SoundId.Pickup, (v != null ? v.Root.position : ev.To.World) + Vector3.up);
+            yield return new WaitForSeconds(0.2f);
+            if (v == null) yield break;
+            v.Refresh(false);
+            TextMesh pop = CombatVisuals.Text(null, "HealPop", v.Root.position + new Vector3(0.4f, 2f, -0.8f), 0.5f, new Color(0.35f, 1f, 0.5f));
+            pop.text = $"+{ev.Amount}";
+            StartCoroutine(FloatAway(pop));
+            foreach (Renderer r in v.Renderers) CombatVisuals.Tint(r, new Color(0.4f, 1f, 0.55f), true);
+            yield return new WaitForSeconds(0.2f);
+            foreach (Renderer r in v.Renderers)
+            {
+                if (r != null) CombatVisuals.ClearTint(r);
             }
         }
 

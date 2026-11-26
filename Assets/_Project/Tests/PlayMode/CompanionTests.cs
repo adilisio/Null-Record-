@@ -17,7 +17,7 @@ namespace Game.Tests
 
         private IEnumerator FindDace()
         {
-            _dace = Object.FindAnyObjectByType<CompanionNPC>();
+            _dace = DaceNpc;
             Assert.IsNotNull(_dace, "Dace missing from the scene (rebuild the greybox level)");
             _follower = _dace.GetComponent<CompanionFollower>();
             _ui = DialogueUI.Instance;

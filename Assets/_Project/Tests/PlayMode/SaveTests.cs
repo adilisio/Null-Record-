@@ -63,7 +63,7 @@ namespace Game.Tests
         [UnityTest]
         public IEnumerator DoorAndCompanion_SurviveAReload()
         {
-            Object.FindAnyObjectByType<CompanionNPC>().Recruit(_interactor);
+            DaceNpc.Recruit(_interactor);
             _inventory.GrantKeycard(2);
             _motor.Teleport(new Vector3(38.9f, 0.05f, 0f));
             yield return Until(() => _interactor.Current is Door, 2f, "door prompt");
@@ -73,12 +73,12 @@ namespace Game.Tests
             Assert.AreEqual("Guard", SaveSystem.Read().companion);
 
             yield return LoadScene();
-            Door door = Object.FindAnyObjectByType<Door>();
+            Door door = GameObject.Find("Door_L2").GetComponent<Door>();
             Assert.IsTrue(door.IsOpen, "door stays open");
             Assert.AreEqual(2, _inventory.KeycardLevel);
             CompanionFollower dace = CompanionFollower.Active;
             Assert.IsNotNull(dace, "Dace is back in the party");
-            Assert.IsTrue(Object.FindAnyObjectByType<CompanionNPC>().Recruited);
+            Assert.IsTrue(DaceNpc.Recruited);
             Assert.That(Mathf.Abs(dace.transform.position.x - X), Is.LessThan(2.5f), "Dace starts beside the player");
 
             Press(Key.D);

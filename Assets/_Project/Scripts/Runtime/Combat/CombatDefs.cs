@@ -22,6 +22,10 @@ namespace Game.Combat
         public int Cooldown;
         /// <summary>Character action clip played when it's used: Strike, Shove, Swing or Shoot.</summary>
         public string Anim = "Strike";
+        /// <summary>Support skill: targets an ally (not self) instead of an enemy.</summary>
+        public bool TargetsAllies;
+        /// <summary>HP restored to the ally (support skills).</summary>
+        public int Heal;
     }
 
     public sealed class UnitDef
@@ -61,6 +65,8 @@ namespace Game.Combat
         public static readonly SkillDef ShieldBash = new SkillDef { Name = "Shield Bash", Damage = 1, Knockback = 2, Cooldown = 2, Anim = "Shove" };
         public static readonly SkillDef StunProd = new SkillDef { Name = "Stun Prod", Damage = 3, Anim = "Swing" };
         public static readonly SkillDef Maul = new SkillDef { Name = "Maul", Damage = 3, Knockback = 1, Anim = "Swing" };
+        public static readonly SkillDef StaticDart = new SkillDef { Name = "Static Dart", Ranged = true, MinRange = 2, MaxRange = 4, Damage = 1, Anim = "Shoot" };
+        public static readonly SkillDef Patch = new SkillDef { Name = "Patch", Ranged = true, MinRange = 1, MaxRange = 3, Heal = 3, Cooldown = 2, TargetsAllies = true, Anim = "Shove" };
         public static readonly SkillDef TaserShot = new SkillDef { Name = "Taser Shot", Ranged = true, MinRange = 2, MaxRange = 5, Damage = 2, Anim = "Shoot" };
 
         /// <summary>The protagonist. Losing them loses the encounter.</summary>
@@ -68,6 +74,9 @@ namespace Game.Combat
 
         /// <summary>Companion 1, Dace (frontline). Roster key "Guard".</summary>
         public static readonly UnitDef Guard = new UnitDef { Name = "Dace", MaxHp = 12, Move = 3, Armor = 1, Skills = new[] { Baton, ShieldBash } };
+
+        /// <summary>Companion 2 (support), roster key "Researcher". Working role label; name and writing are the owner's call.</summary>
+        public static readonly UnitDef Researcher = new UnitDef { Name = "Researcher", MaxHp = 8, Move = 4, Skills = new[] { StaticDart, Patch } };
 
         public static readonly UnitDef Enforcer = new UnitDef { Name = "Enforcer", MaxHp = 6, Move = 3, Skills = new[] { StunProd } };
         public static readonly UnitDef Sentry = new UnitDef { Name = "Sentry", MaxHp = 4, Move = 2, Skills = new[] { TaserShot } };
@@ -81,6 +90,7 @@ namespace Game.Combat
             {
                 case "Subject": return Subject;
                 case "Guard": return Guard;
+                case "Researcher": return Researcher;
                 case "Enforcer": return Enforcer;
                 case "Sentry": return Sentry;
                 case "Warden": return Warden;
