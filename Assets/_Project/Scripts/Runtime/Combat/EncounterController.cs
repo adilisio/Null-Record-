@@ -37,6 +37,14 @@ namespace Game.Combat
             public Vector2 position;
         }
 
+        /// <summary>Character model for a unit name (roster key); units without one use the capsule figure.</summary>
+        [Serializable]
+        public struct UnitModel
+        {
+            public string unit;
+            public GameObject prefab;
+        }
+
         [Header("Space")]
         [Tooltip("Side-on area (world X/Y) that becomes the grid.")]
         [SerializeField] private Rect area = new Rect(0f, 0f, 10f, 6f);
@@ -59,6 +67,7 @@ namespace Game.Combat
         [SerializeField] private int hazardDamage = CombatRules.HazardDamage;
 
         [Header("Presentation")]
+        [SerializeField] private UnitModel[] unitModels = Array.Empty<UnitModel>();
         [SerializeField] private Material tileMaterial;
         [SerializeField] private Material enemyMaterial;
         [SerializeField] private Material visorMaterial;
@@ -113,6 +122,17 @@ namespace Game.Combat
             marker = zoneMarker;
         }
 
+        public void SetUnitModels(params UnitModel[] models) => unitModels = models ?? Array.Empty<UnitModel>();
+
+        private GameObject ModelFor(string unit)
+        {
+            foreach (UnitModel m in unitModels)
+            {
+                if (m.unit == unit) return m.prefab;
+            }
+            return null;
+        }
+
         public void SetHazards(params Vector2[] points) => hazards = points ?? Array.Empty<Vector2>();
 
         public IReadOnlyList<Vector2> Hazards => hazards;
@@ -149,7 +169,7 @@ namespace Game.Combat
             foreach (EnemySpawn s in enemies)
             {
                 Vector3 feet = GroundAt(s.position);
-                _idleEnemies.Add(CombatVisuals.Figure($"Hostile_{s.unit}", enemyMaterial, visorMaterial, feet, -1));
+                _idleEnemies.Add(CombatVisuals.Figure($"Hostile_{s.unit}", enemyMaterial, visorMaterial, feet, -1, ModelFor(s.unit)));
             }
         }
 

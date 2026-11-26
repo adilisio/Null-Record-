@@ -106,12 +106,19 @@ namespace Game.Audio
                 var clips = new AudioClip[n];
                 for (int v = 0; v < n; v++)
                 {
-                    clips[v] = Synth.CreateClip(id, v);
+                    // Recorded clip if one is mapped (Resources/Sounds/<SoundId>_<variant>), else the synthesised placeholder.
+                    clips[v] = Recorded(id, v) ?? Synth.CreateClip(id, v);
                     clips[v].hideFlags = HideFlags.DontUnloadUnusedAsset; // survive scene changes
                 }
                 Library[id] = clips;
             }
         }
+
+        /// <summary>The recorded clip mapped to this sound, or null. Recorded sounds are Kenney CC0 packs (see ThirdParty/Kenney/Sounds).</summary>
+        public static AudioClip Recorded(SoundId id, int variant) => Resources.Load<AudioClip>($"Sounds/{id}_{variant}");
+
+        /// <summary>True when this sound plays a recorded file rather than the synth.</summary>
+        public static bool IsRecorded(SoundId id, int variant = 0) => Recorded(id, variant) != null;
 
         public static AudioClip Clip(SoundId id, int variant = 0)
         {

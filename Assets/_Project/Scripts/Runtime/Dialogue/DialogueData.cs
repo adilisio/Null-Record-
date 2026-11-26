@@ -87,7 +87,10 @@ namespace Game.Dialogue
         public string hideIfFlag;
     }
 
-    /// <summary>Display info per speaker key. Portraits are placeholders (colour + initial) until art exists.</summary>
+    /// <summary>
+    /// Display info per speaker key. A portrait sprite at Resources/Portraits/&lt;key&gt; (rendered from the
+    /// character model by the editor tools) is used when present; otherwise the colour and an initial.
+    /// </summary>
     public static class Speakers
     {
         public struct Info
@@ -95,6 +98,8 @@ namespace Game.Dialogue
             public string Name;
             public Color Color;
         }
+
+        public static Sprite Portrait(string key) => string.IsNullOrEmpty(key) ? null : Resources.Load<Sprite>($"Portraits/{key}");
 
         public static Info Get(string key)
         {

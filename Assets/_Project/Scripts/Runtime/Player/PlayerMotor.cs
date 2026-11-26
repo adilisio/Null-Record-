@@ -66,7 +66,8 @@ namespace Game.Player
         private Vector3 _ledgeStandPos;
         private Vector3 _climbFrom;
         private float _climbT;
-        private float _bodyWidth = 1f;
+        private Vector3 _bodyScale = Vector3.one;
+        private Vector3 _bodyPos;
 
         public MotorState State { get; private set; } = MotorState.Airborne;
         public int Facing { get; private set; } = 1;
@@ -90,7 +91,11 @@ namespace Game.Player
             // Default 0.001 drops tiny per-frame moves at high frame rates (player crawls, jumps fail).
             _cc.minMoveDistance = 0f;
             _input = GetComponent<PlayerInputReader>();
-            if (body != null) _bodyWidth = body.localScale.x;
+            if (body != null)
+            {
+                _bodyScale = body.localScale;
+                _bodyPos = body.localPosition;
+            }
             ApplyHeight(standHeight);
             transform.rotation = Quaternion.Euler(0f, 90f, 0f);
         }
@@ -218,9 +223,10 @@ namespace Game.Player
             _cc.center = new Vector3(0f, h * 0.5f, 0f);
             if (body != null)
             {
-                // Unity's capsule primitive is 2 units tall; scale it to match.
-                body.localScale = new Vector3(_bodyWidth, h * 0.5f, _bodyWidth);
-                body.localPosition = new Vector3(0f, h * 0.5f, 0f);
+                // Squash the body by the height ratio. Works for a centred capsule and for a model with its pivot at the feet.
+                float k = h / standHeight;
+                body.localScale = new Vector3(_bodyScale.x, _bodyScale.y * k, _bodyScale.z);
+                body.localPosition = new Vector3(_bodyPos.x, _bodyPos.y * k, _bodyPos.z);
             }
         }
 

@@ -130,7 +130,7 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
 - Readable terminals and logs, which are the main lore channel.
 - Companion banter is triggered by location.
 - **Tooling (prototype):** each conversation is a JSON file in `Assets/_Project/Dialogue`, made of nodes with a speaker, a line, a `next` node or choices, and flags it sets. Choices can depend on flags (`requireFlag`, `hideIfFlag`), and EditMode tests check every file for broken links. That's enough to write in for now; Ink is still an option if branching outgrows it.
-- **Presentation (prototype):** a bottom text box with a speaker portrait (a placeholder colour block with an initial until there's art), name, line and up to 4 choices. Banter shows as a small strip at the top that doesn't stop play.
+- **Presentation (prototype):** a bottom text box with a speaker portrait (rendered from the speaker's character model at build time; speakers without a model, like the PA, keep a colour block with an initial), name, line and up to 4 choices. Banter shows as a small strip at the top that doesn't stop play.
 
 ### Companion 1: Dace (prototype)
 - Dace waits in Maintenance next to the Level 2 keycard they dropped. Talking to them runs a short recruit conversation with one tone choice (ask who, ask what happened, or stay silent), then an offer to come along. Saying "Not yet" leaves them there, and they'll ask again next time.
@@ -152,6 +152,15 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
   - **Security:** dim cold work lights, a red emergency strip, and a rotating red alarm beacon.
   - **Light budget:** only spot lights cast shadows (point-light shadows are expensive).
   - **Not in yet:** volumetric light shafts, emissive signage art, and baked lighting.
+- **Third-party art, first pass (2026-11-26):** Kenney CC0 packs; see `CREDITS.md`.
+  - **Characters:** one rigged Kenney mesh with idle, run and jump animations, scaled to about 1.6 m. Each character has its own skin, painted by `Tools/Art/make_skins.py`. These looks are placeholder picks, so the character calls are still the owner's:
+    - **Subject:** pale jumpsuit with cyan piping and a blank ID tag.
+    - **Dace:** navy security uniform with an orange armband.
+    - **Enforcer and Sentry:** full helmets with red visors, so no faces. The Enforcer wears dark red armour; the Sentry is gunmetal with a red band.
+  - `CharacterAnimator` drives the animation from actual movement, so it works for the player, the follower and combat units alike. Crouching squashes the model; there's no crouch animation yet.
+  - **Set dressing:** Space Station Kit panels along the back wall, plus props per room. It's visual only, with no colliders and nothing on the play lane. The jump crate and the combat cover keep their greybox colliders under kit meshes.
+  - **Portraits:** each speaking character's head is rendered from their model into `Resources/Portraits/<speaker>.png` when the scenes are built.
+  - **Recorded sounds:** Kenney impact and sci-fi sounds replace the synth for footsteps, ladder clanks, hits, hurt, knockback, unit down, landing, door open and the zap. Every other sound, and the music, is still synthesised. Mix levels weren't retuned for the recordings.
   - **Lighting screenshots:** **Null Record → Capture Lighting Shots** renders each room to `Screenshots/lighting_*.png` without entering Play mode.
 - **Camera:** an orthographic or narrow-FOV perspective side view with a little depth for parallax layers. During combat it pulls back slightly and shows a grid overlay.
 - **Audio:** industrial and percussive: machine hum, clanks, pneumatic hiss and rhythmic hits that build tension in combat. Each region has an ambient bed.
@@ -186,9 +195,9 @@ One region (Intake / Holding), polished enough to show:
 - [x] Side-on character controller (run, jump, crouch, ledge-climb, ladders, interact)
 - [ ] Camera rig with follow, room bounds and parallax
 - [ ] 1 hacking tool (keycard tier 1 → tier 2) + 1 environmental hazard (steam / thermal lining)
-- [~] Companion 1: recruit scene, follow AI, banter (prototype: Dace; writing is placeholder, no art)
+- [~] Companion 1: recruit scene, follow AI, banter (prototype: Dace; writing is placeholder; Kenney-based model with a placeholder skin)
 - [~] 1 optional encounter: level → grid transition, 2–3 enemy types, win and lose flow, rewards (playable prototype in Security; scrap, log and XP rewards plus a hazard tile; no tool reward yet)
-- [~] Dialogue system with portraits and choices (JSON, placeholder portraits)
+- [~] Dialogue system with portraits and choices (JSON; portraits rendered from the models)
 - [~] Autosave and room transitions (autosave, room-entry respawn, title/Continue and pause menus done; single save slot)
 - [~] Lighting pass and audio ambience for the region (lighting and placeholder audio done; a synthesised music bed done; real sound assets still to come)
 

@@ -41,6 +41,7 @@ namespace Game.EditorTools
         [MenuItem("Null Record/Build All Scenes", priority = 0)]
         public static void BuildAll()
         {
+            CharacterArt.Setup();
             MainMenuBuilder.Build();
             Build();
             EditorBuildSettings.scenes = new[]
@@ -65,6 +66,7 @@ namespace Game.EditorTools
             BuildRoomA(level);
             BuildRoomB(level);
             BuildRoomC(level);
+            BuildDressing(level);
             BuildCameraZones(level);
 
             GameObject player = BuildPlayer(new Vector3(1f, 0.05f, 0f));
@@ -232,6 +234,9 @@ namespace Game.EditorTools
             EncounterController enc = encGo.AddComponent<EncounterController>();
             enc.SetInteractionPoint(new Vector3(0f, 0.9f, 0f), 1.2f);
             enc.SetHazards(new Vector2(50.5f, 0f));
+            enc.SetUnitModels(
+                new EncounterController.UnitModel { unit = "Enforcer", prefab = CharacterArt.Prefab("Enforcer") },
+                new EncounterController.UnitModel { unit = "Sentry", prefab = CharacterArt.Prefab("Sentry") });
             enc.Configure(
                 new Rect(42f, -0.2f, 14f, 6.2f),
                 new[]
@@ -276,22 +281,8 @@ namespace Game.EditorTools
             cc.slopeLimit = 50f;
             cc.skinWidth = 0.03f;
 
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body";
-            Object.DestroyImmediate(body.GetComponent<Collider>());
-            body.transform.SetParent(player.transform, false);
-            body.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
-            body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
-            body.GetComponent<Renderer>().sharedMaterial = Mat("Player", new Color(0.85f, 0.85f, 0.8f));
-
-            // Visor shows which way the player faces (local +Z is turned toward ±X by the motor).
-            GameObject visor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            visor.name = "Visor";
-            Object.DestroyImmediate(visor.GetComponent<Collider>());
-            visor.transform.SetParent(player.transform, false);
-            visor.transform.localPosition = new Vector3(0f, 1.5f, 0.3f);
-            visor.transform.localScale = new Vector3(0.4f, 0.12f, 0.12f);
-            visor.GetComponent<Renderer>().sharedMaterial = Mat("Visor", new Color(0.1f, 0.8f, 0.9f), emission: new Color(0.1f, 0.8f, 0.9f) * 2f);
+            // Character model (Kenney CC0 base, our skin); the motor turns local +Z toward the facing direction.
+            GameObject body = CharacterBody(player.transform, "Subject", new Color(0.85f, 0.85f, 0.8f), new Color(0.1f, 0.8f, 0.9f));
 
             PlayerInputReader input = player.AddComponent<PlayerInputReader>();
             InputActionAsset actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputActionsPath);
@@ -307,6 +298,39 @@ namespace Game.EditorTools
             return player;
         }
 
+        /// <summary>
+        /// Adds the character prefab as "Body" (pivot at the feet). Falls back to the old capsule and visor
+        /// if the prefab hasn't been built.
+        /// </summary>
+        private static GameObject CharacterBody(Transform parent, string character, Color capsule, Color visorColor)
+        {
+            GameObject prefab = CharacterArt.Prefab(character);
+            if (prefab != null)
+            {
+                var model = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+                model.name = "Body";
+                model.transform.localPosition = Vector3.zero;
+                model.transform.localRotation = Quaternion.identity;
+                return model;
+            }
+
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.name = "Body";
+            Object.DestroyImmediate(body.GetComponent<Collider>());
+            body.transform.SetParent(parent, false);
+            body.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
+            body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+            body.GetComponent<Renderer>().sharedMaterial = Mat(character, capsule);
+            GameObject visor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            visor.name = "Visor";
+            Object.DestroyImmediate(visor.GetComponent<Collider>());
+            visor.transform.SetParent(parent, false);
+            visor.transform.localPosition = new Vector3(0f, 1.5f, 0.3f);
+            visor.transform.localScale = new Vector3(0.4f, 0.12f, 0.12f);
+            visor.GetComponent<Renderer>().sharedMaterial = Mat(character + "Visor", visorColor, emission: visorColor * 2f);
+            return body;
+        }
+
         private static void BuildCompanion(Transform level)
         {
             Transform group = Group(level, "Companions");
@@ -319,20 +343,7 @@ namespace Game.EditorTools
             dace.transform.SetParent(group, false);
             dace.transform.position = new Vector3(37.6f, 0f, 0f);
             dace.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body";
-            Object.DestroyImmediate(body.GetComponent<Collider>());
-            body.transform.SetParent(dace.transform, false);
-            body.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
-            body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
-            body.GetComponent<Renderer>().sharedMaterial = Mat("Companion", new Color(0.32f, 0.42f, 0.55f));
-            GameObject visor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            visor.name = "Visor";
-            Object.DestroyImmediate(visor.GetComponent<Collider>());
-            visor.transform.SetParent(dace.transform, false);
-            visor.transform.localPosition = new Vector3(0f, 1.5f, 0.3f);
-            visor.transform.localScale = new Vector3(0.4f, 0.12f, 0.12f);
-            visor.GetComponent<Renderer>().sharedMaterial = Mat("CompanionVisor", new Color(1f, 0.75f, 0.3f), emission: new Color(1f, 0.6f, 0.2f) * 1.5f);
+            CharacterBody(dace.transform, "Dace", new Color(0.32f, 0.42f, 0.55f), new Color(1f, 0.75f, 0.3f));
 
             dace.AddComponent<CompanionFollower>();
             CompanionNPC npc = dace.AddComponent<CompanionNPC>();

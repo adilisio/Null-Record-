@@ -61,11 +61,17 @@ namespace Game.Combat
         }
 
         /// <summary>A collider-free capsule figure with a visor, matching the player's greybox look.</summary>
-        public static GameObject Figure(string name, Material body, Material visor, Vector3 feet, int facing)
+        public static GameObject Figure(string name, Material body, Material visor, Vector3 feet, int facing, GameObject model = null)
         {
             var root = new GameObject(name);
             root.transform.position = feet;
             root.transform.rotation = Quaternion.Euler(0f, facing >= 0 ? 90f : -90f, 0f);
+            if (model != null)
+            {
+                GameObject m = Object.Instantiate(model, root.transform, false);
+                m.name = "Body";
+                return root;
+            }
 
             GameObject b = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             b.name = "Body";

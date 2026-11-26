@@ -133,7 +133,9 @@ namespace Game.Dialogue
             if (IsOpen) return;
             AttachCamera();
             Speakers.Info info = Speakers.Get(speakerKey);
-            _barkPortrait.color = info.Color;
+            Sprite face = Speakers.Portrait(speakerKey);
+            _barkPortrait.sprite = face;
+            _barkPortrait.color = face != null ? Color.white : info.Color;
             _barkText.text = $"<b>{info.Name}</b>  {text}";
             _bark.SetActive(true);
             GameAudio.Play(SoundId.DialogueBlip);
@@ -196,8 +198,10 @@ namespace Game.Dialogue
         {
             DialogueNode n = _runner.Current;
             Speakers.Info info = Speakers.Get(n.speaker);
-            _portrait.color = info.Color;
-            _portraitInitial.text = string.IsNullOrEmpty(info.Name) ? "" : info.Name.Substring(0, 1);
+            Sprite face = Speakers.Portrait(n.speaker);
+            _portrait.sprite = face;
+            _portrait.color = face != null ? Color.white : info.Color;
+            _portraitInitial.text = face != null || string.IsNullOrEmpty(info.Name) ? "" : info.Name.Substring(0, 1);
             _name.text = info.Name;
             _body.text = n.text;
 
