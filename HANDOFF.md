@@ -1,112 +1,155 @@
 # Null Record: handoff
 
-_Last updated 2026-11-26. Read this first in a new session, then `CLAUDE.md` (conventions) and `Docs/GDD.md` (design)._
+_Last updated 2026-11-26, end of a long session. A new session should read this first, then `CLAUDE.md` (conventions) and `Docs/GDD.md` (design, and every first-pass decision with its reasons)._
 
-**Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls).
-**Repo:** https://github.com/adilisio/Null-Record- (public). `main` holds the source; `gh-pages` holds only the web build.
+- **Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls). It's live and current as of commit `40c022e`.
+- **Repo:** https://github.com/adilisio/Null-Record- (public). `main` holds the source and everything is pushed; `gh-pages` holds only the web build.
+- **Status:** 152 automated tests passing (95 EditMode, 57 PlayMode). The working tree is clean.
 
 ---
 
-## 1. How the owner works: remote, hands-off
+## 1. How the owner works
 
-- **They're almost always remote,** using Claude Code's Remote Control from another device. They usually **can't touch the PC**.
-  - Any Windows prompt that needs a click on the PC will stall: admin (UAC) prompts, computer-use approval dialogs, sign-in windows.
-  - Don't plan work that needs one. If something truly does, say so plainly and offer an alternative.
-- **They may not see the app's next-step box or buttons.** So end every turn with a plain-text summary. Any question goes in the message itself, with numbered choices.
-- **They want autonomy.** Their words: "don't ask permission in this session", "handle it yourself", "find a way to make it work".
-  - Make reasonable calls, record them in `Docs/GDD.md` (marked as first-pass or placeholder), and keep going.
+- **Remote and hands-off.**
+  - They're almost always on Claude Code's Remote Control from another device and can't click anything on the PC. Admin (UAC) prompts, computer-use approvals and sign-in windows all stall, so never plan work that needs one.
+  - They may not see the app's next-step box or buttons. End every turn with a plain-text summary, with any question in the message itself as numbered choices.
+- **Autonomy.**
+  - Their words: "don't ask permission", "handle it yourself". Make reasonable calls, record them in `Docs/GDD.md` marked first-pass or placeholder, and keep going.
   - Ask only when the choice is really theirs: story and characters, publishing somewhere new, or spending money.
-  - Safety limits still apply. A tool once blocked an attempt to skip a Windows admin prompt; that's correct, so don't route around such blocks.
-- **They follow along through screenshots and files.**
-  - Send progress images and builds with SendUserFile: test screenshots from `Screenshots/`, WAVs from `Screenshots/audio/`.
-  - Give short progress notes during long jobs. They once asked "Test running 9 hours?" after a run hung. **Always put a time limit on Unity batch runs** (the scripts below do).
-- They pick the next feature from 2 or 3 options at the end of each chunk of work. Commit after each feature; push when they ask (they've asked before, so pushing finished work to `main` is expected).
+  - They gave blanket OK to download free CC0 assets ("Don't ask for permission"); Kenney packs came in that way.
+  - Safety blocks still apply. A scripted fetch of Kenney's download API was blocked; using the site's own Download button in the built-in browser worked, so don't route around blocks.
+- **Git:**
+  - Work and commit **straight on `main`**, with no feature branches ("Just work from main").
+  - Commit after each feature or slice. Pushing finished work and republishing the web build is expected.
+  - End commit messages with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- **They follow along through files.** Send screenshots (`Screenshots/*.png`) and WAVs with SendUserFile, and give short progress notes during long jobs. **Always put a time limit on Unity batch runs**; once a run hung for hours.
+- **The end-of-chunk rhythm:** they pick the next feature from 2 or 3 numbered options. They also like a second opinion: "Ask fable to advise" meant spawning an Agent with `model: "fable"` to review the project. That review drove the last polish pass (section 6).
 
-## 2. Machine and environment quirks
+## 2. Machine and environment
 
-- **Windows 11.** The repo is at `C:\Projects\new-unity-game`. Unity is **6000.6.7f1**, at `C:\Program Files\Unity\Hub\Editor\6000.6.7f1` (read-only without admin).
-- **Licensing:**
-  - The Microsoft Store Unity Hub is stuck "currently updating" and won't launch.
-  - A copy of it runs unpackaged from `%LOCALAPPDATA%\UnityHubPortable\Unity Hub.exe` and carries the owner's sign-in (Personal license).
-  - **Start it before any Unity batch run.** It may already be running.
-  - Check sign-in with `%LOCALAPPDATA%\UnityHubPortable\unity.exe auth status`.
-- **Unity CLI:** `%LOCALAPPDATA%\UnityHubPortable\unity.exe` handles editors, modules and auth. `install`/`install-modules` need admin for the editor in Program Files.
+- **Machine and editor:** Windows 11. The repo is at `C:\Projects\new-unity-game`. Unity is **6000.6.7f1**, at `C:\Program Files\Unity\Hub\Editor\6000.6.7f1` (read-only without admin).
+- **Licensing:** the Store Unity Hub is broken. **Start the unpackaged Hub before any Unity batch run:** `%LOCALAPPDATA%\UnityHubPortable\Unity Hub.exe`. It may already be running; check sign-in with `%LOCALAPPDATA%\UnityHubPortable\unity.exe auth status`. The "Access token is unavailable" line in logs is harmless noise.
 - **Build support:**
-  - Installed: **WebGL** and Windows.
-  - **Android isn't installed**; adding it needs an admin prompt at the PC.
-  - A 15 GB copy of the editor, made while trying, sits at `%LOCALAPPDATA%\UnityEditors\6000.6.7f1-android`. It has no Android yet and can be deleted.
-  - The owner chose "web version is enough" for now. If they later want an APK: install "Android Build Support" for 6000.6.7f1 via Unity Hub at the PC, then run **Null Record → Build → Android APK** (`Game.EditorTools.Builds.Android`).
-- **GitHub:** the `gh` CLI is signed in as `adilisio` with repo scope. Commits use the noreply email.
+  - WebGL and Windows only.
+  - Android needs an admin install at the PC, and the owner chose web-only for now.
+  - A spare 15 GB editor copy at `%LOCALAPPDATA%\UnityEditors\6000.6.7f1-android` can be deleted.
+- **Tools:**
+  - The `gh` CLI is signed in as `adilisio`.
+  - Python 3 with PIL is available (used by `Tools/Art/make_skins.py`).
+  - Git LFS handles binaries (FBX, PNG, OGG).
 
-## 3. Daily workflow
+## 3. Workflow
 
-- **Compile check (fast, no Unity):** `sh Tools/CompileCheck/check.sh`. Run it after every script change.
-- **Full verification** (about 6–8 min; builds scenes, lighting shots, WAVs, then EditMode and PlayMode tests):
-  `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 test`
-  - Results go to `Logs/batch/{edit,play}.xml`; screenshots go to `Screenshots/`.
-  - Current status: **152 tests passing** (95 EditMode, 57 PlayMode).
-- **Publish the web build:** run `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 web` (about 2 min after the first build), then `sh Tools/publish-web.sh`. Then check the live URL in the built-in browser.
-- **Scenes are generated.** Build All also rebuilds the character prefabs, skin materials and portraits (`CharacterArt`); rerun `python Tools/Art/make_skins.py` first if you change the skins.
-- **Scenes (detail):** `MainMenu.unity` and `Greybox_Intake.unity` are rebuilt by **Null Record → Build All Scenes**, so edit `MainMenuBuilder.cs` and `GreyboxLevelBuilder*.cs`, never the `.unity` files.
-- **Menus, HUD, touch controls and the dialogue box** are built in code on Screen Space - Camera canvases, so they appear in test screenshots.
-- **Headless test gotchas:**
-  - Tests run at 60 fps (the editor runs at thousands of fps otherwise).
-  - Use unscaled time for waits.
-  - `WaitForEndOfFrame` never fires in batch mode.
-  - Check for audio by counters, not by output.
-  - Tests use a scratch save folder.
+| Task | Command | Notes |
+|---|---|---|
+| Compile check (fast, no Unity) | `sh Tools/CompileCheck/check.sh` | After every script change. Covers Runtime and Editor, **not test assemblies** |
+| Full verification | `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 test` | About 8 min. Rebuilds the scenes, then runs the lighting shots, WAV export, and EditMode and PlayMode tests. Results go to `Logs/batch/{edit,play}.xml`; screenshots go to `Screenshots/` |
+| One suite only | `Unity.exe -batchmode -projectPath … -runTests -testPlatform PlayMode -testResults Logs/batch/play.xml` | Wrap in `Start-Process` + `WaitForExit(540000)`. Fine when only runtime code or tests changed, since the scenes don't need a rebuild |
+| Publish to the web | `unity-batch.ps1 web`, then `sh Tools/publish-web.sh` | About 2–4 min. Then wait for `gh api repos/adilisio/Null-Record-/pages/builds/latest --jq .status` to say `built`, and check the live URL in the built-in browser (Enter on the title starts New Game; clicks don't always register) |
+
+**Hard-won rules:**
+- **Scenes are generated.**
+  - **Null Record → Build All Scenes** (run by both batch jobs) rebuilds `MainMenu.unity` and `Greybox_Intake.unity`.
+  - It also rebuilds the character prefabs, skins and portraits (`CharacterArt`) and the sound gains (`SoundTuning`).
+  - Edit the builders (`GreyboxLevelBuilder*.cs`, `MainMenuBuilder.cs`), never the `.unity` files. Rerun `python Tools/Art/make_skins.py` first if skins change.
+- **Commit the scenes after a test run** that changed a builder.
+- **After a `web` run, discard the churn with `git checkout -- Assets`.** The rebuilt scenes and assets only reshuffle IDs then.
+- **Don't edit live files during a batch run.** Each step (scenes, shots, wav, edit, play) is a separate Unity launch that recompiles, so mid-run edits leak in. Draft in the scratchpad and apply afterwards.
+- **Apply big edits with Python patch files written via the Write tool.** Long inline heredocs in the Bash tool sometimes fail with "unexpected EOF". The patch style used all session is assert-the-anchor-exists, then replace once, keeping each file's CRLF or LF.
+- **Waiting on runs:** run the batch job in the background, and use a Monitor `until grep …` loop on its output to be woken when it finishes.
+- **Test gotchas:**
+  - Tests run at 60 fps; use unscaled time for waits. `WaitForEndOfFrame` never fires in batch mode.
+  - Check audio by counters, not output. Tests use a scratch save folder.
+  - **Find scene objects by name**, because the level has several encounters, companions and gates: `SecurityEncounter`, `DaceNpc` and `IdleHostilesBetween` in `GreyboxTestBase`.
+  - After a test teleport, give the camera about 1.5 s before taking a screenshot.
+  - `TouchControls.ForceVisible` shows the touch UI. A simulated touch must call `TouchControls.ResetTouchSeen()` afterwards.
+- **Editor-mode lighting shots** (`lighting_*.png`) show the Subject and the panel edges in odd palette colours. PlayMode captures and the game render correctly, so judge looks from PlayMode shots.
 
 ## 4. What exists
 
-All of it is greybox. "Placeholder" means it's meant to be replaced.
+Everything below is greybox plus CC0 placeholder art. "Placeholder" means it's meant to be replaced.
+
+**The route (one scene).**
+
+| Room (x range) | What happens |
+|---|---|
+| A Holding (−2–20) | Spawn. Jump crate, ledge-climb block |
+| B Maintenance (20–40) | Ladder to a catwalk (Thermal Lining), the steam vent it protects against, the L2 keycard, **Dace** (companion 1) |
+| C Security (40–56) | Behind the L2 door. **Fight 1:** Enforcer and 2 Sentries, a platform, crate cover, one arc grate |
+| D Records (56–72) | A ladder to the loft holds the **signal spoofer**. Optional scrap on the archive block. A laser grid the spoofer opens |
+| E Server Hall (72–90) | **Fight 2:** Enforcer, Sentry, **Warden**. Mezzanine, two arc grates. The freight lift goes down to region 2 |
+| F Lift Lobby (100–112, y −30) | Arrival. **Companion terminal**: one companion at a time, the other waits here |
+| G Labs (112–132) | The **remote override** on a lab bench. A 7 m pit (unjumpable, checked by test) whose bridge you work from across the gap. A ladder out of the pit |
+| H Specimen Hall (132–156) | **Fight 3:** Enforcer, Sentry, and the Warden on a raised block. **"Researcher"** (companion 2, support) waits past it. A freight shutter (override) marks the **end of the slice** |
+
+**Systems.**
 
 | Area | State |
 |---|---|
-| Player | Run, sprint, jump (coyote time and buffer), crouch, ladders, ledge grab/climb, interact; footsteps and other sounds |
-| Level | 5 rooms: Holding (crate, ledge), Maintenance (ladder, catwalk, Thermal Lining, steam hazard, L2 keycard, Dace), Security (L2 door, optional fight), Records (ladder to a loft with the signal spoofer, optional scrap), Server Hall (behind a laser grid the spoofer opens; second optional fight with the armoured Warden; freight lift to region 2) |
-| Region 2 | Research Wing (same scene, x 100–156, y −30), reached by the freight lift. Lift Lobby (companion terminal to swap who comes along), Labs (remote override; a 7 m pit bridged only by operating its console from across the gap), Specimen Hall (third optional fight; companion 2 "Researcher", support: Patch heals, placeholder writing; freight shutter opened by the override marks the end) |
-| Combat | Optional grid tactics in Security. 1 m tiles, multi-floor, move plus one action, cooldowns, height bonus, cover, armour, knockback, telegraphed enemy attacks that target a tile, no randomness; win and lose flow. A hazard tile (arc grate) you can shove enemies onto. Ranged AI holds high ground and avoids melee reach. Wins give scrap and party XP (50 XP per level, +2 max HP per level) |
-| Companion | **Dace** (working name, placeholder writing): recruit conversation with a tone choice, follows you (catches up across floors), joins fights, 3 banter lines |
-| Dialogue | JSON in `Assets/_Project/Dialogue`, flags and conditions, text box with portraits rendered from the character models, barks |
-| Saving | Autosave on room entry, any progress, and before and after fights; room-entry respawn; one slot; PlayerPrefs on the web |
-| Menus | Title (Continue with save summary, New Game confirmation, Settings, Quit), pause menu, settings (master, effects and ambience volume, fullscreen, debug HUD) |
-| Look | URP post-processing, fog, mood lighting per room (flicker, rotating alarm beacon), player key light |
-| Sound | 28 sounds. Recorded Kenney CC0 clips cover 10 of them (footsteps, hits, ladder, door, zap and others) from `Resources/Sounds/<SoundId>_<variant>.ogg`. The rest are synthesised in code (`Game.Audio.Synth`), including the room ambience, the combat loop and a 32 s exploration music bed with its own volume slider |
-| Art | Kenney CC0 packs (see `CREDITS.md`): animated character models with our own skins (`Tools/Art/make_skins.py`), Space Station Kit dressing (back wall, floor, and meshes over the walkways, blocks, crates and the Security door; the greybox keeps the colliders), a crouch pose, keyframed combat actions (Strike, Shove, Swing, Shoot, Hit, Down; `CharacterActions`), hand-held weapon props, loudness-matched recorded sounds (`SoundTuning`, `gains.json`), and portraits rendered from the models. All are placeholder picks |
-| Platforms | Windows editor, WebGL (live on GitHub Pages), touch controls; no Android APK |
+| Player | Run, sprint, jump (coyote time and buffer), crouch (pose), ladders, ledge grab and climb, interact |
+| Combat | Optional, in-place grid tactics (`Combat/`). Deterministic. Telegraphed intents target a tile. Height bonus (none from low cover), half cover, armour, knockback with impact and fall damage, hazard tiles. Move plus one action, cooldowns (enemies' tick like players'), heal skills. Wins give scrap and party XP (+2 max HP per 50 XP). The camera frames the whole fight. Units have HP bars |
+| Enemies | Enforcer (melee), Sentry (ranged 2–5, holds high ground, avoids melee reach), Warden (armour 2; beaten with shoves, hazards and falls) |
+| Companions | Dace (frontline: Baton, Shield Bash) and Researcher (support: Static Dart, Patch heal), both with working names and placeholder writing. Followers, banter (Dace only, only while following), the swap terminal, downed pose at 0 HP, fully healed between fights |
+| Tools and gates | Keycard L2 (door), Thermal Lining (steam), signal spoofer (`LaserGrid`), remote override (`RemoteConsole`: long-range bridge and shutter). Freight lift (`FreightLift`, fades in) |
+| Saving | Autosave on room entry, progress, and before and after fights. Room-entry respawn (fades in). One slot. Saves who follows and who waits at the terminal. PlayerPrefs on the web |
+| UI | Title, pause, settings (master, effects, ambience, music, fullscreen, debug HUD). Screen-canvas HUD (prompt pill, messages), combat HUD (banner, skill bar, log), dialogue box with portraits rendered from the models. Device-aware hints (`InputHints`, `HintLabel`) |
+| Touch | On-screen stick and buttons (round), driving a virtual gamepad. Combat buttons in a bottom-centre strip. A screen tap no longer counts as "confirm" (it double-fired) |
+| Art | Kenney CC0 characters with our skins, keyframed actions (Strike, Shove, Swing, Shoot, Hit, Down; `CharacterActions`) and primitive weapons. Space Station Kit dressing over greybox colliders; solid blocks get a panel face. See `CREDITS.md` |
+| Audio | 28 sound ids. 10 are recorded Kenney clips (`Resources/Sounds`, loudness-matched by `gains.json`); the rest, plus ambience, the combat loop and the music bed, are synthesised (`Audio/Synth.cs`) |
+| Platforms | Windows editor and WebGL (GitHub Pages). No Android APK |
 
-Code is under `Assets/_Project/Scripts/Runtime/{Player,World,Combat,Companions,Dialogue,Save,Audio,UI,Core,CameraSystem}`, with editor tools in `Scripts/Editor`.
+**Code map:**
+- **Runtime:** `Assets/_Project/Scripts/Runtime/{Player, World, Combat, Companions, Dialogue, Save, Audio, UI, Core, CameraSystem}`.
+- **Level builders:**
+  - `Scripts/Editor/GreyboxLevelBuilder.cs`: rooms A–C, shell, camera zones, actors.
+  - `.Expansion.cs`: D, E.
+  - `.Research.cs`: region 2.
+  - `.Lighting.cs`, `.Props.cs`: dressing.
+- **Other editor tools:** `CharacterArt.cs` (prefabs, controller, portraits), `CharacterActions.cs` (authored clips), `SoundTuning.cs`.
+- **Tests:** `Assets/_Project/Tests/{EditMode,PlayMode}`.
 
-## 5. Open questions and known gaps
+## 5. Open questions (the owner's call)
 
-- **Story** is the owner's call; don't invent it in code. Still open:
-  - Dace's real name, voice and lines
-  - Companion 2 ("Researcher", support): name, voice, look and lines; the recruit lines are marked placeholder
-  - The protagonist's subject ID and why they were erased
-  - Whether the facility goes up or down
-  - The endings
-- **Untested by hand:** nobody has played a build with real hands yet. Feel, balance, mouse control in combat, touch on a real phone and web performance on phones are all unknown.
-- **Known rough edges:**
-  - Dace has no collision, so they pass through walls and doors.
-  - Companions are fully healed between fights (a deliberate first-pass call).
-  - A benched companion pops straight to the terminal when another one is recruited.
-  - The pause key is defined in code, not in the input asset.
-  - URP Forward+ falls back to Forward on WebGL, so lights can look slightly different on the web.
-  - The editor-mode lighting shots (`lighting_*.png`) show the Subject and the kit panel edges in odd palette colours. PlayMode captures and the game itself render correctly.
-- **Not built yet:**
-  - Per-unit XP, and skill choices on level-up
-  - Tool rewards from fights (wait for the hacking-tool design)
-  - More hazard kinds (timed steam, switchable wires)
-  - Units and skills as data assets (ScriptableObjects)
-  - Composed or per-region music
-  - Bespoke art (models, animations beyond idle/run/jump, a crouch animation), composed music
-  - Room transitions beyond camera zones
-  - More rooms or regions
+- **Story and characters:** don't invent them in code.
+  - Dace's real name, voice and lines.
+  - Companion 2 ("Researcher"): name, voice, look and lines. The owner said "keep placeholder" for now.
+  - The protagonist's subject ID and why they were erased.
+  - Whether the facility goes up or down. Lift signs are deliberately direction-neutral.
+  - The endings.
+- **Untested by hand:** nobody has played a build with real hands or on a real phone. Feel, balance, touch and phone performance are all unknown.
 
-## 6. Suggested next steps (the owner chooses)
+## 6. This session, in order
 
-1. **Tune combat further:** balance after a hands-on play, skill choices on level-up, a tool reward once hacking tools exist.
-2. **Rewrite Dace** once the owner gives the name and voice; add the rest of the companion arc.
-3. **Expand further:** the third region (Security Core) past the freight shutter, the drone link tool, companion 3, and a story beat to close region 2.
-4. **More art:** modelled weapons instead of primitives, a downed pose for Dace (companions just stay standing at 0 HP), a ceiling and side-wall pass, and checking the mix by ear.
-5. **Phone polish** once someone tries the web build on a real Android phone.
+All commits are on `main`.
+
+| Step | What changed |
+|---|---|
+| Combat tuning | Hazard tiles, smarter ranged AI, party XP and levels |
+| Music | A synthesised 32 s music bed, plus a Music slider |
+| Real assets | Kenney characters, kit dressing, recorded sounds, portraits, `CREDITS.md` |
+| Slice expansion | Records, laser grid and spoofer, Server Hall, the Warden, combat camera framing |
+| Art polish | Kit meshes over the greybox, crouch pose, loudness matching |
+| Animation | Keyframed attack, hit and knockout clips, hand weapons, filmstrip timing test |
+| Region 2 | Research Wing, freight lift, remote override and bridge, companion 2 with heals, swap terminal, save roster |
+| Fable polish review | Touch tap fix, device hints, screen HUDs, HP bars, downed companions, cover height rule, enemy cooldown fix, fuller framing, solid blocks, fades |
+
+**Decisions and lessons worth keeping:**
+- **Cover stays a tile.** In a one-lane side view, removing it split the grid and stalemated melee, so the fix was "no height bonus from cover" instead.
+- **The pit gap is sized from the motor.** The best sprint jump is about 5.6 m, so the gap is 7 m, and the pit is 4.5 m deep so the far wall can't be climbed.
+- **Weapons follow the arm.** They're laid along the forearm in the idle pose, so they point forward when aiming.
+- **Clip axes come from a rendered probe.** Rig axes for authored clips were found by rendering a contact sheet. In a batch-mode editor, `SkinnedMeshRenderer.forceMatrixRecalculationPerRender = true` is needed to see poses.
+
+## 7. Known rough edges
+
+- **Dace:** has no collision (they pass through walls); a benched companion pops straight to the terminal when another is recruited.
+- **Input:** the pause key is defined in code, not the input asset.
+- **WebGL lighting:** WebGL uses Forward instead of Forward+, so lights can differ slightly.
+- **Art:** weapons are primitives; a body falling right next to a wall can clip slightly.
+- **Not built:** per-unit XP and level-up skill choices, tool rewards from fights, more hazard kinds, ScriptableObject data, per-region music, bespoke art.
+
+## 8. Suggested next steps (offer 2–3; the owner picks)
+
+1. **Tune combat:** balance the three fights (ideally after a hands-on play), skill choices on level-up, a tool reward from a fight.
+2. **Expand further:** the third region (Security Core) past the freight shutter, the drone link tool, companion 3 (ranged), a story beat to close region 2.
+3. **Phone pass:** once the owner tries the web build on a real phone, fix what they hit.
+4. **Rewrite the companions** once the owner gives names and voices.
