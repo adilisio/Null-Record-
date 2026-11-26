@@ -99,6 +99,8 @@ namespace Game.Player
         {
             if (ExternallyControlled) return;
             float dt = Time.deltaTime;
+            // Paused (timeScale 0): a zero-length Move reports "not grounded" and would flip the state to Airborne.
+            if (dt <= 0f) return;
             Vector2 move = ControlEnabled ? _input.Move : Vector2.zero;
 
             switch (State)

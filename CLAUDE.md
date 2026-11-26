@@ -21,4 +21,10 @@ Unity 6000.6.7f1, URP 3D template, new Input System (`Assets/InputSystem_Actions
 - The check covers compilation only. Behaviour still has to be tested in Play mode.
 
 ## Greybox
-- **Null Record → Build Greybox Test Level** regenerates `Assets/_Project/Scenes/Greybox_Intake.unity`, overwriting it. Change the layout in `GreyboxLevelBuilder.cs`, not by editing the scene.
+- **Null Record → Build All Scenes** (`Game.EditorTools.GreyboxLevelBuilder.BuildAll`) regenerates `MainMenu.unity` and `Greybox_Intake.unity` and sets the build order (title first). Both scenes are generated, so change them in `MainMenuBuilder.cs` / `GreyboxLevelBuilder.cs`, never by editing the scene files.
+- Menus and HUD are built in code (`Game.UI.MenuWidgets`) on Screen Space - Camera canvases, so they show up in test screenshots.
+
+## Tests
+- EditMode tests (`Assets/_Project/Tests/EditMode`) cover the rules: combat, dialogue and save files. PlayMode tests (`Tests/PlayMode`, base class `GreyboxTestBase`) drive the real scenes with a virtual keyboard and write screenshots to `Screenshots/`, which git ignores.
+- Headless run (needs the unpackaged Hub running, see Licensing): first `Unity.exe -batchmode -projectPath . -executeMethod Game.EditorTools.GreyboxLevelBuilder.BuildAll -quit`, then `-runTests -testPlatform EditMode`, then `-runTests -testPlatform PlayMode` (each run with `-testResults <file>`). Always put a time limit on these runs.
+- Tests use a scratch save folder (`SaveSystem.DirectoryOverride`) and run at 60 fps. Use unscaled time for waits, because the pause menu sets `timeScale` to 0.

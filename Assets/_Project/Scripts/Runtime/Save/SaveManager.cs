@@ -46,6 +46,7 @@ namespace Game.Save
         public int SaveCount { get; private set; }
         public bool LoadedFromSave { get; private set; }
         public string CurrentRoom => _room != null ? _room.name : "";
+        public string CurrentRoomName => _room != null ? _room.DisplayName : "";
 
         public event Action<string> Saved;
 
@@ -175,6 +176,7 @@ namespace Game.Save
                 savedAtUtc = DateTime.UtcNow.ToString("o"),
                 reason = reason,
                 room = CurrentRoom,
+                roomName = CurrentRoomName,
                 position = grounded ? _motor.transform.position : _respawn.Checkpoint,
                 facing = _motor.Facing,
                 checkpoint = _respawn.Checkpoint,

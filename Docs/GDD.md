@@ -111,7 +111,10 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
   - Saves wait until the player is standing in normal control, so never mid-jump, in dialogue, in combat or while respawning. They're spaced at least 1 s apart, and a "SAVING..." note shows top-right.
   - **What's saved:** position, facing, respawn point, keycard level, protections, scrap, tools, all flags and the companion in the party.
   - **How world objects persist:** each one records itself as a flag, such as `taken_<id>`, `opened_<id>` or the encounter's cleared flag, and checks that flag on load.
-  - The game loads the save automatically when the scene starts; there's no title or Continue screen yet. A broken save file is set aside as `.corrupt`, and the game starts fresh.
+  - **Title screen** (`MainMenu`): Continue (shows the room and how long ago you saved), New Game (asks before erasing an existing save, and Cancel is the default), Settings and Quit. Opening the game scene directly in the editor still auto-loads the save.
+  - **Pause menu:** Esc or gamepad Start freezes the game and turns off player input. It shows the current room and offers Resume, Settings, Quit to Title (saves first if you're somewhere safe) and Quit Game.
+  - **Settings stub**, stored in PlayerPrefs rather than the save: master volume, fullscreen and the debug HUD.
+  - A broken save file is set aside as `.corrupt`, and the game starts fresh.
   - Editor menu: **Null Record → Delete Save** and **Show Save File**.
 - Dying outside combat (falls, hazards) respawns you at the last room entry: the first spot you stood on after entering the room, unless a checkpoint in that room set a different one.
 - Manual save terminals double as companion swap points and workbenches.
@@ -152,7 +155,7 @@ One region (Intake / Holding), polished enough to show:
 - [~] Companion 1: recruit scene, follow AI, banter (prototype: Dace; writing is placeholder, no art)
 - [~] 1 optional encounter: level → grid transition, 2–3 enemy types, win and lose flow, rewards (playable prototype in Security; scrap and log rewards so far, no tool or XP yet)
 - [~] Dialogue system with portraits and choices (JSON, placeholder portraits)
-- [~] Autosave and room transitions (autosave and room-entry respawn done; no title/Continue menu or save slots yet)
+- [~] Autosave and room transitions (autosave, room-entry respawn, title/Continue and pause menus done; single save slot)
 - [ ] Lighting pass and audio ambience for the region
 
 ### Later milestones (rough)

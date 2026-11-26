@@ -93,6 +93,7 @@ namespace Game.Tests
             if (_motor != null) _motor.StateChanged -= OnState;
             if (_kb != null) InputSystem.RemoveDevice(_kb);
             Application.targetFrameRate = -1;
+            Time.timeScale = 1f;
             SaveSystem.Delete();
             SaveSystem.DirectoryOverride = null;
             yield return null;
@@ -137,16 +138,16 @@ namespace Game.Tests
 
         protected static IEnumerator Wait(float seconds)
         {
-            float end = Time.time + seconds;
-            while (Time.time < end) yield return null;
+            float end = Time.unscaledTime + seconds;
+            while (Time.unscaledTime < end) yield return null;
         }
 
         protected IEnumerator Until(Func<bool> condition, float timeout, string step)
         {
-            float end = Time.time + timeout;
+            float end = Time.unscaledTime + timeout; // unscaled: keeps working while paused
             while (!condition())
             {
-                if (Time.time > end)
+                if (Time.unscaledTime > end)
                 {
                     string where = _motor != null
                         ? $" (pos {_motor.transform.position}, state {_motor.State}, vel {_motor.Velocity})"
@@ -156,7 +157,7 @@ namespace Game.Tests
                 }
                 yield return null;
             }
-            Debug.Log($"[RouteTest] ok: {step} at x={X:0.00} y={Y:0.00} t={Time.time:0.00}");
+            Debug.Log(_motor != null ? $"[RouteTest] ok: {step} at x={X:0.00} y={Y:0.00} t={Time.time:0.00}" : $"[RouteTest] ok: {step}");
         }
 
         // ---------------------------------------------------------------- screenshots

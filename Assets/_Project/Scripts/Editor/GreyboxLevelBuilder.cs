@@ -36,7 +36,21 @@ namespace Game.EditorTools
 
         private static readonly Dictionary<string, Material> Materials = new Dictionary<string, Material>();
 
-        [MenuItem("Null Record/Build Greybox Test Level", priority = 0)]
+        /// <summary>Builds the title scene and the greybox level, and sets the build order (title first).</summary>
+        [MenuItem("Null Record/Build All Scenes", priority = 0)]
+        public static void BuildAll()
+        {
+            MainMenuBuilder.Build();
+            Build();
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(GameFlow.TitleScene, true),
+                new EditorBuildSettingsScene(GameFlow.GameScene, true),
+            };
+            Debug.Log("[Null Record] Built all scenes. Build order: MainMenu, Greybox_Intake.");
+        }
+
+        [MenuItem("Null Record/Build Greybox Test Level", priority = 1)]
         public static void Build()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
@@ -57,6 +71,7 @@ namespace Game.EditorTools
             BuildHud(player.GetComponent<PlayerInteractor>());
             new GameObject("DialogueUI").AddComponent<DialogueUI>();
             new GameObject("SaveManager").AddComponent<SaveManager>();
+            new GameObject("PauseMenu").AddComponent<PauseMenu>();
             BuildCompanion(level);
             new GameObject("Bootstrap").AddComponent<Bootstrap>();
 
@@ -231,9 +246,9 @@ namespace Game.EditorTools
         private static void BuildCameraZones(Transform level)
         {
             Transform zones = Group(level, "CameraZones");
-            CameraZoneAt(zones, "Zone_A", new Vector3(9f, 4f, 0f), new Vector2(22f, 8.5f));
-            CameraZoneAt(zones, "Zone_B", new Vector3(30f, 4f, 0f), new Vector2(20f, 8.5f));
-            CameraZoneAt(zones, "Zone_C", new Vector3(48f, 4f, 0f), new Vector2(16f, 8.5f));
+            CameraZoneAt(zones, "Zone_A", new Vector3(9f, 4f, 0f), new Vector2(22f, 8.5f), "Holding");
+            CameraZoneAt(zones, "Zone_B", new Vector3(30f, 4f, 0f), new Vector2(20f, 8.5f), "Maintenance");
+            CameraZoneAt(zones, "Zone_C", new Vector3(48f, 4f, 0f), new Vector2(16f, 8.5f), "Security");
         }
 
         // ------------------------------------------------------------------ actors
@@ -415,12 +430,12 @@ namespace Game.EditorTools
             go.AddComponent<Game.World.Checkpoint>();
         }
 
-        private static void CameraZoneAt(Transform parent, string name, Vector3 center, Vector2 size)
+        private static void CameraZoneAt(Transform parent, string name, Vector3 center, Vector2 size, string roomName)
         {
             GameObject go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.transform.position = center;
-            go.AddComponent<CameraZone>().Configure(size);
+            go.AddComponent<CameraZone>().Configure(size, roomName);
         }
 
         private static void PointLight(Transform parent, string name, Vector3 position, Color color, float intensity, float range, bool shadows = true)

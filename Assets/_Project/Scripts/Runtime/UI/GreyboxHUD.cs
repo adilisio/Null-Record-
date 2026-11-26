@@ -53,7 +53,7 @@ namespace Game.UI
                 GUI.Label(new Rect(0, Screen.height - 90, Screen.width, 40), "[E]  " + player.Current.GetPrompt(player), _prompt);
             }
 
-            if (!showDebug) return;
+            if (!showDebug || !Core.GameSettings.DebugHud) return;
             PlayerInventory inv = player.Inventory;
             PlayerMotor motor = player.Motor;
             string line = inv != null ? $"Keycard L{inv.KeycardLevel}   Protection: {inv.Protections}   Scrap: {inv.Scrap}" : "";

@@ -18,6 +18,8 @@ namespace Game.Save
         public string savedAtUtc;
         public string reason;
         public string room;
+        /// <summary>Player-facing room name for the Continue summary.</summary>
+        public string roomName;
 
         public Vector3 position;
         public int facing = 1;

@@ -12,6 +12,10 @@ namespace Game.CameraSystem
         private static readonly List<CameraZone> All = new List<CameraZone>();
 
         [SerializeField] private Vector2 size = new Vector2(20f, 8f);
+        [Tooltip("Room name shown to the player (save summary, pause menu). Defaults to the object name.")]
+        [SerializeField] private string displayName = "";
+
+        public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
 
         public Rect Rect
         {
@@ -25,7 +29,11 @@ namespace Game.CameraSystem
         private void OnEnable() => All.Add(this);
         private void OnDisable() => All.Remove(this);
 
-        public void Configure(Vector2 newSize) => size = newSize;
+        public void Configure(Vector2 newSize, string roomName = "")
+        {
+            size = newSize;
+            displayName = roomName;
+        }
 
         public static CameraZone Find(Vector2 point)
         {
