@@ -791,6 +791,33 @@ namespace Game.Combat
             if (v == null) yield break;
             v.Refresh(false);
             if (!v.Owned) yield break; // the player's own body stays; defeat resets the encounter
+            CharacterAnimator anim = v.Root.GetComponentInChildren<CharacterAnimator>();
+            if (anim != null)
+            {
+                // Knocked out: arms fly up, the whole body tips over backwards from the feet, lies still, then sinks away.
+                v.HideLabels();
+                anim.Play("Down", 5f);
+                yield return new WaitForSeconds(0.1f);
+                Quaternion upright = v.Root.rotation;
+                Quaternion flat = upright * Quaternion.Euler(-85f, 0f, 0f);
+                for (float t = 0f; t < 1f; t += Time.deltaTime / 0.35f)
+                {
+                    v.Root.rotation = Quaternion.Slerp(upright, flat, t * t); // accelerate like a fall
+                    yield return null;
+                }
+                v.Root.rotation = flat;
+                GameAudio.Play(SoundId.Land, v.Root.position + Vector3.up * 0.3f, 0.8f);
+                yield return new WaitForSeconds(0.45f);
+                Vector3 lying = v.Root.position;
+                for (float t = 0f; t < 1f; t += Time.deltaTime / 0.3f)
+                {
+                    v.Root.position = lying + Vector3.down * (0.5f * t);
+                    yield return null;
+                }
+                v.Root.gameObject.SetActive(false);
+                yield break;
+            }
+
             Vector3 s = v.Root.localScale;
             for (float t = 0f; t < 1f; t += Time.deltaTime / 0.3f)
             {

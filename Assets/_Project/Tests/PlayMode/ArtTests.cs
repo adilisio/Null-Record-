@@ -156,6 +156,80 @@ namespace Game.Tests
         }
 
         [UnityTest]
+        public IEnumerator Filmstrip_BatonSwing_ThenAKnockout()
+        {
+            EncounterController enc = SecurityEncounter;
+            Object.FindAnyObjectByType<CompanionNPC>().Recruit(_interactor);
+            _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
+            yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
+            enc.Engage(_interactor);
+            yield return Until(() => !enc.IsBusy, 5f, "opening");
+            CombatState st = enc.State;
+            Unit dace = null, foe = null;
+            foreach (Unit u in st.Alive(Team.Player)) if (!u.IsLeader) dace = u;
+            foreach (Unit e in st.Alive(Team.Enemy)) { foe = e; break; }
+            Assert.IsNotNull(dace, "Dace is in the fight");
+            Tile spot = null;
+            foreach (Tile t in st.Grid.Tiles)
+            {
+                if (t.Col == dace.Tile.Col - 1 && Mathf.Abs(t.Y - dace.Tile.Y) < 0.3f) spot = t;
+            }
+            Assert.IsNotNull(spot, "room for the foe left of Dace");
+            foe.Tile = spot;
+            UnitView fv = (UnitView)foe.View;
+            fv.Root.position = spot.World;
+            fv.SetFacing(1);
+            foe.Hp = 50;
+            yield return Wait(0.3f);
+
+            // Baton swing at full speed: a frame every ~60 ms.
+            Assert.IsTrue(st.TryUseSkill(dace, 0, foe.Tile), "Baton");
+            for (int i = 0; i < 9; i++)
+            {
+                yield return Shot($"19_swing_{i}");
+                yield return Wait(0.05f);
+            }
+            yield return Until(() => !enc.IsBusy, 3f, "swing done");
+
+            // Knockout: one more hit finishes it.
+            foe.Hp = 1;
+            Unit me = enc.Selected;
+            CharacterAnimator theirs = fv.Root.GetComponentInChildren<CharacterAnimator>();
+            Transform foot = fv.Root;
+            float maxTilt = 0f;
+            dace.Acted = false; // a second action this turn, for the test only
+            Assert.IsTrue(st.TryUseSkill(dace, 0, foe.Tile), "finishing Baton");
+            for (int i = 0; i < 12; i++)
+            {
+                yield return Shot($"20_down_{i}");
+                if (foot != null && foot.gameObject.activeInHierarchy) maxTilt = Mathf.Max(maxTilt, Vector3.Angle(foot.up, Vector3.up));
+                yield return Wait(0.09f);
+            }
+            Assert.AreEqual("Down", theirs.LastAction, "knockout clip");
+            Assert.Greater(maxTilt, 60f, "the body tips over");
+            Assert.IsFalse(fv.Root.Find("CombatLabels").gameObject.activeSelf, "labels hidden while it falls");
+            yield return Until(() => !enc.IsBusy, 4f, "knockout done");
+            Assert.IsFalse(fv.Root.gameObject.activeSelf, "and is cleared away");
+        }
+
+        [UnityTest]
+        public IEnumerator Prefabs_CarryTheirWeapons()
+        {
+            yield return null;
+            foreach ((string who, string name) in new[] { ("Dace", "Weapon_Dace") })
+            {
+                CompanionNPC dace = Object.FindAnyObjectByType<CompanionNPC>();
+                Assert.IsNotNull(dace.transform.Find("Body/Model/Root/HipsCtrl/Hips/Spine/Chest/UpperChest/RightShoulder/RightArm/RightForeArm/RightHand/" + name), $"{who} holds {name}");
+            }
+            int armed = 0;
+            foreach (Transform t in Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            {
+                if (t.name.StartsWith("Weapon_") && t.parent != null && t.parent.name == "RightHand") armed++;
+            }
+            Assert.GreaterOrEqual(armed, 7, "Dace plus six idle hostiles hold weapons (the Subject is unarmed)");
+        }
+
+        [UnityTest]
         public IEnumerator Dace_HasARenderedPortrait()
         {
             yield return null;

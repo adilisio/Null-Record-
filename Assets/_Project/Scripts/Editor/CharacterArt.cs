@@ -115,6 +115,91 @@ namespace Game.EditorTools
             rt.Release();
         }
 
+        /// <summary>
+        /// Builds the character's weapon from primitives and parents it to the right hand, so the action clips swing it.
+        /// It is laid along the forearm-to-hand direction in the idle pose (down at rest, forward when aiming).
+        /// The Subject is unarmed.
+        /// </summary>
+        private static void AttachWeapon(string character, Transform bones)
+        {
+            AnimationClip idle = AssetDatabase.LoadAllAssetsAtPath($"{KenneyDir}/Animations/idle.fbx").OfType<AnimationClip>().First(c => c.name == "Idle");
+            idle.SampleAnimation(bones.gameObject, 0.25f);
+            Transform hand = bones.GetComponentsInChildren<Transform>().First(t => t.name == "RightHand");
+            Transform fore = hand.parent;
+            Vector3 dir = (hand.position - fore.position).normalized;
+
+            Material metal = WeaponMaterial("Weapon_Metal", new Color(0.18f, 0.19f, 0.21f), Color.black, 0.7f);
+            Material grip = WeaponMaterial("Weapon_Grip", new Color(0.08f, 0.08f, 0.09f), Color.black, 0.1f);
+            Material glow = WeaponMaterial("Weapon_Glow", new Color(0.4f, 0.8f, 1f), new Color(0.4f, 0.8f, 1f) * 3f, 0.3f);
+            Material hazard = WeaponMaterial("Weapon_Hazard", new Color(0.9f, 0.7f, 0.12f), Color.black, 0.3f);
+
+            var weapon = new GameObject($"Weapon_{character}");
+            weapon.transform.position = hand.position;
+            weapon.transform.rotation = Quaternion.FromToRotation(Vector3.up, dir);
+            switch (character)
+            {
+                case "Dace": // baton
+                    Part(weapon, PrimitiveType.Cylinder, grip, new Vector3(0f, 0.05f, 0f), new Vector3(0.05f, 0.08f, 0.05f));
+                    Part(weapon, PrimitiveType.Cylinder, metal, new Vector3(0f, 0.32f, 0f), new Vector3(0.04f, 0.2f, 0.04f));
+                    break;
+                case "Enforcer": // stun prod
+                    Part(weapon, PrimitiveType.Cylinder, grip, new Vector3(0f, 0.08f, 0f), new Vector3(0.05f, 0.1f, 0.05f));
+                    Part(weapon, PrimitiveType.Cylinder, metal, new Vector3(0f, 0.4f, 0f), new Vector3(0.035f, 0.24f, 0.035f));
+                    Part(weapon, PrimitiveType.Sphere, glow, new Vector3(0f, 0.66f, 0f), new Vector3(0.07f, 0.07f, 0.07f));
+                    break;
+                case "Warden": // maul
+                    Part(weapon, PrimitiveType.Cylinder, grip, new Vector3(0f, 0.3f, 0f), new Vector3(0.05f, 0.36f, 0.05f));
+                    Part(weapon, PrimitiveType.Cube, metal, new Vector3(0f, 0.68f, 0f), new Vector3(0.32f, 0.16f, 0.16f));
+                    Part(weapon, PrimitiveType.Cube, hazard, new Vector3(0f, 0.68f, 0f), new Vector3(0.33f, 0.05f, 0.17f));
+                    break;
+                case "Sentry": // taser pistol, barrel along the arm
+                    Part(weapon, PrimitiveType.Cube, grip, new Vector3(0f, 0.04f, 0f), new Vector3(0.06f, 0.1f, 0.09f));
+                    Part(weapon, PrimitiveType.Cube, metal, new Vector3(0f, 0.14f, 0f), new Vector3(0.07f, 0.16f, 0.06f));
+                    Part(weapon, PrimitiveType.Cube, glow, new Vector3(0f, 0.23f, 0f), new Vector3(0.04f, 0.02f, 0.04f));
+                    break;
+                default:
+                    Object.DestroyImmediate(weapon);
+                    return;
+            }
+            weapon.transform.SetParent(hand, true);
+        }
+
+        private static void Part(GameObject parent, PrimitiveType type, Material mat, Vector3 localPos, Vector3 size)
+        {
+            GameObject p = GameObject.CreatePrimitive(type);
+            Object.DestroyImmediate(p.GetComponent<Collider>());
+            p.name = type.ToString();
+            p.transform.SetParent(parent.transform, false);
+            p.transform.localPosition = localPos;
+            p.transform.localScale = size;
+            p.GetComponent<Renderer>().sharedMaterial = mat;
+        }
+
+        private static Material WeaponMaterial(string name, Color color, Color emission, float smoothness)
+        {
+            string path = $"{Dir}/Materials/{name}.mat";
+            var fresh = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = name };
+            fresh.SetColor("_BaseColor", color);
+            fresh.SetFloat("_Smoothness", smoothness);
+            fresh.SetFloat("_Metallic", smoothness > 0.5f ? 0.8f : 0f);
+            if (emission.maxColorComponent > 0f)
+            {
+                fresh.EnableKeyword("_EMISSION");
+                fresh.SetColor("_EmissionColor", emission);
+            }
+            Material existing = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (existing == null)
+            {
+                AssetDatabase.CreateAsset(fresh, path);
+                return fresh;
+            }
+            existing.shader = fresh.shader;
+            existing.CopyPropertiesFromMaterial(fresh);
+            if (emission.maxColorComponent > 0f) existing.EnableKeyword("_EMISSION");
+            EditorUtility.SetDirty(existing);
+            return existing;
+        }
+
         public static GameObject Prefab(string name) => AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir}/{name}.prefab");
 
         private static void ConfigureModel()
@@ -184,6 +269,7 @@ namespace Game.EditorTools
                 into.duration = 0.05f;
                 into.canTransitionToSelf = true;
                 into.AddCondition(AnimatorConditionMode.If, 0f, action);
+                if (CharacterActions.Holds(action)) continue;
                 AnimatorStateTransition back = s.AddTransition(sIdle);
                 back.hasExitTime = true;
                 back.exitTime = 0.95f;
@@ -254,6 +340,7 @@ namespace Game.EditorTools
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
 
             root.AddComponent<CharacterAnimator>().Configure(animator);
+            AttachWeapon(name, bones);
             PrefabUtility.SaveAsPrefabAsset(root, $"{Dir}/{name}.prefab");
             Object.DestroyImmediate(root);
         }

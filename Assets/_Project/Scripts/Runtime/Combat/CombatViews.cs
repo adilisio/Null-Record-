@@ -135,6 +135,12 @@ namespace Game.Combat
             }
         }
 
+        /// <summary>Hides the name/HP and intent labels (a downed unit shouldn't carry them as it falls).</summary>
+        public void HideLabels()
+        {
+            if (_labelRoot != null) _labelRoot.gameObject.SetActive(false);
+        }
+
         public void SetFacing(int dir)
         {
             Root.rotation = Quaternion.Euler(0f, dir >= 0 ? 90f : -90f, 0f);

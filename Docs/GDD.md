@@ -165,7 +165,10 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
     - **Shoot:** a two-handed aim with recoil (Taser Shot).
     - **Hit:** a flinch, played on whoever takes damage.
 
-    The combat lunge waits for the wind-up so the hit lands on the swing.
+    - **Down:** knocked out. The arms fly up, the whole body tips over backwards from the feet, lies still, then sinks away. Labels hide as it falls.
+
+    The combat lunge waits for the wind-up so the hit lands on the swing. Full-speed filmstrips (`Screenshots/filmstrip_*.png` after a test run) confirm the damage lands on the down-stroke.
+  - **Weapons:** simple primitive props in the right hand, so the action clips swing them. They're laid along the forearm, pointing down at rest and forward when aiming. Dace has a baton, the Enforcer a stun prod with a glowing tip, the Warden a maul with a hazard stripe, and the Sentry a taser pistol. The Subject is unarmed.
   - **Set dressing:** Space Station Kit panels along the back wall, kit floor tiles over the whole floor, kit meshes over the walkways (catwalk, loft, mezzanine, Security platform), the climb blocks, the crates and cover, and the Security door panel, which slides with the door. It's all visual: the greybox boxes keep their colliders with their renderers hidden, so collision and the combat grid are unchanged.
   - **Portraits:** each speaking character's head is rendered from their model into `Resources/Portraits/<speaker>.png` when the scenes are built.
   - **Recorded sounds:** Kenney impact and sci-fi sounds replace the synth for footsteps, ladder clanks, hits, hurt, knockback, unit down, landing, door open and the zap. Every other sound, and the music, is still synthesised. **Mix:** when the scenes are built, the editor measures each recording's loudness against the synth sound it replaces and saves a per-clip gain to `Resources/Sounds/gains.json`. The game applies it, so the tuned mix levels still hold. It's only been checked by measurement, not by ear.

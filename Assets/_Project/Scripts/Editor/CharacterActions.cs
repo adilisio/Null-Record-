@@ -14,7 +14,9 @@ namespace Game.EditorTools
     /// </summary>
     public static class CharacterActions
     {
-        public static readonly string[] Names = { "Strike", "Shove", "Swing", "Shoot", "Hit" };
+        public static readonly string[] Names = { "Strike", "Shove", "Swing", "Shoot", "Hit", "Down" };
+        /// <summary>Actions that hold their last pose instead of returning to Idle.</summary>
+        public static bool Holds(string action) => action == "Down";
 
         private struct Key
         {
@@ -41,6 +43,8 @@ namespace Game.EditorTools
             ["Shoot"] = new[] { K(0f), K(0.1f, ra: 88f, la: 80f), K(0.2f, ra: 95f, la: 86f, spine: -6f), K(0.35f, ra: 88f, la: 80f), K(0.5f) },
             // Flinch back.
             ["Hit"] = new[] { K(0f), K(0.08f, raBack: 25f, la: -25f, spine: -22f), K(0.35f) },
+            // Knocked out: arms fly up as the body arches back (the encounter tips the whole body over). Holds.
+            ["Down"] = new[] { K(0f), K(0.15f, ra: 60f, fore: 30f, la: 50f, spine: -12f), K(0.4f, ra: 130f, fore: 50f, la: 110f, spine: -25f) },
         };
 
         /// <summary>Builds (or rebuilds) the clips from the idle pose and returns them by name.</summary>
