@@ -18,6 +18,8 @@ namespace Game.EditorTools
         public const string Dir = "Assets/_Project/Art/Characters";
         /// <summary>Scales the imported model to about 1.6 m (its T-pose bounds overstate its height).</summary>
         public const float ModelScale = 0.62f;
+        /// <summary>Normalised time in the jump clip used as the crouch pose (the wind-up before take-off).</summary>
+        public const float CrouchPoseTime = 0.12f;
         public static readonly string[] Roster = { "Subject", "Dace", "Enforcer", "Sentry", "Warden" };
 
         private const string ModelPath = KenneyDir + "/Model/characterMedium.fbx";
@@ -150,6 +152,7 @@ namespace Game.EditorTools
             AnimatorController c = AnimatorController.CreateAnimatorControllerAtPath(path);
             c.AddParameter("Speed", AnimatorControllerParameterType.Float);
             c.AddParameter(new AnimatorControllerParameter { name = "Grounded", type = AnimatorControllerParameterType.Bool, defaultBool = true });
+            c.AddParameter("Crouch", AnimatorControllerParameterType.Bool);
 
             AnimatorStateMachine sm = c.layers[0].stateMachine;
             AnimatorState sIdle = sm.AddState("Idle");
@@ -158,7 +161,15 @@ namespace Game.EditorTools
             sRun.motion = run;
             AnimatorState sJump = sm.AddState("Jump");
             sJump.motion = jump;
+            // The pack has no crouch clip: hold the jump's wind-up (knees bent) as a crouch pose.
+            AnimatorState sCrouch = sm.AddState("Crouch");
+            sCrouch.motion = jump;
+            sCrouch.speed = 0f;
+            sCrouch.cycleOffset = CrouchPoseTime;
             sm.defaultState = sIdle;
+            Link(sIdle, sCrouch, 0.1f).AddCondition(AnimatorConditionMode.If, 0f, "Crouch");
+            Link(sRun, sCrouch, 0.1f).AddCondition(AnimatorConditionMode.If, 0f, "Crouch");
+            Link(sCrouch, sIdle, 0.12f).AddCondition(AnimatorConditionMode.IfNot, 0f, "Crouch");
 
             Link(sIdle, sRun, 0.12f).AddCondition(AnimatorConditionMode.Greater, 0.4f, "Speed");
             Link(sRun, sIdle, 0.15f).AddCondition(AnimatorConditionMode.Less, 0.4f, "Speed");

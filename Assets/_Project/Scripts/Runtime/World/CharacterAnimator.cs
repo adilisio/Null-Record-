@@ -12,6 +12,7 @@ namespace Game.World
     {
         public static readonly int SpeedId = Animator.StringToHash("Speed");
         public static readonly int GroundedId = Animator.StringToHash("Grounded");
+        public static readonly int CrouchId = Animator.StringToHash("Crouch");
 
         [SerializeField] private Animator animator;
         [Tooltip("Moves further than this in one frame count as a teleport, not running.")]
@@ -51,6 +52,7 @@ namespace Game.World
             if (animator == null || animator.runtimeAnimatorController == null) return;
             animator.SetFloat(SpeedId, _speed);
             animator.SetBool(GroundedId, _motor == null || _motor.State != MotorState.Airborne);
+            animator.SetBool(CrouchId, _motor != null && _motor.IsCrouching);
         }
     }
 }

@@ -21,6 +21,11 @@ namespace Game.Audio
         [SerializeField] private int voices = 16;
 
         private static readonly Dictionary<SoundId, AudioClip[]> Library = new Dictionary<SoundId, AudioClip[]>();
+        /// <summary>Loudness match for recorded clips (Resources/Sounds/gains.json, written by the editor's SoundTuning).</summary>
+        private static readonly Dictionary<AudioClip, float> ClipGain = new Dictionary<AudioClip, float>();
+
+        [System.Serializable] private class GainEntry { public string key; public float gain = 1f; }
+        [System.Serializable] private class GainTable { public GainEntry[] entries; }
 
         /// <summary>Mix level per sound, relative to the effects/ambience volume.</summary>
         private static readonly Dictionary<SoundId, float> Mix = new Dictionary<SoundId, float>
@@ -102,6 +107,14 @@ namespace Game.Audio
         {
             if (Library.Count > 0 && Library[SoundId.Footstep][0] != null) return;
             Library.Clear();
+            ClipGain.Clear();
+            var gains = new Dictionary<string, float>();
+            TextAsset table = Resources.Load<TextAsset>("Sounds/gains");
+            if (table != null)
+            {
+                GainTable t = JsonUtility.FromJson<GainTable>(table.text);
+                if (t?.entries != null) foreach (GainEntry e in t.entries) gains[e.key] = e.gain;
+            }
             foreach (SoundId id in System.Enum.GetValues(typeof(SoundId)))
             {
                 int n = Synth.Variants(id);
@@ -109,7 +122,9 @@ namespace Game.Audio
                 for (int v = 0; v < n; v++)
                 {
                     // Recorded clip if one is mapped (Resources/Sounds/<SoundId>_<variant>), else the synthesised placeholder.
-                    clips[v] = Recorded(id, v) ?? Synth.CreateClip(id, v);
+                    AudioClip rec = Recorded(id, v);
+                    if (rec != null && gains.TryGetValue($"{id}_{v}", out float g)) ClipGain[rec] = g;
+                    clips[v] = rec ?? Synth.CreateClip(id, v);
                     clips[v].hideFlags = HideFlags.DontUnloadUnusedAsset; // survive scene changes
                 }
                 Library[id] = clips;
@@ -129,6 +144,9 @@ namespace Game.Audio
             return c[Mathf.Clamp(variant, 0, c.Length - 1)];
         }
 
+        /// <summary>Extra gain for a recorded clip so it sits at the synth's loudness (1 for synth clips).</summary>
+        public static float GainOf(AudioClip clip) => clip != null && ClipGain.TryGetValue(clip, out float g) ? g : 1f;
+
         public static float MixLevel(SoundId id) => Mix.TryGetValue(id, out float m) ? m : 0.5f;
 
         // ---------------------------------------------------------------- playback
@@ -145,7 +163,7 @@ namespace Game.Audio
             src.ignoreListenerPause = ui; // menu clicks still play while the game is paused
             src.clip = clips[Random.Range(0, clips.Length)];
             src.pitch = 1f + Random.Range(-pitchJitter, pitchJitter);
-            src.volume = MixLevel(id) * volume * EffectsGain;
+            src.volume = Mathf.Clamp01(MixLevel(id) * volume * EffectsGain * GainOf(src.clip));
             if (at.HasValue)
             {
                 src.transform.position = at.Value;

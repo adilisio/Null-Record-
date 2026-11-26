@@ -18,6 +18,12 @@ namespace Game.EditorTools
         {
             Transform root = Group(level, "Dressing");
             BackWallPanels(Group(root, "BackWall"));
+            FloorTiles(Group(root, "FloorTiles"));
+            // Kit meshes over the greybox walkways, blocks and door; the greybox colliders stay.
+            foreach (string walkway in new[] { "Catwalk", "Loft", "Mezzanine", "Platform_High" }) Reskin(walkway, "floor-panel");
+            Reskin("Block_LedgeClimb", "structure");
+            Reskin("Block_Archive", "structure");
+            Reskin("Door_L2/Panel", "door-double-closed", 90f, asChild: true);
             HoldingProps(Group(root, "Holding"));
             MaintenanceProps(Group(root, "Maintenance"));
             SecurityProps(Group(root, "Security"));
@@ -36,6 +42,20 @@ namespace Game.EditorTools
                     Prop(parent, piece, new Vector3(x + 0.5f, row, PanelZ), 0f);
                 }
             }
+        }
+
+        /// <summary>Kit floor tiles over the whole level (top at y = 0); the greybox floor keeps its collider.</summary>
+        private static void FloorTiles(Transform parent)
+        {
+            for (int x = -2; x < (int)SliceEndX; x++)
+            {
+                for (int z = -2; z < 2; z++)
+                {
+                    Prop(parent, (x + z) % 6 == 0 ? "floor-detail" : "floor", new Vector3(x + 0.5f, -0.3f, z + 0.5f), 0f);
+                }
+            }
+            GameObject floor = GameObject.Find("Shell/Floor");
+            if (floor != null) floor.GetComponent<Renderer>().enabled = false;
         }
 
         private static void HoldingProps(Transform parent)
@@ -85,12 +105,16 @@ namespace Game.EditorTools
         /// <summary>
         /// Hides a greybox box's renderer (its collider stays for gameplay) and fits a kit piece to the same bounds.
         /// </summary>
-        private static void Reskin(string boxName, string piece)
+        private static void Reskin(string boxName, string piece, float yaw = 0f, bool asChild = false)
         {
             GameObject box = GameObject.Find(boxName);
-            if (box == null) return;
+            if (box == null)
+            {
+                Debug.LogWarning($"[Null Record] Reskin: '{boxName}' not found.");
+                return;
+            }
             Bounds target = box.GetComponent<Renderer>().bounds;
-            GameObject prop = Prop(box.transform.parent, piece, new Vector3(target.center.x, target.min.y, target.center.z), 0f);
+            GameObject prop = Prop(box.transform.parent, piece, new Vector3(target.center.x, target.min.y, target.center.z), yaw);
             Bounds b = new Bounds(prop.transform.position, Vector3.zero);
             bool first = true;
             foreach (Renderer r in prop.GetComponentsInChildren<Renderer>())
@@ -99,8 +123,23 @@ namespace Game.EditorTools
                 else b.Encapsulate(r.bounds);
             }
             if (first) return;
-            prop.transform.localScale = new Vector3(target.size.x / b.size.x, target.size.y / b.size.y, target.size.z / b.size.z);
-            prop.name = boxName + "_Model";
+            // Fit in world space; the yaw is a multiple of 90, so swap X and Z when the piece is turned sideways.
+            bool sideways = Mathf.Abs(Mathf.DeltaAngle(yaw, 90f)) < 1f || Mathf.Abs(Mathf.DeltaAngle(yaw, -90f)) < 1f;
+            Vector3 fit = new Vector3(target.size.x / b.size.x, target.size.y / b.size.y, target.size.z / b.size.z);
+            Vector3 local = sideways ? new Vector3(fit.z, fit.y, fit.x) : fit;
+            prop.transform.localScale = Vector3.Scale(prop.transform.localScale, local);
+            // Re-centre: some pieces aren't centred on their pivot.
+            Bounds after = new Bounds(prop.transform.position, Vector3.zero);
+            first = true;
+            foreach (Renderer r in prop.GetComponentsInChildren<Renderer>())
+            {
+                if (first) { after = r.bounds; first = false; }
+                else after.Encapsulate(r.bounds);
+            }
+            prop.transform.position += new Vector3(target.center.x - after.center.x, target.min.y - after.min.y, target.center.z - after.center.z);
+            if (asChild) prop.transform.SetParent(box.transform, true); // moves with the box (doors)
+            GameObjectUtility.SetStaticEditorFlags(prop, asChild ? 0 : StaticEditorFlags.BatchingStatic);
+            prop.name = box.name + "_Model";
             box.GetComponent<Renderer>().enabled = false;
         }
     }

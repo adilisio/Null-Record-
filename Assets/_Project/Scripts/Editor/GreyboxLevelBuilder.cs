@@ -42,6 +42,7 @@ namespace Game.EditorTools
         public static void BuildAll()
         {
             CharacterArt.Setup();
+            SoundTuning.Run();
             MainMenuBuilder.Build();
             Build();
             EditorBuildSettings.scenes = new[]

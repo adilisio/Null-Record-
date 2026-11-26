@@ -68,6 +68,7 @@ namespace Game.Player
         private float _climbT;
         private Vector3 _bodyScale = Vector3.one;
         private Vector3 _bodyPos;
+        private bool _squashBody = true;
 
         public MotorState State { get; private set; } = MotorState.Airborne;
         public int Facing { get; private set; } = 1;
@@ -95,6 +96,8 @@ namespace Game.Player
             {
                 _bodyScale = body.localScale;
                 _bodyPos = body.localPosition;
+                // An animated character model shows crouching with a pose, not by squashing.
+                _squashBody = body.GetComponent<Game.World.CharacterAnimator>() == null;
             }
             ApplyHeight(standHeight);
             transform.rotation = Quaternion.Euler(0f, 90f, 0f);
@@ -221,7 +224,7 @@ namespace Game.Player
         {
             _cc.height = h;
             _cc.center = new Vector3(0f, h * 0.5f, 0f);
-            if (body != null)
+            if (body != null && _squashBody)
             {
                 // Squash the body by the height ratio. Works for a centred capsule and for a model with its pivot at the feet.
                 float k = h / standHeight;

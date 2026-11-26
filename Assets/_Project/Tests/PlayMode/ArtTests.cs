@@ -70,6 +70,58 @@ namespace Game.Tests
         }
 
         [UnityTest]
+        public IEnumerator Crouch_PlaysAPose_InsteadOfSquashingTheModel()
+        {
+            CharacterAnimator ca = _motor.GetComponentInChildren<CharacterAnimator>();
+            Vector3 scale = ca.transform.localScale;
+            Press(Key.C);
+            yield return Wait(0.5f);
+            Assert.IsTrue(_motor.IsCrouching, "crouching");
+            Assert.IsTrue(ca.Animator.GetCurrentAnimatorStateInfo(0).IsName("Crouch"), "crouch pose");
+            Assert.AreEqual(scale, ca.transform.localScale, "the model isn't squashed");
+            yield return Shot("17_crouch");
+            Release(Key.C);
+            yield return Wait(0.6f);
+            AnimatorStateInfo st = ca.Animator.GetCurrentAnimatorStateInfo(0);
+            string state = st.IsName("Idle") ? "Idle" : st.IsName("Run") ? "Run" : st.IsName("Jump") ? "Jump" : st.IsName("Crouch") ? "Crouch" : "?";
+            Assert.IsFalse(_motor.IsCrouching, "motor stands up");
+            Assert.AreEqual("Idle", state, $"stands back up (crouch param {ca.Animator.GetBool(CharacterAnimator.CrouchId)}, transition {ca.Animator.IsInTransition(0)})");
+        }
+
+        [UnityTest]
+        public IEnumerator RecordedSounds_AreLoudnessMatched()
+        {
+            yield return null;
+            Assert.IsNotNull(Resources.Load<TextAsset>("Sounds/gains"), "gains table (rebuild scenes)");
+            bool anyAdjusted = false;
+            for (int v = 0; v < 4; v++)
+            {
+                float g = AudioManager.GainOf(AudioManager.Clip(SoundId.Footstep, v));
+                Assert.That(g, Is.InRange(0.25f, 4f));
+                anyAdjusted |= Mathf.Abs(g - 1f) > 0.01f;
+            }
+            Assert.IsTrue(anyAdjusted, "footsteps were matched to the synth's level");
+            Assert.AreEqual(1f, AudioManager.GainOf(AudioManager.Clip(SoundId.MusicExplore)), "synth clips are untouched");
+        }
+
+        [UnityTest]
+        public IEnumerator Greybox_IsCoveredByKitMeshes_ButKeepsItsColliders()
+        {
+            yield return null;
+            GameObject floor = GameObject.Find("Shell/Floor");
+            Assert.IsFalse(floor.GetComponent<Renderer>().enabled, "greybox floor hidden");
+            Assert.IsTrue(floor.GetComponent<Collider>().enabled, "but still solid");
+            foreach (string name in new[] { "Catwalk", "Loft", "Mezzanine", "Platform_High", "Block_LedgeClimb", "Block_Archive" })
+            {
+                GameObject box = GameObject.Find(name);
+                Assert.IsNotNull(box, name);
+                Assert.IsFalse(box.GetComponent<Renderer>().enabled, $"{name} renders as a kit mesh");
+                Assert.IsNotNull(GameObject.Find(name + "_Model"), $"{name}_Model");
+            }
+            Assert.IsNotNull(GameObject.Find("Door_L2/Panel/Panel_Model"), "the door mesh rides on the sliding panel");
+        }
+
+        [UnityTest]
         public IEnumerator Dace_HasARenderedPortrait()
         {
             yield return null;
