@@ -1,5 +1,7 @@
 # Null Record
 
+> **New session? Read `HANDOFF.md` first.** It covers the current state, how to run things, and how the owner works (remotely, wanting autonomy).
+
 Unity 6000.6.7f1, URP 3D template, new Input System (`Assets/InputSystem_Actions.inputactions`).
 
 ## Conventions
@@ -26,5 +28,5 @@ Unity 6000.6.7f1, URP 3D template, new Input System (`Assets/InputSystem_Actions
 
 ## Tests
 - EditMode tests (`Assets/_Project/Tests/EditMode`) cover the rules: combat, dialogue and save files. PlayMode tests (`Tests/PlayMode`, base class `GreyboxTestBase`) drive the real scenes with a virtual keyboard and write screenshots to `Screenshots/`, which git ignores.
-- Headless run (needs the unpackaged Hub running, see Licensing): first `Unity.exe -batchmode -projectPath . -executeMethod Game.EditorTools.GreyboxLevelBuilder.BuildAll -quit`, then `-runTests -testPlatform EditMode`, then `-runTests -testPlatform PlayMode` (each run with `-testResults <file>`). Always put a time limit on these runs.
+- Headless run (needs the unpackaged Hub running, see Licensing): `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 test` builds the scenes and runs both test suites with time limits; results go to `Logs/batch/`. `... unity-batch.ps1 web` builds the WebGL player, and `sh Tools/publish-web.sh` publishes it to GitHub Pages.
 - Tests use a scratch save folder (`SaveSystem.DirectoryOverride`) and run at 60 fps. Use unscaled time for waits, because the pause menu sets `timeScale` to 0.
