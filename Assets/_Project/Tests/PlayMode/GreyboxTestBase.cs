@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using Game.Core;
 using Game.Player;
+using Game.Save;
 using Game.World;
 using NUnit.Framework;
 using UnityEngine;
@@ -60,6 +61,17 @@ namespace Game.Tests
             _states.Clear();
             GameMessages.Posted += OnMessage;
 
+            // Each test starts from a fresh game: saves go to a scratch folder that is wiped first.
+            SaveSystem.DirectoryOverride = System.IO.Path.Combine(Application.temporaryCachePath, "NullRecordTestSaves");
+            SaveSystem.Delete();
+
+            yield return LoadScene();
+        }
+
+        /// <summary>(Re)loads the greybox scene and finds the player again. Reloading picks up the current save.</summary>
+        protected IEnumerator LoadScene()
+        {
+            if (_motor != null) _motor.StateChanged -= OnState;
             yield return SceneManager.LoadSceneAsync(ScenePath, LoadSceneMode.Single);
             yield return null;
 
@@ -81,6 +93,8 @@ namespace Game.Tests
             if (_motor != null) _motor.StateChanged -= OnState;
             if (_kb != null) InputSystem.RemoveDevice(_kb);
             Application.targetFrameRate = -1;
+            SaveSystem.Delete();
+            SaveSystem.DirectoryOverride = null;
             yield return null;
         }
 

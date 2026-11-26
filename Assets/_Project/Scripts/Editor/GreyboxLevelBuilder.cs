@@ -3,6 +3,7 @@ using System.IO;
 using Game.CameraSystem;
 using Game.Companions;
 using Game.Dialogue;
+using Game.Save;
 using Game.Combat;
 using Game.Core;
 using Game.Player;
@@ -55,6 +56,7 @@ namespace Game.EditorTools
             BuildCamera(player.transform);
             BuildHud(player.GetComponent<PlayerInteractor>());
             new GameObject("DialogueUI").AddComponent<DialogueUI>();
+            new GameObject("SaveManager").AddComponent<SaveManager>();
             BuildCompanion(level);
             new GameObject("Bootstrap").AddComponent<Bootstrap>();
 
@@ -63,6 +65,20 @@ namespace Game.EditorTools
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);
             Debug.Log($"[Null Record] Built greybox level at {ScenePath}. Press Play to test.");
+        }
+
+        [MenuItem("Null Record/Delete Save", priority = 20)]
+        public static void DeleteSave()
+        {
+            SaveSystem.Delete();
+            Debug.Log($"[Null Record] Deleted save at {SaveSystem.FilePath}");
+        }
+
+        [MenuItem("Null Record/Show Save File", priority = 21)]
+        public static void ShowSave()
+        {
+            if (SaveSystem.Exists) EditorUtility.RevealInFinder(SaveSystem.FilePath);
+            else Debug.Log($"[Null Record] No save yet ({SaveSystem.FilePath}).");
         }
 
         // ------------------------------------------------------------------ level
@@ -132,6 +148,7 @@ namespace Game.EditorTools
 
             GameObject lining = Pickup(room, "Pickup_ThermalLining", new Vector3(27.5f, 4.6f, 0f), Mat("Pickup_Gear", new Color(1f, 0.5f, 0.1f), emission: new Color(1f, 0.45f, 0.1f)));
             lining.GetComponent<ItemPickup>().ConfigureProtection(HazardType.Heat);
+            lining.GetComponent<ItemPickup>().SetSaveId("pickup_thermal_lining");
 
             // Steam vent spanning floor to ceiling; impassable without Thermal Lining.
             Box(room, "SteamGrate", new Vector3(31.5f, 0.02f, 0f), new Vector3(3f, 0.05f, 2.5f), grate, collider: false);
@@ -147,6 +164,7 @@ namespace Game.EditorTools
 
             GameObject card = Pickup(room, "Pickup_Keycard_L2", new Vector3(36f, 1f, 0f), Mat("Pickup_Keycard", new Color(0.2f, 0.6f, 1f), emission: new Color(0.2f, 0.6f, 1f) * 1.5f));
             card.GetComponent<ItemPickup>().ConfigureKeycard(2);
+            card.GetComponent<ItemPickup>().SetSaveId("pickup_keycard_l2");
 
             Label(room, "MAINTENANCE", new Vector3(24f, 6.5f, 1.9f), new Color(1f, 0.7f, 0.3f));
             Label(room, "climb [W]", new Vector3(22.5f, 1.8f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f);
@@ -173,6 +191,7 @@ namespace Game.EditorTools
             Door door = doorGo.AddComponent<Door>();
             door.Configure(2, panel.transform, light.GetComponent<Renderer>(), 3f);
             door.SetInteractionPoint(new Vector3(-0.6f, 1.2f, 0f), 1.5f);
+            door.SetSaveId("door_security_l2");
 
             Checkpoint(room, "Checkpoint_C", new Vector3(41.5f, 0f, 0f));
 

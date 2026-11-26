@@ -23,6 +23,8 @@ namespace Game.World
         [SerializeField] private string toolId = "";
         [SerializeField] private float bobHeight = 0.1f;
         [SerializeField] private float spinSpeed = 60f;
+        [Tooltip("Unique per scene. Taking the pickup sets the flag taken_<id>, which keeps it gone after loading.")]
+        [SerializeField] private string saveId = "";
 
         private Vector3 _origin;
 
@@ -40,7 +42,17 @@ namespace Game.World
             displayName = hazard.ProtectionName();
         }
 
-        private void Start() => _origin = transform.position;
+        public string SaveId => saveId;
+        private string TakenFlag => $"taken_{saveId}";
+
+        public void SetSaveId(string id) => saveId = id;
+
+        private void Start()
+        {
+            _origin = transform.position;
+            PlayerInventory inv = GameObject.FindWithTag("Player")?.GetComponent<PlayerInventory>();
+            if (!string.IsNullOrEmpty(saveId) && inv != null && inv.HasFlag(TakenFlag)) Destroy(gameObject);
+        }
 
         private void Update()
         {
@@ -63,6 +75,7 @@ namespace Game.World
                 case PickupKind.Scrap: inv.AddScrap(amount); break;
             }
 
+            if (!string.IsNullOrEmpty(saveId)) inv.SetFlag(TakenFlag);
             GameMessages.Show(kind == PickupKind.Scrap ? $"+{amount} scrap" : $"Acquired: {displayName}");
             Destroy(gameObject);
         }

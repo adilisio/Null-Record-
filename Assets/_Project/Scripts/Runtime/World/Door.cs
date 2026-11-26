@@ -17,6 +17,8 @@ namespace Game.World
         [SerializeField] private Renderer statusLight;
         [SerializeField] private Color lockedColor = new Color(1f, 0.15f, 0.1f);
         [SerializeField] private Color unlockedColor = new Color(0.2f, 1f, 0.4f);
+        [Tooltip("Unique per scene. Opening sets the flag opened_<id>, so the door stays open after loading.")]
+        [SerializeField] private string saveId = "";
 
         private bool _open;
         private MaterialPropertyBlock _block;
@@ -32,7 +34,20 @@ namespace Game.World
             openDistance = slideDistance;
         }
 
-        private void Start() => RefreshLight();
+        private string OpenedFlag => $"opened_{saveId}";
+
+        public void SetSaveId(string id) => saveId = id;
+
+        private void Start()
+        {
+            PlayerInventory inv = GameObject.FindWithTag("Player")?.GetComponent<PlayerInventory>();
+            if (!string.IsNullOrEmpty(saveId) && inv != null && inv.HasFlag(OpenedFlag))
+            {
+                _open = true;
+                if (panel != null) panel.localPosition += Vector3.up * openDistance;
+            }
+            RefreshLight();
+        }
 
         public override bool IsAvailable(PlayerInteractor player) => !_open && base.IsAvailable(player);
 
@@ -50,6 +65,7 @@ namespace Game.World
                 return;
             }
             _open = true;
+            if (!string.IsNullOrEmpty(saveId)) player.Inventory.SetFlag(OpenedFlag);
             RefreshLight();
             StartCoroutine(Slide());
         }

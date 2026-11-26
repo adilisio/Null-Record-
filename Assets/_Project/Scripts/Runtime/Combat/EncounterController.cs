@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Game.Companions;
 using Game.Core;
 using Game.Player;
+using Game.Save;
 using Game.World;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -111,6 +112,15 @@ namespace Game.Combat
             if (tileMaterial == null) tileMaterial = FallbackMaterial(new Color(1f, 1f, 1f, 0.3f), true);
             if (enemyMaterial == null) enemyMaterial = FallbackMaterial(new Color(0.55f, 0.18f, 0.16f), false);
             if (visorMaterial == null) visorMaterial = FallbackMaterial(new Color(1f, 0.25f, 0.2f), false);
+            PlayerInventory inv = GameObject.FindWithTag("Player")?.GetComponent<PlayerInventory>();
+            if (inv != null && !string.IsNullOrEmpty(clearedFlag) && inv.HasFlag(clearedFlag))
+            {
+                // Already won in a previous session.
+                Status = EncounterStatus.Cleared;
+                SetHidden(true);
+                if (marker != null) CombatVisuals.Tint(marker, new Color(0.15f, 0.15f, 0.17f), emissive: true);
+                return;
+            }
             SpawnIdleEnemies();
         }
 
@@ -146,6 +156,8 @@ namespace Game.Combat
         public void Engage(PlayerInteractor player)
         {
             if (Status != EncounterStatus.Idle || player == null) return;
+            // Autosave just before the fight (the GDD's "before and after encounters").
+            if (SaveManager.Instance != null) SaveManager.Instance.SaveNow("encounter");
             _player = player;
             PlayerMotor motor = player.Motor;
             float laneZ = motor != null ? motor.LaneZ : 0f;

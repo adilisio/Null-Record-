@@ -50,6 +50,22 @@ namespace Game.Player
             Changed?.Invoke();
         }
 
+        public IEnumerable<string> Tools => _tools;
+        public IEnumerable<string> Flags => _flags;
+
+        /// <summary>Replaces everything at once (save loading). Raises <see cref="Changed"/> once.</summary>
+        public void Restore(int keycard, HazardType hazards, int scrapAmount, IEnumerable<string> tools, IEnumerable<string> flags)
+        {
+            keycardLevel = Mathf.Max(0, keycard);
+            protections = hazards;
+            scrap = Mathf.Max(0, scrapAmount);
+            _tools.Clear();
+            _flags.Clear();
+            if (tools != null) _tools.UnionWith(tools);
+            if (flags != null) _flags.UnionWith(flags);
+            Changed?.Invoke();
+        }
+
         public bool HasFlag(string flag) => _flags.Contains(flag);
 
         public void SetFlag(string flag)

@@ -57,14 +57,14 @@ namespace Game.Companions
         }
 
         /// <summary>Joins the party immediately (also used by tests and, later, save loading).</summary>
-        public void Recruit(PlayerInteractor player)
+        public void Recruit(PlayerInteractor player, bool announce = true)
         {
             if (Recruited) return;
             Recruited = true;
             player.Inventory?.SetFlag(recruitFlag);
             _follower.Begin(player);
             enabled = false; // no longer an interactable
-            GameMessages.Show($"{displayName} joined you.");
+            if (announce) GameMessages.Show($"{displayName} joined you.");
         }
     }
 }
