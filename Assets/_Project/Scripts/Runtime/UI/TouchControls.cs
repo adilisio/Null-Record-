@@ -25,6 +25,9 @@ namespace Game.UI
 
         private static bool _touchSeen;
 
+        /// <summary>Forget that the screen was touched (tests that simulate a touch call this afterwards).</summary>
+        public static void ResetTouchSeen() => _touchSeen = false;
+
         /// <summary>On phones/tablets, or once the screen has actually been touched (desktop browsers often report a touchscreen).</summary>
         public static bool ShouldShow => ForceVisible || Application.isMobilePlatform || _touchSeen;
 
@@ -55,9 +58,11 @@ namespace Game.UI
             Transform r = canvas.transform;
 
             // Stick, bottom-left.
-            Image ring = MenuWidgets.Panel(r, "StickRing", new Color(1f, 1f, 1f, 0.05f));
+            Image ring = MenuWidgets.Panel(r, "StickRing", new Color(1f, 1f, 1f, 0.06f));
+            ring.sprite = MenuWidgets.Circle;
             MenuWidgets.Anchor(ring.rectTransform, Vector2.zero, Vector2.zero, new Vector2(60f, 50f), new Vector2(280f, 270f));
-            Image knob = MenuWidgets.Panel(ring.transform, "Knob", new Color(1f, 1f, 1f, 0.18f));
+            Image knob = MenuWidgets.Panel(ring.transform, "Knob", new Color(1f, 1f, 1f, 0.2f));
+            knob.sprite = MenuWidgets.Circle;
             knob.rectTransform.anchorMin = knob.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             knob.rectTransform.sizeDelta = new Vector2(96f, 96f);
             var stick = knob.gameObject.AddComponent<OnScreenStick>();
@@ -73,20 +78,35 @@ namespace Game.UI
             Text pause = Button(r, "Pause", "<Gamepad>/start", new Vector2(-30f, 0f), 70f, new Color(1f, 1f, 1f, 0.12f), top: true);
             pause.text = "II";
 
-            // Combat-only row: change action and switch unit.
+            // Combat-only strip, bottom centre (clear of the grid's right-hand tiles): change action and switch unit.
             _combatRow = new GameObject("CombatRow", typeof(RectTransform));
             _combatRow.transform.SetParent(r, false);
             MenuWidgets.Stretch((RectTransform)_combatRow.transform, Vector2.zero, Vector2.zero);
-            Button(_combatRow.transform, "Prev", "<Gamepad>/dpad/left", new Vector2(-300f, 260f), 64f, new Color(1f, 1f, 1f, 0.07f)).text = "<";
-            Button(_combatRow.transform, "Next", "<Gamepad>/dpad/right", new Vector2(-224f, 260f), 64f, new Color(1f, 1f, 1f, 0.07f)).text = ">";
-            Button(_combatRow.transform, "Unit", "<Gamepad>/leftStickPress", new Vector2(-24f, 260f), 64f, new Color(1f, 1f, 1f, 0.07f)).text = "UNIT";
+            CentreButton(_combatRow.transform, "Prev", "<Gamepad>/dpad/left", -120f, "<");
+            CentreButton(_combatRow.transform, "Next", "<Gamepad>/dpad/right", -40f, ">");
+            CentreButton(_combatRow.transform, "Unit", "<Gamepad>/leftStickPress", 70f, "UNIT");
             _combatRow.SetActive(false);
         }
 
-        /// <summary>A round-ish on-screen button anchored to the bottom-right (or top-right) corner.</summary>
+        private static void CentreButton(Transform parent, string name, string controlPath, float x, string label)
+        {
+            Image img = MenuWidgets.Panel(parent, name, new Color(1f, 1f, 1f, 0.08f));
+            img.sprite = MenuWidgets.Circle;
+            RectTransform rt = img.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.anchoredPosition = new Vector2(x, 24f);
+            rt.sizeDelta = new Vector2(68f, 68f);
+            img.gameObject.AddComponent<OnScreenButton>().controlPath = controlPath;
+            Text t = MenuWidgets.Label(img.transform, "Label", label, 16, new Color(0.86f, 0.88f, 0.9f, 0.8f), TextAnchor.MiddleCenter);
+            MenuWidgets.Stretch(t.rectTransform, Vector2.zero, Vector2.zero);
+        }
+
+        /// <summary>A round on-screen button anchored to the bottom-right (or top-right) corner.</summary>
         private static Text Button(Transform parent, string name, string controlPath, Vector2 offsetFromCorner, float size, Color color, bool top = false)
         {
             Image img = MenuWidgets.Panel(parent, name, color);
+            img.sprite = MenuWidgets.Circle;
             RectTransform rt = img.rectTransform;
             Vector2 corner = top ? new Vector2(1f, 1f) : new Vector2(1f, 0f);
             rt.anchorMin = rt.anchorMax = corner;

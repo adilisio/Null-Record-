@@ -147,7 +147,7 @@ namespace Game.EditorTools
             Box(room, "CellBars", new Vector3(-0.5f, 3f, 1.6f), new Vector3(0.1f, 6f, 0.1f), Mat("Metal", new Color(0.5f, 0.52f, 0.55f), metallic: 0.8f), collider: false);
 
             Label(room, "HOLDING 03", new Vector3(2f, 5.5f, 1.9f), new Color(0.75f, 0.8f, 0.85f));
-            Label(room, "jump [Space]", new Vector3(5.75f, 2.2f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.5f);
+            Hint(Label(room, "jump [Space]", new Vector3(5.75f, 2.2f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.5f), "jump [JUMP]");
             Label(room, "grab the ledge: hold toward it while falling", new Vector3(11f, 3.6f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f);
         }
 
@@ -198,7 +198,7 @@ namespace Game.EditorTools
             card.GetComponent<ItemPickup>().SetSaveId("pickup_keycard_l2");
 
             Label(room, "MAINTENANCE", new Vector3(24f, 6.5f, 1.9f), new Color(1f, 0.7f, 0.3f));
-            Label(room, "climb [W]", new Vector3(22.5f, 1.8f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f);
+            Hint(Label(room, "climb [W]", new Vector3(22.5f, 1.8f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f), "climb [stick up]");
         }
 
         private static void BuildRoomC(Transform level)
@@ -233,7 +233,7 @@ namespace Game.EditorTools
             Box(room, "Hazard_ArcGrate", new Vector3(50.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f),
                 Mat("ArcGrate", new Color(0.12f, 0.14f, 0.05f), emission: new Color(0.7f, 1f, 0.15f) * 1.5f), collider: false);
 
-            GameObject engageSign = Label(room, "[ optional encounter: E to engage ]", new Vector3(49f, 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f);
+            GameObject engageSign = Hint(Label(room, "[ optional encounter: E to engage ]", new Vector3(49f, 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f), "[ optional encounter: USE to engage ]");
             GameObject encGo = new GameObject("Encounter_Security");
             encGo.transform.SetParent(room, false);
             encGo.transform.position = new Vector3(44.5f, 0f, 0f);
@@ -479,6 +479,13 @@ namespace Game.EditorTools
             l.intensity = intensity;
             l.range = range;
             l.shadows = shadows ? LightShadows.Soft : LightShadows.None;
+        }
+
+        /// <summary>Makes a sign's wording follow the device (keyboard text as built, <paramref name="touchText"/> on touch).</summary>
+        private static GameObject Hint(GameObject label, string touchText)
+        {
+            label.AddComponent<Game.UI.HintLabel>().Configure(label.GetComponent<TextMesh>().text, touchText);
+            return label;
         }
 
         private static GameObject Label(Transform parent, string text, Vector3 position, Color color, float size = 1f)

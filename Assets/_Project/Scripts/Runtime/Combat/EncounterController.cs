@@ -84,9 +84,11 @@ namespace Game.Combat
         private CompanionFollower _companion;
         private Vector3 _engagePosition;
         private GridView _grid;
-        private TextMesh _banner;
-        private TextMesh _help;
-        private TextMesh _logText;
+        private GameObject _hud;
+        private UnityEngine.UI.Text _banner;
+        private UnityEngine.UI.Text _help;
+        private UnityEngine.UI.Text _logText;
+        private RectTransform _helpPanel;
         private bool _animating;
         private bool _finishing;
         private int _inputBlockedUntilFrame;
@@ -223,7 +225,7 @@ namespace Game.Combat
             Unit subject = State.AddUnit(CombatPresets.Subject, Team.Player, playerTile, leader: true, bonusHp: bonusHp);
             motor?.SetExternalControl(true);
             player.transform.position = playerTile.World;
-            _views.Add(new UnitView(subject, player.transform, owned: false));
+            _views.Add(new UnitView(subject, player.transform, owned: false, barMaterial: tileMaterial));
 
             // The companion in the party (if any) fights with their own body.
             _companion = CompanionFollower.Active;
@@ -236,7 +238,7 @@ namespace Game.Combat
                     Unit c = State.AddUnit(companionDef, Team.Player, ct, bonusHp: bonusHp);
                     _companion.SetPaused(true);
                     _companion.transform.position = ct.World;
-                    _views.Add(new UnitView(c, _companion.transform, owned: false));
+                    _views.Add(new UnitView(c, _companion.transform, owned: false, barMaterial: tileMaterial));
                 }
             }
 
@@ -246,11 +248,15 @@ namespace Game.Combat
                 UnitDef def = CombatPresets.Find(enemies[i].unit);
                 if (def == null) continue;
                 Tile t = Nearest(grid, GroundAt(enemies[i].position));
-                if (State.Occupied(t)) continue;
+                if (State.Occupied(t))
+                {
+                    Destroy(_idleEnemies[i]); // no free tile: don't leave the idle figure standing
+                    continue;
+                }
                 Unit e = State.AddUnit(def, Team.Enemy, t);
                 GameObject fig = _idleEnemies[i];
                 fig.transform.position = t.World;
-                _views.Add(new UnitView(e, fig.transform, owned: true));
+                _views.Add(new UnitView(e, fig.transform, owned: true, barMaterial: tileMaterial));
             }
             _idleEnemies.Clear();
 
@@ -286,7 +292,7 @@ namespace Game.Combat
             _views.Clear();
             _grid?.Destroy();
             _grid = null;
-            if (_banner != null) Destroy(_banner.transform.parent.gameObject);
+            if (_hud != null) Destroy(_hud);
             Selected = null;
             Cursor = null;
 
@@ -618,18 +624,36 @@ namespace Game.Combat
 
             foreach (UnitView v in _views)
             {
+                v.DisplayHp = v.Unit.Hp; // idle: the playback has caught up
                 if (v.Unit.Alive) v.Refresh(playerTurn && v.Unit == Selected);
             }
             UpdateHud();
         }
 
+        /// <summary>The turn banner as shown (tests).</summary>
+        public string BannerText => _banner != null ? _banner.text : "";
+        /// <summary>The unit/skill/controls bar as shown (tests).</summary>
+        public string HelpText => _help != null ? _help.text : "";
+
+        /// <summary>Banner, unit/skill bar and log on a screen canvas, so they stay readable at any size (phones included).</summary>
         private void BuildHud()
         {
-            var root = new GameObject("CombatHUD").transform;
-            float cx = area.center.x;
-            _banner = CombatVisuals.Text(root, "Banner", new Vector3(cx, area.yMax - 0.35f, 1.4f), 0.55f, new Color(1f, 0.85f, 0.6f));
-            _help = CombatVisuals.Text(root, "Help", new Vector3(cx, area.yMax - 0.95f, 1.4f), 0.3f, new Color(0.75f, 0.8f, 0.85f));
-            _logText = CombatVisuals.Text(root, "Log", new Vector3(area.xMin + 0.4f, area.yMax - 1.5f, 1.4f), 0.26f, new Color(0.85f, 0.85f, 0.8f), TextAnchor.UpperLeft);
+            Canvas canvas = Game.UI.MenuWidgets.Canvas(null, "CombatHUD", 55, Camera.main);
+            _hud = canvas.gameObject;
+            Transform r = canvas.transform;
+
+            _banner = Game.UI.MenuWidgets.Label(r, "Banner", "", 30, new Color(1f, 0.85f, 0.6f), TextAnchor.UpperCenter);
+            Game.UI.MenuWidgets.Anchor(_banner.rectTransform, new Vector2(0.2f, 1f), new Vector2(0.8f, 1f), new Vector2(0f, -66f), new Vector2(0f, -22f));
+            _banner.gameObject.AddComponent<UnityEngine.UI.Shadow>().effectDistance = new Vector2(2f, -2f);
+
+            UnityEngine.UI.Image panel = Game.UI.MenuWidgets.Panel(r, "HelpPanel", new Color(0.03f, 0.04f, 0.05f, 0.72f));
+            _helpPanel = panel.rectTransform;
+            _help = Game.UI.MenuWidgets.Label(panel.transform, "Help", "", 18, new Color(0.85f, 0.88f, 0.92f), TextAnchor.MiddleCenter);
+            Game.UI.MenuWidgets.Stretch(_help.rectTransform, new Vector2(14f, 4f), new Vector2(-14f, -4f));
+
+            _logText = Game.UI.MenuWidgets.Label(r, "Log", "", 14, new Color(0.85f, 0.85f, 0.8f), TextAnchor.UpperRight);
+            Game.UI.MenuWidgets.Anchor(_logText.rectTransform, new Vector2(0.76f, 1f), new Vector2(1f, 1f), new Vector2(0f, -250f), new Vector2(-16f, -150f));
+            _logText.gameObject.AddComponent<UnityEngine.UI.Shadow>().effectDistance = new Vector2(1.5f, -1.5f);
         }
 
         private void UpdateHud()
@@ -655,13 +679,16 @@ namespace Game.Combat
                     skills += s.TargetsAllies ? $"   {s.Name} heal+{s.Heal}{cd}" : $"   {s.Name} {s.Damage}{(s.Knockback > 0 ? $"+push{s.Knockback}" : "")}{cd}";
                 }
                 string hazard = Cursor != null && Cursor.Hazard > 0 ? $"   [cursor: HAZARD, {Cursor.Hazard} damage if you stop here]" : "";
-                _help.text = $"{Selected.Name}: {action}{(Selected.Acted ? " / acted" : "")}  |{skills}{hazard}\n" +
-                             "WASD cursor   Space confirm   1/2 action   C cancel   Shift unit   E end turn";
+                _help.text = $"{Selected.Name}: {action}{(Selected.Acted ? " / acted" : "")}  |{skills}{hazard}\n" + Game.UI.InputHints.CombatControls;
             }
             else
             {
                 _help.text = "";
             }
+
+            // Under the banner: clear of the grid (bottom) and the touch controls.
+            Game.UI.MenuWidgets.Anchor(_helpPanel, new Vector2(0.14f, 1f), new Vector2(0.86f, 1f), new Vector2(0f, -132f), new Vector2(0f, -70f));
+            _helpPanel.gameObject.SetActive(_help.text.Length > 0);
 
             int from = Mathf.Max(0, _log.Count - 3);
             _logText.text = string.Join("\n", _log.GetRange(from, _log.Count - from));
@@ -782,6 +809,7 @@ namespace Game.Combat
             GameAudio.Play(SoundId.Pickup, (v != null ? v.Root.position : ev.To.World) + Vector3.up);
             yield return new WaitForSeconds(0.2f);
             if (v == null) yield break;
+            v.DisplayHp = ev.HpAfter;
             v.Refresh(false);
             TextMesh pop = CombatVisuals.Text(null, "HealPop", v.Root.position + new Vector3(0.4f, 2f, -0.8f), 0.5f, new Color(0.35f, 1f, 0.5f));
             pop.text = $"+{ev.Amount}";
@@ -798,6 +826,7 @@ namespace Game.Combat
         {
             UnitView v = ViewOf(ev.Target);
             if (v == null) yield break;
+            v.DisplayHp = ev.HpAfter;
             v.Refresh(false);
             v.Root.GetComponentInChildren<CharacterAnimator>()?.Play("Hit", 0.35f);
             TextMesh pop = CombatVisuals.Text(null, "DamagePop", v.Root.position + new Vector3(0.4f, 2f, -0.8f), 0.5f, new Color(1f, 0.3f, 0.25f));

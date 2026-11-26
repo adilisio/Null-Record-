@@ -70,7 +70,8 @@ namespace Game.CameraSystem
                 float fitW = (a.width * 0.5f + 1f) / (tan * _camera.aspect);
                 float fitH = (a.height * 0.5f + 1f) / tan;
                 desiredDistance = Mathf.Max(distance, fitW, fitH);
-                desired = a.center + new Vector2(0f, 0.5f);
+                // With touch controls up, sit lower so the grid rides above the stick and buttons.
+                desired = a.center + new Vector2(0f, Game.UI.TouchControls.ShouldShow ? -1.3f : 0.5f);
             }
             else
             {

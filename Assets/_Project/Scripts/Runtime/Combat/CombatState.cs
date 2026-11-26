@@ -82,6 +82,8 @@ namespace Game.Combat
         public Tile From;
         public Tile To;
         public int Amount;
+        /// <summary>The target's HP once this event has happened (Damage and Heal), so the view can count down with the playback.</summary>
+        public int HpAfter;
         public string Text;
     }
 
@@ -260,7 +262,7 @@ namespace Game.Combat
                 if (victim == null) return;
                 int before = victim.Hp;
                 victim.Hp = Mathf.Min(victim.MaxHp, victim.Hp + s.Heal);
-                Emit(new CombatEvent { Kind = CombatEventKind.Heal, Actor = attacker, Target = victim, Skill = s, Amount = victim.Hp - before, From = attacker.Tile, To = target });
+                Emit(new CombatEvent { Kind = CombatEventKind.Heal, Actor = attacker, Target = victim, Skill = s, Amount = victim.Hp - before, HpAfter = victim.Hp, From = attacker.Tile, To = target });
                 Say($"{attacker.Name} uses {s.Name} on {victim.Name}: +{victim.Hp - before} HP.");
                 return;
             }
@@ -284,7 +286,7 @@ namespace Game.Combat
         {
             if (!victim.Alive) return;
             victim.Hp = Mathf.Max(0, victim.Hp - amount);
-            Emit(new CombatEvent { Kind = CombatEventKind.Damage, Target = victim, Amount = amount, Text = why });
+            Emit(new CombatEvent { Kind = CombatEventKind.Damage, Target = victim, Amount = amount, HpAfter = victim.Hp, Text = why });
             Say($"{why}: {amount} damage.");
             if (!victim.Alive)
             {

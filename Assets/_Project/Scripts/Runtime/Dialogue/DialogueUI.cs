@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Game.Player;
 using Game.Audio;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -157,10 +158,22 @@ namespace Game.Dialogue
                 MoveSelection(mv.y > 0 ? -1 : 1);
             }
 
-            if (Pressed(_aJump) || Pressed(_aInteract) || Pressed(_aAttack)) Confirm();
+            if (Pressed(_aJump) || Pressed(_aInteract) || Pressed(_aAttack) || TappedOffUi()) Confirm();
         }
 
+        /// <summary>The line on screen right now (tests).</summary>
+        public string CurrentLine => _body != null ? _body.text : "";
+
         private static bool Pressed(InputAction a) => a != null && a.WasPressedThisFrame();
+
+        /// <summary>A tap anywhere that isn't an on-screen button (those already send their own input).</summary>
+        private static bool TappedOffUi()
+        {
+            Touchscreen ts = Touchscreen.current;
+            if (ts == null || !ts.primaryTouch.press.wasPressedThisFrame) return false;
+            int id = ts.primaryTouch.touchId.ReadValue();
+            return EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject(id);
+        }
 
         private void Close()
         {
@@ -215,7 +228,7 @@ namespace Game.Dialogue
                 _choiceTexts[i].text = (sel ? "> " : "   ") + choices[i].text;
                 _choiceTexts[i].color = sel ? new Color(1f, 0.85f, 0.55f) : new Color(0.7f, 0.72f, 0.75f);
             }
-            _hint.text = choices.Count > 0 ? "W/S choose   Space select" : "Space continue";
+            _hint.text = choices.Count > 0 ? Game.UI.InputHints.DialogueChoose : Game.UI.InputHints.DialogueContinue;
         }
 
         private void HideBark()

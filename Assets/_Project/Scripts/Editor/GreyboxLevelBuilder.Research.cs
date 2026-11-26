@@ -152,7 +152,7 @@ namespace Game.EditorTools
             Box(room, "Raised_Block", new Vector3(146.5f, y + 0.8f, 0f), new Vector3(3f, 1.6f, 2.4f), Mat("ArchiveBlock", new Color(0.28f, 0.3f, 0.34f)));
             Box(room, "Hazard_ArcGrate_C", new Vector3(138.5f, y + 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
 
-            GameObject engageSign = Label(room, "[ optional encounter: E to engage ]", new Vector3(141f, y + 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f);
+            GameObject engageSign = Hint(Label(room, "[ optional encounter: E to engage ]", new Vector3(141f, y + 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f), "[ optional encounter: USE to engage ]");
             var encGo = new GameObject("Encounter_Specimens");
             encGo.transform.SetParent(room, false);
             encGo.transform.position = new Vector3(135.5f, y, 0f);

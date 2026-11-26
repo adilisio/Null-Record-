@@ -153,6 +153,9 @@ namespace Game.Tests
             yield return Until(() => !enc.IsBusy, 3f, "events done");
             yield return Wait(0.8f);
             Assert.IsTrue(mine.Animator.GetCurrentAnimatorStateInfo(0).IsName("Idle"), "back to Idle after the clip");
+            UnitView fv2 = (UnitView)foe.View;
+            Assert.AreEqual(foe.Hp, fv2.DisplayHp, "the shown HP has caught up with the real HP");
+            Assert.IsNotNull(fv2.Root.Find("CombatLabels/HpFill"), "HP bar over the head");
         }
 
         [UnityTest]

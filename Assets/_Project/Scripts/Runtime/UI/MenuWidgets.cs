@@ -21,6 +21,31 @@ namespace Game.UI
         public static readonly Color Danger = new Color(1f, 0.38f, 0.32f);
 
         private static Font _font;
+        private static Sprite _circle;
+
+        /// <summary>A soft-edged white circle sprite (made once in code) for round on-screen controls.</summary>
+        public static Sprite Circle
+        {
+            get
+            {
+                if (_circle != null) return _circle;
+                const int n = 128;
+                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { name = "Circle", wrapMode = TextureWrapMode.Clamp };
+                float r = n * 0.5f;
+                for (int y = 0; y < n; y++)
+                {
+                    for (int x = 0; x < n; x++)
+                    {
+                        float d = Mathf.Sqrt((x + 0.5f - r) * (x + 0.5f - r) + (y + 0.5f - r) * (y + 0.5f - r));
+                        tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(r - d)));
+                    }
+                }
+                tex.Apply();
+                _circle = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f);
+                return _circle;
+            }
+        }
+
         public static Font Font => _font != null ? _font : _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         public static Canvas Canvas(Transform parent, string name, int order, Camera cam)

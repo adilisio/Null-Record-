@@ -100,23 +100,44 @@ namespace Game.Combat
         public TextMesh Label;
         public TextMesh IntentLabel;
         public Renderer[] Renderers;
+        /// <summary>HP as shown: follows the event playback rather than jumping to the final value.</summary>
+        public int DisplayHp;
+        private Renderer _barFill;
+        private Transform _barFillT;
         /// <summary>Spawned for this encounter (destroyed afterwards); false for the player's own body.</summary>
         public bool Owned;
         private readonly Transform _labelRoot;
 
-        public UnitView(Unit unit, Transform root, bool owned)
+        public UnitView(Unit unit, Transform root, bool owned, Material barMaterial = null)
         {
             Unit = unit;
             Root = root;
             Owned = owned;
             Renderers = root.GetComponentsInChildren<Renderer>();
+            DisplayHp = unit.Hp;
             // Labels live on an unrotated child so they read correctly whichever way the unit faces.
             _labelRoot = new GameObject("CombatLabels").transform;
             _labelRoot.SetParent(root, false);
-            Label = CombatVisuals.Text(_labelRoot, "Label", new Vector3(0f, 2.35f, -0.6f), 0.28f, Color.white);
+            Label = CombatVisuals.Text(_labelRoot, "Label", new Vector3(0f, 2.45f, -0.6f), 0.22f, Color.white);
             if (unit.Team == Team.Enemy)
             {
-                IntentLabel = CombatVisuals.Text(_labelRoot, "Intent", new Vector3(0f, 2.85f, -0.6f), 0.24f, new Color(1f, 0.45f, 0.4f));
+                IntentLabel = CombatVisuals.Text(_labelRoot, "Intent", new Vector3(0f, 2.85f, -0.6f), 0.22f, new Color(1f, 0.45f, 0.4f));
+            }
+            if (barMaterial != null)
+            {
+                // A small HP bar over the head: dark back, team-coloured fill anchored at the left.
+                GameObject back = CombatVisuals.Quad(_labelRoot, "HpBack", barMaterial, Vector3.zero, Vector3.one);
+                back.transform.localPosition = new Vector3(0f, 2.22f, -0.62f);
+                back.transform.localRotation = Quaternion.identity;
+                back.transform.localScale = new Vector3(0.8f, 0.09f, 0.01f);
+                CombatVisuals.Tint(back.GetComponent<Renderer>(), new Color(0f, 0f, 0f, 0.7f));
+                GameObject fill = CombatVisuals.Quad(_labelRoot, "HpFill", barMaterial, Vector3.zero, Vector3.one);
+                fill.transform.localPosition = new Vector3(0f, 2.22f, -0.64f);
+                fill.transform.localRotation = Quaternion.identity;
+                fill.transform.localScale = new Vector3(0.76f, 0.06f, 0.01f);
+                _barFill = fill.GetComponent<Renderer>();
+                _barFillT = fill.transform;
+                CombatVisuals.Tint(_barFill, unit.Team == Team.Player ? new Color(0.35f, 0.9f, 1f, 0.95f) : new Color(1f, 0.35f, 0.3f, 0.95f));
             }
             unit.View = this;
             Refresh(false);
@@ -127,7 +148,13 @@ namespace Game.Combat
             _labelRoot.rotation = Quaternion.identity;
             Color team = Unit.Team == Team.Player ? new Color(0.6f, 0.9f, 1f) : new Color(1f, 0.6f, 0.55f);
             Label.color = selected ? Color.white : team;
-            Label.text = (selected ? "> " : "") + Unit.Name + "\n" + $"{Unit.Hp}/{Unit.MaxHp}";
+            Label.text = (selected ? "> " : "") + $"{Unit.Name}  {DisplayHp}/{Unit.MaxHp}";
+            if (_barFillT != null)
+            {
+                float f = Unit.MaxHp > 0 ? Mathf.Clamp01(DisplayHp / (float)Unit.MaxHp) : 0f;
+                _barFillT.localScale = new Vector3(0.76f * f, 0.06f, 0.01f);
+                _barFillT.localPosition = new Vector3(-0.38f * (1f - f), 2.22f, -0.64f);
+            }
             if (IntentLabel != null)
             {
                 Intent i = Unit.Intent;

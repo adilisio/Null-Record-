@@ -215,8 +215,9 @@ namespace Game.Save
             var rt = (RectTransform)go.transform;
             rt.anchorMin = new Vector2(1f, 1f);
             rt.anchorMax = new Vector2(1f, 1f);
-            rt.offsetMin = new Vector2(-260f, -56f);
-            rt.offsetMax = new Vector2(-24f, -20f);
+            // Left of the touch pause button (top-right corner).
+            rt.offsetMin = new Vector2(-380f, -56f);
+            rt.offsetMax = new Vector2(-120f, -20f);
             go.SetActive(false);
         }
     }

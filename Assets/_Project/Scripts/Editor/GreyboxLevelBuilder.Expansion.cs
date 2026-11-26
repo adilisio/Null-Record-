@@ -80,7 +80,7 @@ namespace Game.EditorTools
             grid.SetInteractionPoint(new Vector3(-0.6f, 1.2f, 0f), 1.5f);
 
             Label(room, "RECORDS", new Vector3(60f, 6.5f, 1.9f), new Color(0.75f, 0.85f, 1f));
-            Label(room, "climb [W]", new Vector3(63f, 1.8f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f);
+            Hint(Label(room, "climb [W]", new Vector3(63f, 1.8f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f), "climb [stick up]");
         }
 
         private static void BuildRoomE(Transform level)
@@ -99,7 +99,7 @@ namespace Game.EditorTools
             Box(room, "Hazard_ArcGrate_A", new Vector3(81.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
             Box(room, "Hazard_ArcGrate_B", new Vector3(87.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
 
-            GameObject engageSign = Label(room, "[ optional encounter: E to engage ]", new Vector3(81.5f, 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f);
+            GameObject engageSign = Hint(Label(room, "[ optional encounter: E to engage ]", new Vector3(81.5f, 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f), "[ optional encounter: USE to engage ]");
             var encGo = new GameObject("Encounter_Servers");
             encGo.transform.SetParent(room, false);
             encGo.transform.position = new Vector3(75.5f, 0f, 0f);
