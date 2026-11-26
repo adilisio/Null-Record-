@@ -52,7 +52,7 @@ namespace Game.Tests
                 Assert.IsNotNull(t.GetComponentInChildren<SkinnedMeshRenderer>(), $"{t.name} has a model");
                 Assert.IsNotNull(t.GetComponentInChildren<CharacterAnimator>(), $"{t.name} animates");
             }
-            Assert.AreEqual(6, hostiles, "three idle hostiles each in Security and the Server Hall");
+            Assert.AreEqual(9, hostiles, "three idle hostiles each in Security, the Server Hall and the Specimen Hall");
         }
 
         [UnityTest]
@@ -226,7 +226,7 @@ namespace Game.Tests
             {
                 if (t.name.StartsWith("Weapon_") && t.parent != null && t.parent.name == "RightHand") armed++;
             }
-            Assert.GreaterOrEqual(armed, 7, "Dace plus six idle hostiles hold weapons (the Subject is unarmed)");
+            Assert.GreaterOrEqual(armed, 11, "Dace, the Researcher and nine idle hostiles hold something (the Subject is unarmed)");
         }
 
         [UnityTest]

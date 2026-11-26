@@ -20,7 +20,7 @@ namespace Game.EditorTools
         public const float ModelScale = 0.62f;
         /// <summary>Normalised time in the jump clip used as the crouch pose (the wind-up before take-off).</summary>
         public const float CrouchPoseTime = 0.12f;
-        public static readonly string[] Roster = { "Subject", "Dace", "Enforcer", "Sentry", "Warden" };
+        public static readonly string[] Roster = { "Subject", "Dace", "Researcher", "Enforcer", "Sentry", "Warden" };
 
         private const string ModelPath = KenneyDir + "/Model/characterMedium.fbx";
 
@@ -41,7 +41,7 @@ namespace Game.EditorTools
         }
 
         /// <summary>Speaker key -> character prefab. Portraits land in Resources/Portraits/&lt;key&gt;.png.</summary>
-        private static readonly (string key, string character)[] PortraitSubjects = { ("dace", "Dace"), ("subject", "Subject") };
+        private static readonly (string key, string character)[] PortraitSubjects = { ("dace", "Dace"), ("researcher", "Researcher"), ("subject", "Subject") };
         private const string PortraitDir = "Assets/_Project/Resources/Portraits";
 
         /// <summary>
@@ -151,6 +151,11 @@ namespace Game.EditorTools
                     Part(weapon, PrimitiveType.Cylinder, grip, new Vector3(0f, 0.3f, 0f), new Vector3(0.05f, 0.36f, 0.05f));
                     Part(weapon, PrimitiveType.Cube, metal, new Vector3(0f, 0.68f, 0f), new Vector3(0.32f, 0.16f, 0.16f));
                     Part(weapon, PrimitiveType.Cube, hazard, new Vector3(0f, 0.68f, 0f), new Vector3(0.33f, 0.05f, 0.17f));
+                    break;
+                case "Researcher": // hand scanner
+                    Part(weapon, PrimitiveType.Cube, grip, new Vector3(0f, 0.05f, 0f), new Vector3(0.05f, 0.1f, 0.05f));
+                    Part(weapon, PrimitiveType.Cube, metal, new Vector3(0f, 0.13f, 0f), new Vector3(0.12f, 0.08f, 0.03f));
+                    Part(weapon, PrimitiveType.Cube, glow, new Vector3(0f, 0.13f, -0.017f), new Vector3(0.09f, 0.055f, 0.005f));
                     break;
                 case "Sentry": // taser pistol, barrel along the arm
                     Part(weapon, PrimitiveType.Cube, grip, new Vector3(0f, 0.04f, 0f), new Vector3(0.06f, 0.1f, 0.09f));

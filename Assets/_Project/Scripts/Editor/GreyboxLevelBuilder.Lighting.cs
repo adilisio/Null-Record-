@@ -61,6 +61,7 @@ namespace Game.EditorTools
             MaintenanceLights(lights);
             SecurityLights(lights);
             ExpansionLights(lights);
+            ResearchLights(lights);
         }
 
         // ---------------------------------------------------------------- rooms

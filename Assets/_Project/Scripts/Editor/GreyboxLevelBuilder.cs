@@ -69,6 +69,7 @@ namespace Game.EditorTools
             BuildRoomC(level);
             BuildRoomD(level);
             BuildRoomE(level);
+            BuildResearchWing(level);
             BuildDressing(level);
             BuildCameraZones(level);
 
@@ -270,6 +271,7 @@ namespace Game.EditorTools
             CameraZoneAt(zones, "Zone_C", new Vector3(48f, 4f, 0f), new Vector2(16f, 8.5f), "Security");
             CameraZoneAt(zones, "Zone_D", new Vector3(64f, 4f, 0f), new Vector2(16f, 8.5f), "Records");
             CameraZoneAt(zones, "Zone_E", new Vector3(81f, 4f, 0f), new Vector2(18f, 8.5f), "Server Hall");
+            ResearchZones(zones);
         }
 
         // ------------------------------------------------------------------ actors

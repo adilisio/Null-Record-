@@ -17,8 +17,8 @@ namespace Game.EditorTools
         private static void BuildDressing(Transform level)
         {
             Transform root = Group(level, "Dressing");
-            BackWallPanels(Group(root, "BackWall"));
-            FloorTiles(Group(root, "FloorTiles"));
+            BackWallPanels(Group(root, "BackWall"), -2, (int)SliceEndX, 0f);
+            FloorTiles(Group(root, "FloorTiles"), -2, (int)SliceEndX, 0f, 0f, 0f, "Shell/Floor");
             // Kit meshes over the greybox walkways, blocks and door; the greybox colliders stay.
             foreach (string walkway in new[] { "Catwalk", "Loft", "Mezzanine", "Platform_High" }) Reskin(walkway, "floor-panel");
             Reskin("Block_LedgeClimb", "structure");
@@ -28,34 +28,42 @@ namespace Game.EditorTools
             MaintenanceProps(Group(root, "Maintenance"));
             SecurityProps(Group(root, "Security"));
             ExpansionProps(root);
+            ResearchProps(root);
         }
 
-        private static void BackWallPanels(Transform parent)
+        private static void BackWallPanels(Transform parent, int x0, int x1, float floorY)
         {
-            // Three rows of 1 m panels along the whole level, with a little deterministic variety.
-            for (int x = -2; x < (int)SliceEndX; x++)
+            // Three rows of 1 m panels, with a little deterministic variety.
+            for (int x = x0; x < x1; x++)
             {
                 for (int row = 0; row < 3; row++)
                 {
-                    string piece = row == 1 && x % 7 == 3 ? "wall-window" : "wall";
-                    if (row == 2 && x % 9 == 4) piece = "wall-banner";
-                    Prop(parent, piece, new Vector3(x + 0.5f, row, PanelZ), 0f);
+                    string piece = row == 1 && Mathf.Abs(x) % 7 == 3 ? "wall-window" : "wall";
+                    if (row == 2 && Mathf.Abs(x) % 9 == 4) piece = "wall-banner";
+                    Prop(parent, piece, new Vector3(x + 0.5f, floorY + row, PanelZ), 0f);
                 }
             }
         }
 
-        /// <summary>Kit floor tiles over the whole level (top at y = 0); the greybox floor keeps its collider.</summary>
-        private static void FloorTiles(Transform parent)
+        /// <summary>
+        /// Kit floor tiles (top at <paramref name="floorY"/>) from x0 to x1, skipping [gapFrom, gapTo); the greybox
+        /// floors named in <paramref name="hide"/> keep their colliders with their renderers hidden.
+        /// </summary>
+        private static void FloorTiles(Transform parent, int x0, int x1, float floorY, float gapFrom, float gapTo, params string[] hide)
         {
-            for (int x = -2; x < (int)SliceEndX; x++)
+            for (int x = x0; x < x1; x++)
             {
+                if (x + 0.5f > gapFrom && x + 0.5f < gapTo) continue;
                 for (int z = -2; z < 2; z++)
                 {
-                    Prop(parent, (x + z) % 6 == 0 ? "floor-detail" : "floor", new Vector3(x + 0.5f, -0.3f, z + 0.5f), 0f);
+                    Prop(parent, Mathf.Abs(x + z) % 6 == 0 ? "floor-detail" : "floor", new Vector3(x + 0.5f, floorY - 0.3f, z + 0.5f), 0f);
                 }
             }
-            GameObject floor = GameObject.Find("Shell/Floor");
-            if (floor != null) floor.GetComponent<Renderer>().enabled = false;
+            foreach (string name in hide)
+            {
+                GameObject floor = GameObject.Find(name);
+                if (floor != null) floor.GetComponent<Renderer>().enabled = false;
+            }
         }
 
         private static void HoldingProps(Transform parent)

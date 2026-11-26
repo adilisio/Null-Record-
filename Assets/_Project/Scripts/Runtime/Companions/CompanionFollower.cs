@@ -40,13 +40,32 @@ namespace Game.Companions
             if (Active == this) Active = null;
         }
 
+        public void SetCombatUnit(string unit) => combatUnit = unit;
+
+        /// <summary>
+        /// Makes this the companion in the party. Whoever was active before goes to wait at the companion terminal
+        /// (one companion at a time).
+        /// </summary>
         public void Begin(PlayerInteractor player)
         {
+            if (Active != null && Active != this) Active.Bench(CompanionTerminal.BenchSpotFor(Active));
             _target = player.transform;
             _motor = player.Motor;
             Active = this;
             Paused = false;
             enabled = true;
+        }
+
+        /// <summary>Leaves the party and stands at <paramref name="spot"/> until called again.</summary>
+        public void Bench(Vector3 spot)
+        {
+            _target = null;
+            _motor = null;
+            Paused = false;
+            if (Active == this) Active = null;
+            enabled = false;
+            transform.position = spot;
+            transform.rotation = Quaternion.Euler(0f, -90f, 0f);
         }
 
         /// <summary>Hands the transform to another system (combat) or takes it back.</summary>

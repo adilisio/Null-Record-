@@ -106,6 +106,7 @@ namespace Game.Dialogue
             switch (key)
             {
                 case "dace": return new Info { Name = "Dace", Color = new Color(0.32f, 0.42f, 0.55f) };
+                case "researcher": return new Info { Name = "Researcher", Color = new Color(0.3f, 0.75f, 0.65f) };
                 case "pa": return new Info { Name = "Site PA", Color = new Color(0.55f, 0.2f, 0.18f) };
                 default: return new Info { Name = string.IsNullOrEmpty(key) ? "" : key, Color = new Color(0.3f, 0.3f, 0.32f) };
             }

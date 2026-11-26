@@ -224,6 +224,19 @@ One region (Intake / Holding), polished enough to show:
 - **Combat camera:** during a fight the camera frames the whole encounter area, pulling back if needed, rather than following the player.
 - Room names, the lift and the log fragments are placeholders until the story is set.
 
+### Region 2: the Research Wing (2026-11-26, first pass)
+- **Getting there:** the freight lift at the end of the Server Hall rides to the Research Wing and back. It's in the same scene for now, offset to x 100–156, y −30. The GDD plans one scene per region, so this is a first-pass simplification. The lift text is direction-neutral, because up or down is still a story question.
+- **Lift Lobby:** the arrival lift, a checkpoint, and the **companion terminal**. One companion is active at a time; the others wait beside the terminal, and using it cycles who comes along. Recruiting a new companion sends the current one to wait there. Saves remember who follows and who waits.
+- **Labs:** the **remote override**, the second hacking tool, sits on a lab bench. A 7 m pit can't be jumped: the best sprint jump with coyote time and ledge reach is about 5.6 m. It's 4.5 m deep, too deep to ledge-climb out of the far side, and a ladder gets you back to the near side. The bridge controls are on the far side; with the override you operate them from across the gap, up to 10 m away, and the bridge slides out. Without it they're locked out. The bridge stays out after loading (`opened_bridge_labs`).
+- **Specimen Hall:**
+  - **Third optional fight:** the Enforcer, the Sentry on a platform, and the Warden on a 1.6 m raised block. Shoving it off deals fall damage, which ignores its armour. There's one arc grate.
+  - **Rewards:** 50 scrap, 50 XP and a log fragment.
+  - **Companion 2:** waits past the fight. You can walk past the idle hostiles.
+  - **The end:** a freight shutter, also opened by the override, marks the end of the slice.
+- **Companion 2:** the support role from the table in section 5, labelled **"Researcher"** for now; the name, voice, look and writing are the owner's call. The recruit lines are marked placeholder.
+  - **Skills:** Static Dart (ranged 2–4, 1 damage) and **Patch**, which heals an ally (not self) for 3, range 1–3, cooldown 2. The enemy AI never uses support skills.
+  - **Placeholder look:** a lab coat skin and a hand scanner.
+
 ### Later milestones (rough)
 2. Greybox all three regions and the gating map
 3. Companions 2 and 3, the full skill sets and the XP/scrap economy

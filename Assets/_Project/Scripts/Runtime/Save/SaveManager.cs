@@ -104,14 +104,14 @@ namespace Game.Save
                 _motor.Teleport(_loaded.position);
                 _motor.Face(_loaded.facing);
                 _respawn.SetCheckpoint(_loaded.checkpoint);
-                if (!string.IsNullOrEmpty(_loaded.companion))
+                // Every recruited companion comes back: the saved one follows, the others wait at the terminal.
+                foreach (CompanionNPC npc in FindObjectsByType<CompanionNPC>(FindObjectsSortMode.None))
                 {
-                    foreach (CompanionNPC npc in FindObjectsByType<CompanionNPC>(FindObjectsSortMode.None))
-                    {
-                        if (npc.GetComponent<CompanionFollower>().CombatUnit == _loaded.companion) npc.Recruit(_interactor, announce: false);
-                    }
-                    CompanionFollower.Active?.WarpBehindPlayer();
+                    if (!_inventory.HasFlag(npc.RecruitFlag)) continue;
+                    bool active = npc.GetComponent<CompanionFollower>().CombatUnit == _loaded.companion;
+                    npc.Recruit(_interactor, announce: false, makeActive: active);
                 }
+                CompanionFollower.Active?.WarpBehindPlayer();
                 GameMessages.Show("Save loaded.");
             }
             _room = CameraZone.Find(_motor.transform.position);

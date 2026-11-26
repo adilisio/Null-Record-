@@ -1,0 +1,37 @@
+{
+  "id": "researcher_recruit",
+  "nodes": [
+    {
+      "id": "start",
+      "speaker": "researcher",
+      "text": "[Placeholder line: the owner writes this character.] You got the bridge working. I can patch you up in a fight.",
+      "next": "offer",
+      "setFlags": ["met_researcher"]
+    },
+    {
+      "id": "offer",
+      "speaker": "researcher",
+      "text": "[Placeholder] Want me along?",
+      "choices": [
+        { "text": "Come with me.", "next": "yes", "setFlags": ["companion_researcher"] },
+        { "text": "Not yet.", "next": "no" }
+      ]
+    },
+    {
+      "id": "yes",
+      "speaker": "researcher",
+      "text": "[Placeholder] Lead the way."
+    },
+    {
+      "id": "no",
+      "speaker": "researcher",
+      "text": "[Placeholder] I'll be here."
+    },
+    {
+      "id": "again",
+      "speaker": "researcher",
+      "text": "[Placeholder] Changed your mind?",
+      "next": "offer"
+    }
+  ]
+}

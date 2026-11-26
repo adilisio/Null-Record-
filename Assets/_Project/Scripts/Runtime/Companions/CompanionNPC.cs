@@ -26,6 +26,7 @@ namespace Game.Companions
 
         public bool Recruited { get; private set; }
         public string RecruitFlag => recruitFlag;
+        public string DisplayName => displayName;
 
         public void Configure(string name, TextAsset json, string met, string recruit)
         {
@@ -56,15 +57,28 @@ namespace Game.Companions
             });
         }
 
-        /// <summary>Joins the party immediately (also used by tests and, later, save loading).</summary>
-        public void Recruit(PlayerInteractor player, bool announce = true)
+        /// <summary>
+        /// Joins the party (also used by tests and save loading). With <paramref name="makeActive"/> they follow you
+        /// and whoever was following goes to wait at the companion terminal; otherwise they wait there themselves.
+        /// </summary>
+        public void Recruit(PlayerInteractor player, bool announce = true, bool makeActive = true)
         {
             if (Recruited) return;
             Recruited = true;
             player.Inventory?.SetFlag(recruitFlag);
-            _follower.Begin(player);
             enabled = false; // no longer an interactable
-            if (announce) GameMessages.Show($"{displayName} joined you.");
+            if (!makeActive)
+            {
+                _follower.Bench(CompanionTerminal.BenchSpotFor(_follower));
+                return;
+            }
+            CompanionFollower previous = CompanionFollower.Active;
+            _follower.Begin(player);
+            if (!announce) return;
+            CompanionNPC benched = previous != null && previous != _follower ? previous.GetComponent<CompanionNPC>() : null;
+            GameMessages.Show(benched != null
+                ? $"{displayName} joined you. {benched.DisplayName} will wait at the companion terminal."
+                : $"{displayName} joined you.");
         }
     }
 }

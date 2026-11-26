@@ -132,9 +132,21 @@ def warden():
     return im
 
 
+def researcher():
+    im = Image.open(f"{SRC}/skaterFemaleA.png").convert("RGBA")
+    d = ImageDraw.Draw(im)
+    coat = (226, 230, 232)
+    uniform(d, coat, None, (52, 58, 70), (40, 40, 46))
+    # Teal shirt showing at the collar and a coat pocket with a pen.
+    d.polygon([(260, 490), (382, 490), (321, 640)], fill=(40, 150, 140))
+    d.rectangle((370, 640, 450, 700), fill=shade(coat, 0.85))
+    d.rectangle((388, 615, 396, 660), fill=(40, 90, 200))
+    return im
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
-    for name, fn in (("Subject", subject), ("Dace", dace), ("Enforcer", enforcer), ("Sentry", sentry), ("Warden", warden)):
+    for name, fn in (("Subject", subject), ("Dace", dace), ("Enforcer", enforcer), ("Sentry", sentry), ("Warden", warden), ("Researcher", researcher)):
         fn().convert("RGB").save(f"{OUT}/{name}.png", optimize=True)
         print("wrote", f"{OUT}/{name}.png")
 

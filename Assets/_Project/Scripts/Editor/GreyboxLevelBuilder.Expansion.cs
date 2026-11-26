@@ -127,10 +127,16 @@ namespace Game.EditorTools
                 new EncounterController.UnitModel { unit = "Sentry", prefab = CharacterArt.Prefab("Sentry") },
                 new EncounterController.UnitModel { unit = "Warden", prefab = CharacterArt.Prefab("Warden") });
 
-            // End of the slice: a freight lift that's out of service.
+            // Freight lift to the Research Wing (region 2).
             Box(room, "Lift_Doors", new Vector3(89.6f, 1.6f, 1.2f), new Vector3(0.6f, 3.2f, 1.4f), Mat("Door", new Color(0.55f, 0.57f, 0.6f), metallic: 0.6f), collider: false);
             Label(room, "FREIGHT LIFT", new Vector3(88.2f, 4f, 1.9f), new Color(1f, 0.7f, 0.3f), 0.5f);
-            Label(room, "out of service (end of the slice)", new Vector3(88f, 3.4f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.35f);
+            Label(room, "to the Research Wing", new Vector3(88f, 3.4f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.35f);
+            var liftGo = new GameObject("FreightLift_Down");
+            liftGo.transform.SetParent(room, false);
+            liftGo.transform.position = new Vector3(89.2f, 0f, 0f);
+            FreightLift lift = liftGo.AddComponent<FreightLift>();
+            lift.Configure(new Vector3(102.5f, R2Y + 0.05f, 0f), 1, "Take the freight lift (Research Wing)", "Research Wing.");
+            lift.SetInteractionPoint(new Vector3(-0.2f, 1.2f, 0f), 1.5f);
             Label(room, "SERVER HALL", new Vector3(77f, 6.5f, 1.9f), new Color(0.4f, 1f, 0.9f));
         }
 
