@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Game.Combat;
+using Game.Companions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -13,10 +14,11 @@ namespace Game.Tests
     {
         private EncounterController _enc;
 
-        private IEnumerator EnterSecurity()
+        private IEnumerator EnterSecurity(bool withDace = true)
         {
             _enc = Object.FindAnyObjectByType<EncounterController>();
             Assert.IsNotNull(_enc, "Encounter_Security missing from the scene (rebuild the greybox level)");
+            if (withDace) Object.FindAnyObjectByType<CompanionNPC>().Recruit(_interactor);
             _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
             yield return Until(() => _interactor.Current == _enc, 2f, "encounter prompt");
         }
@@ -36,7 +38,7 @@ namespace Game.Tests
 
             CombatState st = _enc.State;
             Assert.AreEqual(Phase.Player, st.Phase);
-            Assert.AreEqual(2, new List<Unit>(st.Alive(Team.Player)).Count, "Subject + companion");
+            Assert.AreEqual(2, new List<Unit>(st.Alive(Team.Player)).Count, "Subject + Dace");
             Assert.AreEqual(3, new List<Unit>(st.Alive(Team.Enemy)).Count);
             Assert.IsTrue(_motor.ExternallyControlled, "player body should be under encounter control");
             foreach (Unit e in st.Alive(Team.Enemy)) Assert.IsNotNull(e.Intent, $"{e.Name} has no intent");
@@ -58,7 +60,7 @@ namespace Game.Tests
 
             // Switch to the companion, preview a skill, then end the turn.
             yield return Tap(Key.LeftShift);
-            Assert.AreEqual("Guard", _enc.Selected.Name);
+            Assert.AreEqual("Dace", _enc.Selected.Name);
             yield return Tap(Key.Digit2);
             Assert.AreEqual(0, _enc.Mode, "2 selects the first skill");
             yield return Wait(0.2f);
@@ -72,6 +74,15 @@ namespace Game.Tests
             Debug.Log("[RouteTest] log: " + string.Join(" | ", st.Log));
             yield return Wait(0.2f);
             yield return Shot("12_turn2");
+        }
+
+        [UnityTest]
+        public IEnumerator WithoutCompanion_SubjectFightsAlone()
+        {
+            yield return EnterSecurity(withDace: false);
+            _enc.Engage(_interactor);
+            yield return Settle("opening events");
+            Assert.AreEqual(1, new List<Unit>(_enc.State.Alive(Team.Player)).Count, "only the Subject");
         }
 
         [UnityTest]

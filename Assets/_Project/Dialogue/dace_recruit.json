@@ -1,0 +1,68 @@
+{
+  "id": "dace_recruit",
+  "nodes": [
+    {
+      "id": "start",
+      "speaker": "dace",
+      "text": "Easy. I'm not here to drag you back.",
+      "next": "intro",
+      "setFlags": ["met_dace"]
+    },
+    {
+      "id": "intro",
+      "speaker": "dace",
+      "text": "You're the one from Holding Three. The system says you don't exist. It said the same about me an hour ago.",
+      "choices": [
+        { "text": "Who are you?", "next": "who" },
+        { "text": "What happened to you?", "next": "happened" },
+        { "text": "[Say nothing.]", "next": "silent" }
+      ]
+    },
+    {
+      "id": "who",
+      "speaker": "dace",
+      "text": "Dace. Site security, until I refused an order. Now my badge opens nothing. That card on the floor was mine. Take it.",
+      "next": "offer"
+    },
+    {
+      "id": "happened",
+      "speaker": "dace",
+      "text": "They told us to sweep Holding and 'reconcile the count.' I asked what that meant. Nobody answered, so I walked.",
+      "next": "offer"
+    },
+    {
+      "id": "silent",
+      "speaker": "dace",
+      "text": "Not a talker. Fine. I've had enough talk for one shift.",
+      "next": "offer"
+    },
+    {
+      "id": "offer",
+      "speaker": "dace",
+      "text": "Security's through that door. There's a crew in there that still follows orders. I could watch your back.",
+      "choices": [
+        { "text": "Come with me.", "next": "yes", "setFlags": ["companion_guard"] },
+        { "text": "Not yet.", "next": "no" }
+      ]
+    },
+    {
+      "id": "yes",
+      "speaker": "dace",
+      "text": "Then let's not stand around in the steam. Lead the way."
+    },
+    {
+      "id": "no",
+      "speaker": "dace",
+      "text": "I'll be here. Not like I've got anywhere else to be."
+    },
+    {
+      "id": "again",
+      "speaker": "dace",
+      "text": "Changed your mind?",
+      "choices": [
+        { "text": "Come with me.", "next": "yes", "setFlags": ["companion_guard"] },
+        { "text": "Not yet.", "next": "no" }
+      ]
+    }
+  ]
+}

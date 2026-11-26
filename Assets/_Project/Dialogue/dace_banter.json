@@ -1,0 +1,20 @@
+{
+  "id": "dace_banter",
+  "nodes": [
+    {
+      "id": "security_door",
+      "speaker": "dace",
+      "text": "My old post. The reader still blinks green for anyone but me."
+    },
+    {
+      "id": "security_room",
+      "speaker": "dace",
+      "text": "Three of them. We don't have to do this. Your call."
+    },
+    {
+      "id": "security_cleared",
+      "speaker": "dace",
+      "text": "They had my file open. Whatever they're erasing, it isn't just us."
+    }
+  ]
+}

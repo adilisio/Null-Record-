@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
 using Game.CameraSystem;
+using Game.Companions;
+using Game.Dialogue;
 using Game.Combat;
 using Game.Core;
 using Game.Player;
@@ -28,6 +30,7 @@ namespace Game.EditorTools
         private const string ScenePath = "Assets/_Project/Scenes/Greybox_Intake.unity";
         private const string MaterialDir = "Assets/_Project/Art/Materials/Greybox";
         private const string InputActionsPath = "Assets/InputSystem_Actions.inputactions";
+        private const string DialogueDir = "Assets/_Project/Dialogue";
         private const float Depth = 4f; // z thickness of level geometry
 
         private static readonly Dictionary<string, Material> Materials = new Dictionary<string, Material>();
@@ -51,6 +54,8 @@ namespace Game.EditorTools
             GameObject player = BuildPlayer(new Vector3(1f, 0.05f, 0f));
             BuildCamera(player.transform);
             BuildHud(player.GetComponent<PlayerInteractor>());
+            new GameObject("DialogueUI").AddComponent<DialogueUI>();
+            BuildCompanion(level);
             new GameObject("Bootstrap").AddComponent<Bootstrap>();
 
             AssetDatabase.SaveAssets();
@@ -184,7 +189,6 @@ namespace Game.EditorTools
             enc.SetInteractionPoint(new Vector3(0f, 0.9f, 0f), 1.2f);
             enc.Configure(
                 new Rect(42f, -0.2f, 14f, 6.2f),
-                "Guard",
                 new[]
                 {
                     new EncounterController.EnemySpawn { unit = "Enforcer", position = new Vector2(49.5f, 0f) },
@@ -196,7 +200,6 @@ namespace Game.EditorTools
                 "Recovered: security incident report (fragment).",
                 TransparentMat("GridTile", new Color(1f, 1f, 1f, 0.3f)),
                 Mat("Enemy", new Color(0.5f, 0.16f, 0.14f)),
-                Mat("Companion", new Color(0.32f, 0.42f, 0.55f)),
                 Mat("EnemyVisor", new Color(1f, 0.25f, 0.2f), emission: new Color(1f, 0.2f, 0.15f) * 2f),
                 zoneMarker.GetComponent<Renderer>(),
                 engageSign);
@@ -258,6 +261,52 @@ namespace Game.EditorTools
             player.AddComponent<PlayerInteractor>();
             player.AddComponent<PlayerRespawn>();
             return player;
+        }
+
+        private static void BuildCompanion(Transform level)
+        {
+            Transform group = Group(level, "Companions");
+            TextAsset recruit = AssetDatabase.LoadAssetAtPath<TextAsset>($"{DialogueDir}/dace_recruit.json");
+            TextAsset banter = AssetDatabase.LoadAssetAtPath<TextAsset>($"{DialogueDir}/dace_banter.json");
+            if (recruit == null || banter == null) Debug.LogWarning("[Null Record] Dialogue JSON not found; Dace won't talk.");
+
+            // Dace: Companion 1 (frontline). Waits in Maintenance by the keycard they dropped.
+            GameObject dace = new GameObject("Dace");
+            dace.transform.SetParent(group, false);
+            dace.transform.position = new Vector3(37.6f, 0f, 0f);
+            dace.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.name = "Body";
+            Object.DestroyImmediate(body.GetComponent<Collider>());
+            body.transform.SetParent(dace.transform, false);
+            body.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
+            body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+            body.GetComponent<Renderer>().sharedMaterial = Mat("Companion", new Color(0.32f, 0.42f, 0.55f));
+            GameObject visor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            visor.name = "Visor";
+            Object.DestroyImmediate(visor.GetComponent<Collider>());
+            visor.transform.SetParent(dace.transform, false);
+            visor.transform.localPosition = new Vector3(0f, 1.5f, 0.3f);
+            visor.transform.localScale = new Vector3(0.4f, 0.12f, 0.12f);
+            visor.GetComponent<Renderer>().sharedMaterial = Mat("CompanionVisor", new Color(1f, 0.75f, 0.3f), emission: new Color(1f, 0.6f, 0.2f) * 1.5f);
+
+            dace.AddComponent<CompanionFollower>();
+            CompanionNPC npc = dace.AddComponent<CompanionNPC>();
+            npc.Configure("Dace", recruit, "met_dace", "companion_guard");
+            npc.SetInteractionPoint(new Vector3(0f, 0.9f, 0f), 1.3f);
+
+            // Remarks, once each, while Dace is with you.
+            Banter(group, "Banter_SecurityDoor", new Rect(38f, -0.5f, 1.6f, 4.5f), banter, "security_door", "companion_guard");
+            Banter(group, "Banter_SecurityRoom", new Rect(41f, -0.5f, 3f, 4.5f), banter, "security_room", "companion_guard");
+            Banter(group, "Banter_SecurityCleared", new Rect(42f, -0.5f, 14f, 7f), banter, "security_cleared", "encounter_security_cleared");
+        }
+
+        private static void Banter(Transform parent, string name, Rect area, TextAsset lines, string node, string requireFlag)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = new Vector3(area.center.x, area.center.y, 0f);
+            go.AddComponent<BanterTrigger>().Configure(area, lines, node, requireFlag);
         }
 
         private static void BuildCamera(Transform target)

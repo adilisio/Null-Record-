@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Game.Companions;
 using Game.Core;
 using Game.Player;
 using Game.World;
@@ -40,7 +41,7 @@ namespace Game.Combat
         [SerializeField] private LayerMask environment = ~0;
 
         [Header("Roster")]
-        [SerializeField] private string companion = "Guard";
+        [Tooltip("The player's side is the Subject plus whichever companion is in the party (CompanionFollower.Active).")]
         [SerializeField] private EnemySpawn[] enemies = Array.Empty<EnemySpawn>();
 
         [Header("Rewards")]
@@ -51,7 +52,6 @@ namespace Game.Combat
         [Header("Presentation")]
         [SerializeField] private Material tileMaterial;
         [SerializeField] private Material enemyMaterial;
-        [SerializeField] private Material companionMaterial;
         [SerializeField] private Material visorMaterial;
         [SerializeField] private Renderer marker;
         [Tooltip("Hidden while the fight is on (e.g. the 'engage' sign).")]
@@ -63,6 +63,7 @@ namespace Game.Combat
         private readonly List<string> _log = new List<string>();
 
         private PlayerInteractor _player;
+        private CompanionFollower _companion;
         private Vector3 _engagePosition;
         private GridView _grid;
         private TextMesh _banner;
@@ -88,19 +89,17 @@ namespace Game.Combat
 
         public event Action<EncounterStatus> StatusChanged;
 
-        public void Configure(Rect newArea, string companionUnit, EnemySpawn[] spawns, int scrap, string flag, string log,
-            Material tile, Material enemy, Material ally, Material visor, Renderer zoneMarker, params GameObject[] hide)
+        public void Configure(Rect newArea, EnemySpawn[] spawns, int scrap, string flag, string log,
+            Material tile, Material enemy, Material visor, Renderer zoneMarker, params GameObject[] hide)
         {
             hideDuringCombat = hide;
             area = newArea;
-            companion = companionUnit;
             enemies = spawns;
             rewardScrap = scrap;
             clearedFlag = flag;
             rewardLog = log;
             tileMaterial = tile;
             enemyMaterial = enemy;
-            companionMaterial = ally;
             visorMaterial = visor;
             marker = zoneMarker;
         }
@@ -111,7 +110,6 @@ namespace Game.Combat
         {
             if (tileMaterial == null) tileMaterial = FallbackMaterial(new Color(1f, 1f, 1f, 0.3f), true);
             if (enemyMaterial == null) enemyMaterial = FallbackMaterial(new Color(0.55f, 0.18f, 0.16f), false);
-            if (companionMaterial == null) companionMaterial = FallbackMaterial(new Color(0.35f, 0.45f, 0.6f), false);
             if (visorMaterial == null) visorMaterial = FallbackMaterial(new Color(1f, 0.25f, 0.2f), false);
             SpawnIdleEnemies();
         }
@@ -168,15 +166,18 @@ namespace Game.Combat
             player.transform.position = playerTile.World;
             _views.Add(new UnitView(subject, player.transform, owned: false));
 
-            UnitDef companionDef = CombatPresets.Find(companion);
+            // The companion in the party (if any) fights with their own body.
+            _companion = CompanionFollower.Active;
+            UnitDef companionDef = _companion != null ? CombatPresets.Find(_companion.CombatUnit) : null;
             if (companionDef != null)
             {
                 Tile ct = FreeNeighbour(grid, playerTile, -1) ?? FreeNeighbour(grid, playerTile, 1);
                 if (ct != null)
                 {
                     Unit c = State.AddUnit(companionDef, Team.Player, ct);
-                    GameObject fig = CombatVisuals.Figure($"Companion_{companionDef.Name}", companionMaterial, visorMaterial, ct.World, 1);
-                    _views.Add(new UnitView(c, fig.transform, owned: true));
+                    _companion.SetPaused(true);
+                    _companion.transform.position = ct.World;
+                    _views.Add(new UnitView(c, _companion.transform, owned: false));
                 }
             }
 
@@ -227,6 +228,11 @@ namespace Game.Combat
             Cursor = null;
 
             PlayerMotor motor = _player != null ? _player.Motor : null;
+            if (_companion != null)
+            {
+                foreach (Renderer r in _companion.GetComponentsInChildren<Renderer>()) CombatVisuals.ClearTint(r);
+                _companion.SetPaused(false);
+            }
             if (victory)
             {
                 motor?.SetExternalControl(false);
@@ -250,12 +256,14 @@ namespace Game.Combat
                     motor.SetExternalControl(false);
                 }
                 SpawnIdleEnemies();
+                _companion?.WarpBehindPlayer();
                 if (marker != null) CombatVisuals.ClearTint(marker);
                 SetHidden(false);
                 GameMessages.Show("Defeated. The encounter has reset.");
                 Status = EncounterStatus.Idle;
             }
             State = null;
+            _companion = null;
             _finishing = false;
             StatusChanged?.Invoke(Status);
         }

@@ -35,7 +35,7 @@ A grounded, near-future, side-on (2.5D) Metroidvania. You play a silent protagon
 
 | # | Region | Combat role (draft) | Story hook (draft) |
 |---|---|---|---|
-| 1 | Intake / Holding | Frontline: armor, shove, guard | A guard who stopped following orders |
+| 1 | Intake / Holding | Frontline: armor, shove, guard | **Dace** (working name), a guard who stopped following orders |
 | 2 | Research Wing | Support: heal, buff, reveal enemy intent | A researcher with a guilty conscience |
 | 3 | Security Core | Ranged: overwatch, line attacks | A former test subject, like you |
 
@@ -109,7 +109,15 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
 - Text boxes with character portraits and a light branching choice structure (tone choices, plus a few that matter).
 - Readable terminals and logs, which are the main lore channel.
 - Companion banter is triggered by location.
-- Planned tooling: a simple dialogue graph stored as ScriptableObjects or a lightweight JSON/Ink-style format. This is still to be decided; see open questions.
+- **Tooling (prototype):** each conversation is a JSON file in `Assets/_Project/Dialogue`, made of nodes with a speaker, a line, a `next` node or choices, and flags it sets. Choices can depend on flags (`requireFlag`, `hideIfFlag`), and EditMode tests check every file for broken links. That's enough to write in for now; Ink is still an option if branching outgrows it.
+- **Presentation (prototype):** a bottom text box with a speaker portrait (a placeholder colour block with an initial until there's art), name, line and up to 4 choices. Banter shows as a small strip at the top that doesn't stop play.
+
+### Companion 1: Dace (prototype)
+- Dace waits in Maintenance next to the Level 2 keycard they dropped. Talking to them runs a short recruit conversation with one tone choice (ask who, ask what happened, or stay silent), then an offer to come along. Saying "Not yet" leaves them there, and they'll ask again next time.
+- Once recruited, Dace follows a step behind. When the player climbs to another floor or gets far ahead, Dace catches up by appearing behind them; there's no pathfinding yet.
+- Dace joins optional encounters as the frontline unit. Without them, the Subject fights alone.
+- **Banter:** three one-off remarks while Dace is with you: at the Security door, on entering Security, and after the fight is cleared.
+- **All of Dace's writing is first-draft placeholder.** The name, voice and lines are meant to be rewritten.
 
 ## 10. Art and audio
 - **Art:** low-poly models, flat or minimal-texture materials, and **strong URP lighting**: volumetric shafts, emissive signage, hard shadows and colour-coded zones (cold white labs, amber maintenance, red security). Characters are simple, readable silhouettes.
@@ -130,9 +138,9 @@ One region (Intake / Holding), polished enough to show:
 - [x] Side-on character controller (run, jump, crouch, ledge-climb, ladders, interact)
 - [ ] Camera rig with follow, room bounds and parallax
 - [ ] 1 hacking tool (keycard tier 1 → tier 2) + 1 environmental hazard (steam / thermal lining)
-- [ ] Companion 1: recruit scene, follow AI, banter
+- [~] Companion 1: recruit scene, follow AI, banter (prototype: Dace; writing is placeholder, no art)
 - [~] 1 optional encounter: level → grid transition, 2–3 enemy types, win and lose flow, rewards (playable prototype in Security; scrap and log rewards so far, no tool or XP yet)
-- [ ] Dialogue system with portraits and choices
+- [~] Dialogue system with portraits and choices (JSON, placeholder portraits)
 - [ ] Autosave and room transitions
 - [ ] Lighting pass and audio ambience for the region
 
@@ -156,6 +164,6 @@ One region (Intake / Holding), polished enough to show:
 ## 14. Open questions
 - Should the black site go **down** (escape by descending to the truth) or **up** (climbing toward the surface)?
 - How many endings? (Suggestion: 2, shaped by which companions you kept close and whether you expose the site.)
-- Dialogue tooling: Ink vs. a custom ScriptableObject graph?
+- Dialogue tooling: JSON for now (see §9). Move to Ink if branching gets heavy?
 - ~~Grid tile size and multi-floor encounters~~ (prototype: 1 m tiles, multi-floor allowed; see §7)
 - What the protagonist's subject ID is and why they were erased (the central reveal)

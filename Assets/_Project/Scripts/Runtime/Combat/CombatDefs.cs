@@ -43,8 +43,8 @@ namespace Game.Combat
         /// <summary>The protagonist. Losing them loses the encounter.</summary>
         public static readonly UnitDef Subject = new UnitDef { Name = "Subject", MaxHp = 8, Move = 4, Skills = new[] { Strike, Shove } };
 
-        /// <summary>Companion 1 (frontline). Stand-in until the recruit scene exists.</summary>
-        public static readonly UnitDef Guard = new UnitDef { Name = "Guard", MaxHp = 12, Move = 3, Armor = 1, Skills = new[] { Baton, ShieldBash } };
+        /// <summary>Companion 1, Dace (frontline). Roster key "Guard".</summary>
+        public static readonly UnitDef Guard = new UnitDef { Name = "Dace", MaxHp = 12, Move = 3, Armor = 1, Skills = new[] { Baton, ShieldBash } };
 
         public static readonly UnitDef Enforcer = new UnitDef { Name = "Enforcer", MaxHp = 6, Move = 3, Skills = new[] { StunProd } };
         public static readonly UnitDef Sentry = new UnitDef { Name = "Sentry", MaxHp = 4, Move = 2, Skills = new[] { TaserShot } };

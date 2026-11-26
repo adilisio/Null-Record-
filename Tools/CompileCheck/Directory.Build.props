@@ -17,5 +17,6 @@
   <ItemGroup>
     <Reference Include="$(UnityEditorDir)\Data\Managed\UnityEngine\UnityEngine*.dll" Exclude="$(UnityEditorDir)\Data\Managed\UnityEngine\UnityEditor*.dll" Private="false" />
     <Reference Include="$(PackageAsmDir)\Unity.InputSystem.dll" Private="false" />
+    <Reference Include="$(PackageAsmDir)\UnityEngine.UI.dll" Private="false" />
   </ItemGroup>
 </Project>
