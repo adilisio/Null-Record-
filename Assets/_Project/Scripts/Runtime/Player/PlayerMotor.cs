@@ -84,6 +84,8 @@ namespace Game.Player
         private void Awake()
         {
             _cc = GetComponent<CharacterController>();
+            // Default 0.001 drops tiny per-frame moves at high frame rates (player crawls, jumps fail).
+            _cc.minMoveDistance = 0f;
             _input = GetComponent<PlayerInputReader>();
             if (body != null) _bodyWidth = body.localScale.x;
             ApplyHeight(standHeight);

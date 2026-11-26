@@ -54,3 +54,6 @@ desktop.ini
 # Offline compile check output
 /Tools/CompileCheck/bin/
 /Tools/CompileCheck/obj/
+
+# Play-test captures
+/Screenshots/
