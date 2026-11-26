@@ -61,3 +61,6 @@ desktop.ini
 
 # Player builds
 /Builds/
+
+# Burst output from WebGL builds
+/Data/
