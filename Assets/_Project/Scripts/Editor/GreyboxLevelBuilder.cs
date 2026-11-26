@@ -26,7 +26,7 @@ namespace Game.EditorTools
     ///   B  Maintenance x 20..40  ladder → catwalk with Thermal Lining, steam vent, Level 2 keycard
     ///   C  Security   x 40..56   behind a Level 2 door; optional grid-combat encounter
     /// </summary>
-    public static class GreyboxLevelBuilder
+    public static partial class GreyboxLevelBuilder
     {
         private const string ScenePath = "Assets/_Project/Scenes/Greybox_Intake.unity";
         private const string MaterialDir = "Assets/_Project/Art/Materials/Greybox";
@@ -67,7 +67,8 @@ namespace Game.EditorTools
             BuildCameraZones(level);
 
             GameObject player = BuildPlayer(new Vector3(1f, 0.05f, 0f));
-            BuildCamera(player.transform);
+            Camera cam = BuildCamera(player.transform);
+            BuildLighting(level, cam, player.transform);
             BuildHud(player.GetComponent<PlayerInteractor>());
             new GameObject("DialogueUI").AddComponent<DialogueUI>();
             new GameObject("SaveManager").AddComponent<SaveManager>();
@@ -131,9 +132,6 @@ namespace Game.EditorTools
             Label(room, "HOLDING 03", new Vector3(2f, 5.5f, 1.9f), new Color(0.75f, 0.8f, 0.85f));
             Label(room, "jump [Space]", new Vector3(5.75f, 2.2f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.5f);
             Label(room, "grab the ledge: hold toward it while falling", new Vector3(11f, 3.6f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f);
-
-            PointLight(room, "Light_Cell", new Vector3(3f, 7f, -1f), new Color(0.75f, 0.85f, 1f), 6f, 14f);
-            PointLight(room, "Light_Block", new Vector3(15f, 6.5f, -1.5f), new Color(0.7f, 0.8f, 1f), 4f, 12f);
         }
 
         private static void BuildRoomB(Transform level)
@@ -175,7 +173,7 @@ namespace Game.EditorTools
             hz.size = new Vector3(2.6f, 8f, Depth);
             hazard.AddComponent<HazardVolume>().Configure(HazardType.Heat, "Scalded by venting steam.");
             AddSteamParticles(hazard.transform);
-            PointLight(room, "Light_Steam", new Vector3(31.5f, 1f, -1f), new Color(1f, 0.45f, 0.1f), 5f, 8f);
+            PointLight(room, "Light_Steam", new Vector3(31.5f, 1f, -1f), new Color(1f, 0.45f, 0.1f), 5f, 8f, shadows: false);
 
             GameObject card = Pickup(room, "Pickup_Keycard_L2", new Vector3(36f, 1f, 0f), Mat("Pickup_Keycard", new Color(0.2f, 0.6f, 1f), emission: new Color(0.2f, 0.6f, 1f) * 1.5f));
             card.GetComponent<ItemPickup>().ConfigureKeycard(2);
@@ -183,8 +181,6 @@ namespace Game.EditorTools
 
             Label(room, "MAINTENANCE", new Vector3(24f, 6.5f, 1.9f), new Color(1f, 0.7f, 0.3f));
             Label(room, "climb [W]", new Vector3(22.5f, 1.8f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.4f);
-            SpotLight(room, "Light_Maint", new Vector3(26f, 7.8f, -1f), new Color(1f, 0.7f, 0.35f), 25f, 14f, 70f);
-            SpotLight(room, "Light_Keycard", new Vector3(36f, 7.8f, -1f), new Color(1f, 0.7f, 0.35f), 15f, 12f, 55f);
         }
 
         private static void BuildRoomC(Transform level)
@@ -193,7 +189,7 @@ namespace Game.EditorTools
             Material concrete = Mat("Concrete", new Color(0.32f, 0.33f, 0.35f));
             Material doorMat = Mat("Door", new Color(0.55f, 0.57f, 0.6f), metallic: 0.6f);
             Material status = Mat("StatusLight", Color.white, emission: Color.white);
-            Material encounter = Mat("EncounterMarker", new Color(0.3f, 0.02f, 0.02f), emission: new Color(1f, 0.05f, 0.05f) * 1.5f);
+            Material encounter = Mat("EncounterMarker", new Color(0.3f, 0.02f, 0.02f), emission: new Color(1f, 0.05f, 0.05f) * 0.45f);
 
             // Wall above the doorway; the panel slides up into it.
             Box(room, "Door_Header", new Vector3(40f, 5.5f, 0f), new Vector3(0.6f, 5f, Depth), concrete);
@@ -239,8 +235,6 @@ namespace Game.EditorTools
                 engageSign);
 
             Label(room, "SECURITY", new Vector3(44f, 6.5f, 1.9f), new Color(1f, 0.35f, 0.3f));
-            PointLight(room, "Light_Security", new Vector3(48f, 7f, -1f), new Color(1f, 0.2f, 0.15f), 6f, 14f);
-            PointLight(room, "Light_Door", new Vector3(41f, 4f, -1.5f), new Color(0.8f, 0.85f, 1f), 2f, 6f);
         }
 
         private static void BuildCameraZones(Transform level)
@@ -343,7 +337,7 @@ namespace Game.EditorTools
             go.AddComponent<BanterTrigger>().Configure(area, lines, node, requireFlag);
         }
 
-        private static void BuildCamera(Transform target)
+        private static Camera BuildCamera(Transform target)
         {
             GameObject camGo = new GameObject("Main Camera");
             camGo.tag = "MainCamera";
@@ -358,6 +352,7 @@ namespace Game.EditorTools
 
             SideCameraRig rig = camGo.AddComponent<SideCameraRig>();
             SetRef(rig, "target", target);
+            return cam;
         }
 
         private static void BuildHud(PlayerInteractor player)
@@ -378,10 +373,10 @@ namespace Game.EditorTools
             GameObject sun = new GameObject("Directional Light (fill)");
             Light l = sun.AddComponent<Light>();
             l.type = LightType.Directional;
-            l.color = new Color(0.55f, 0.65f, 0.85f);
-            l.intensity = 0.25f;
+            l.color = new Color(0.5f, 0.6f, 0.82f);
+            l.intensity = 0.32f;
             l.shadows = LightShadows.Soft;
-            sun.transform.rotation = Quaternion.Euler(40f, -25f, 0f);
+            sun.transform.rotation = Quaternion.Euler(32f, 18f, 0f); // front-top fill: lights faces toward the camera, shadows fall on the back wall
         }
 
         private static Transform Group(Transform parent, string name)
@@ -449,21 +444,6 @@ namespace Game.EditorTools
             l.intensity = intensity;
             l.range = range;
             l.shadows = shadows ? LightShadows.Soft : LightShadows.None;
-        }
-
-        private static void SpotLight(Transform parent, string name, Vector3 position, Color color, float intensity, float range, float angle)
-        {
-            GameObject go = new GameObject(name);
-            go.transform.SetParent(parent, true);
-            go.transform.position = position;
-            go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            Light l = go.AddComponent<Light>();
-            l.type = LightType.Spot;
-            l.color = color;
-            l.intensity = intensity;
-            l.range = range;
-            l.spotAngle = angle;
-            l.shadows = LightShadows.Soft;
         }
 
         private static GameObject Label(Transform parent, string text, Vector3 position, Color color, float size = 1f)
