@@ -149,6 +149,21 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
   - **Lighting screenshots:** **Null Record → Capture Lighting Shots** renders each room to `Screenshots/lighting_*.png` without entering Play mode.
 - **Camera:** an orthographic or narrow-FOV perspective side view with a little depth for parallax layers. During combat it pulls back slightly and shows a grid overlay.
 - **Audio:** industrial and percussive: machine hum, clanks, pneumatic hiss and rhythmic hits that build tension in combat. Each region has an ambient bed.
+- **Audio (placeholder pass, 2026-11-26):** every sound is synthesised in code (`Game.Audio.Synth`) from noise, oscillators and envelopes. There are no audio files yet; each `SoundId` can be mapped to a recorded clip later.
+  - **Player:** footsteps (4 variants, quieter while crouching), jump, landing (louder the harder you land), ladder and ledge clanks, and a hurt sound on death.
+  - **World:**
+    - Door: pneumatic hiss, motor whir and a clunk when it opens; a two-beep buzzer when access is denied.
+    - Pickup: a two-tone chime.
+    - Steam vent: a positional hiss loop.
+  - **Ambience per room**, crossfaded as you move: fluorescent hum in Holding, machine rumble with a pump throb and distant clanks in Maintenance, and a low drone with soft alarm beeps in Security. The title screen uses the Security drone.
+  - **Combat:**
+    - A 120 BPM percussive loop that ducks the room ambience.
+    - Swing and taser-zap attacks, hits, shoves, units going down and footsteps between tiles.
+    - Short stingers for the player phase, enemy phase, victory and defeat.
+  - **UI:** menu move and confirm clicks (these still play while paused), and dialogue blips for each line and bark.
+  - **Mixing:** master × effects or ambience volume (both in Settings) × a mix level per sound. The audio listener follows the player rather than sitting with the camera 16 m back. Pausing freezes world audio.
+  - **Listening outside Unity:** **Null Record → Export Placeholder Sounds** writes every sound to `Screenshots/audio/*.wav`.
+  - **Not in yet:** real recordings, music, reverb per room, footstep surface types, and an AudioMixer with snapshots.
 
 ## 11. Platform and controls
 - PC (Steam). Keyboard and mouse plus controller, through the Input System (`InputSystem_Actions`).
@@ -168,7 +183,7 @@ One region (Intake / Holding), polished enough to show:
 - [~] 1 optional encounter: level → grid transition, 2–3 enemy types, win and lose flow, rewards (playable prototype in Security; scrap and log rewards so far, no tool or XP yet)
 - [~] Dialogue system with portraits and choices (JSON, placeholder portraits)
 - [~] Autosave and room transitions (autosave, room-entry respawn, title/Continue and pause menus done; single save slot)
-- [~] Lighting pass and audio ambience for the region (lighting pass done; audio not started)
+- [~] Lighting pass and audio ambience for the region (lighting and placeholder audio done; real sound assets and music still to come)
 
 ### Later milestones (rough)
 2. Greybox all three regions and the gating map

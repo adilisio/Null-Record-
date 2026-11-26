@@ -1,4 +1,5 @@
 using System;
+using Game.Audio;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -94,6 +95,11 @@ namespace Game.UI
             Text label = Label(bg.transform, "Label", text, 26, TextColor);
             Stretch(label.rectTransform, new Vector2(18f, 0f), Vector2.zero);
             b.gameObject.AddComponent<MenuButtonStyle>().Init(b, label);
+            b.onClick.AddListener(() =>
+            {
+                MenuButtonStyle.LastConfirmFrame = Time.frameCount;
+                GameAudio.Play(SoundId.UiConfirm);
+            });
             if (onClick != null) b.onClick.AddListener(() => onClick());
             return b;
         }
@@ -215,7 +221,15 @@ namespace Game.UI
             Refresh();
         }
 
-        public void OnSelect(BaseEventData e) { _selected = true; Refresh(); }
+        /// <summary>Frame of the last button press; selection changes caused by it stay silent.</summary>
+        public static int LastConfirmFrame = -10;
+
+        public void OnSelect(BaseEventData e)
+        {
+            _selected = true;
+            Refresh();
+            if (Time.frameCount - LastConfirmFrame > 1 && Time.frameCount > 2) GameAudio.Play(SoundId.UiMove);
+        }
         public void OnDeselect(BaseEventData e) { _selected = false; Refresh(); }
         public void OnPointerEnter(PointerEventData e) { _hovered = true; Refresh(); }
         public void OnPointerExit(PointerEventData e) { _hovered = false; Refresh(); }

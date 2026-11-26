@@ -1,4 +1,5 @@
 using System.IO;
+using Game.Audio;
 using Game.Core;
 using Game.UI;
 using UnityEditor;
@@ -24,6 +25,7 @@ namespace Game.EditorTools
             camGo.AddComponent<AudioListener>();
 
             new GameObject("TitleMenu").AddComponent<TitleMenu>();
+            new GameObject("AudioManager").AddComponent<AudioManager>().Configure("Security"); // low drone + distant beeps under the title
 
             Directory.CreateDirectory(Path.GetDirectoryName(GameFlow.TitleScene));
             EditorSceneManager.SaveScene(scene, GameFlow.TitleScene);

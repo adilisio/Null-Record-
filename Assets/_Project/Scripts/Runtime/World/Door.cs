@@ -1,6 +1,7 @@
 using System.Collections;
 using Game.Core;
 using Game.Player;
+using Game.Audio;
 using UnityEngine;
 
 namespace Game.World
@@ -62,11 +63,13 @@ namespace Game.World
             if (!CanOpen(player))
             {
                 GameMessages.Show($"Access denied. Level {requiredKeycardLevel} keycard required.");
+                GameAudio.Play(SoundId.DoorDenied, transform.position + Vector3.up * 1.5f);
                 return;
             }
             _open = true;
             if (!string.IsNullOrEmpty(saveId)) player.Inventory.SetFlag(OpenedFlag);
             RefreshLight();
+            GameAudio.Play(SoundId.DoorOpen, transform.position + Vector3.up * 1.5f);
             StartCoroutine(Slide());
         }
 

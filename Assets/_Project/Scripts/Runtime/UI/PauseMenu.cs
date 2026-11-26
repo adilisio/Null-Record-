@@ -55,6 +55,7 @@ namespace Game.UI
         {
             _pause?.Dispose();
             if (IsPaused) Time.timeScale = 1f;
+            AudioListener.pause = false;
         }
 
         private void Update()
@@ -70,6 +71,7 @@ namespace Game.UI
             if (IsPaused) return;
             IsPaused = true;
             Time.timeScale = 0f;
+            AudioListener.pause = true; // world sounds freeze; menu clicks ignore the pause
             _playerMap?.Disable();
             if (_root.GetComponent<Canvas>().worldCamera == null) _root.GetComponent<Canvas>().worldCamera = Camera.main;
             _root.gameObject.SetActive(true);
@@ -86,6 +88,7 @@ namespace Game.UI
             if (!IsPaused) return;
             IsPaused = false;
             Time.timeScale = 1f;
+            AudioListener.pause = false;
             _playerMap?.Enable();
             _root.gameObject.SetActive(false);
         }

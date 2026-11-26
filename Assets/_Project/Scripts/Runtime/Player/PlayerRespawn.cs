@@ -1,5 +1,6 @@
 using System.Collections;
 using Game.Core;
+using Game.Audio;
 using UnityEngine;
 
 namespace Game.Player
@@ -38,6 +39,7 @@ namespace Game.Player
             _respawning = true;
             _motor.ControlEnabled = false;
             if (!string.IsNullOrEmpty(reason)) GameMessages.Show(reason);
+            GameAudio.Play(SoundId.Hurt, transform.position);
             yield return new WaitForSeconds(respawnDelay);
             _motor.Teleport(_checkpoint);
             _motor.ControlEnabled = true;

@@ -1,5 +1,6 @@
 using Game.Core;
 using Game.Player;
+using Game.Audio;
 using UnityEngine;
 
 namespace Game.World
@@ -76,6 +77,7 @@ namespace Game.World
             }
 
             if (!string.IsNullOrEmpty(saveId)) inv.SetFlag(TakenFlag);
+            GameAudio.Play(SoundId.Pickup, transform.position);
             GameMessages.Show(kind == PickupKind.Scrap ? $"+{amount} scrap" : $"Acquired: {displayName}");
             Destroy(gameObject);
         }

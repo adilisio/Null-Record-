@@ -14,6 +14,7 @@ namespace Game.Core
         public static void Continue()
         {
             Time.timeScale = 1f;
+            AudioListener.pause = false;
             SaveData save = SaveSystem.Read();
             SceneManager.LoadScene(save != null && !string.IsNullOrEmpty(save.scene) ? save.scene : GameScene);
         }
@@ -22,6 +23,7 @@ namespace Game.Core
         public static void NewGame()
         {
             Time.timeScale = 1f;
+            AudioListener.pause = false;
             SaveSystem.Delete();
             SceneManager.LoadScene(GameScene);
         }
@@ -29,6 +31,7 @@ namespace Game.Core
         public static void QuitToTitle()
         {
             Time.timeScale = 1f;
+            AudioListener.pause = false;
             SceneManager.LoadScene(TitleScene);
         }
 
@@ -48,6 +51,21 @@ namespace Game.Core
         private const string VolumeKey = "settings.masterVolume";
         private const string FullscreenKey = "settings.fullscreen";
         private const string DebugHudKey = "settings.debugHud";
+        private const string EffectsKey = "settings.effectsVolume";
+        private const string AmbienceKey = "settings.ambienceVolume";
+
+        public static float EffectsVolume
+        {
+            get => PlayerPrefs.GetFloat(EffectsKey, 1f);
+            set => PlayerPrefs.SetFloat(EffectsKey, Mathf.Clamp01(value));
+        }
+
+        /// <summary>Room ambience and the combat loop.</summary>
+        public static float AmbienceVolume
+        {
+            get => PlayerPrefs.GetFloat(AmbienceKey, 0.8f);
+            set => PlayerPrefs.SetFloat(AmbienceKey, Mathf.Clamp01(value));
+        }
 
         public static float MasterVolume
         {

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Game.Player;
+using Game.Audio;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -100,6 +101,7 @@ namespace Game.Dialogue
             AttachCamera();
             _box.SetActive(true);
             Refresh();
+            GameAudio.Play(SoundId.DialogueBlip);
         }
 
         /// <summary>Continue, or pick the highlighted choice.</summary>
@@ -110,7 +112,11 @@ namespace Game.Dialogue
             else _runner.Advance();
             _selected = 0;
             if (_runner.IsFinished) Close();
-            else Refresh();
+            else
+            {
+                Refresh();
+                GameAudio.Play(SoundId.DialogueBlip);
+            }
         }
 
         public void MoveSelection(int delta)
@@ -118,6 +124,7 @@ namespace Game.Dialogue
             if (!IsOpen || _runner.Choices.Count == 0) return;
             _selected = (_selected + delta + _runner.Choices.Count) % _runner.Choices.Count;
             Refresh();
+            GameAudio.Play(SoundId.UiMove);
         }
 
         /// <summary>A one-line remark that doesn't stop play.</summary>
@@ -129,6 +136,7 @@ namespace Game.Dialogue
             _barkPortrait.color = info.Color;
             _barkText.text = $"<b>{info.Name}</b>  {text}";
             _bark.SetActive(true);
+            GameAudio.Play(SoundId.DialogueBlip);
             _barkUntil = Time.time + barkSeconds;
         }
 

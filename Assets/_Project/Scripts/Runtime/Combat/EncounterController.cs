@@ -6,6 +6,7 @@ using Game.Core;
 using Game.Player;
 using Game.Save;
 using Game.World;
+using Game.Audio;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -224,11 +225,14 @@ namespace Game.Combat
             Mode = -1;
             _inputBlockedUntilFrame = Time.frameCount + 1; // the Interact press that engaged must not end the turn
             GameMessages.Show("Hostiles engaged.");
+            GameAudio.SetCombat(true);
         }
 
         private IEnumerator Finish(bool victory)
         {
             _finishing = true;
+            GameAudio.Play(victory ? SoundId.Victory : SoundId.Defeat);
+            GameAudio.SetCombat(false);
             yield return new WaitForSeconds(1.2f);
 
             foreach (UnitView v in _views) v.Destroy();
@@ -605,18 +609,24 @@ namespace Game.Combat
                         yield return AnimateMove(ev);
                         break;
                     case CombatEventKind.Attack:
+                        GameAudio.Play(ev.Skill.Ranged ? SoundId.Zap : SoundId.Swing, ev.From.World + Vector3.up);
                         yield return AnimateAttack(ev);
                         break;
                     case CombatEventKind.Damage:
+                        if (ViewOf(ev.Target) != null) GameAudio.Play(SoundId.Hit, ViewOf(ev.Target).Root.position + Vector3.up);
                         yield return AnimateDamage(ev);
                         break;
                     case CombatEventKind.Knockback:
+                        GameAudio.Play(SoundId.Knockback, ev.To.World + Vector3.up);
                         yield return Slide(ViewOf(ev.Target), ev.To.World, 0.15f);
                         break;
                     case CombatEventKind.Death:
+                        if (ev.From != null) GameAudio.Play(SoundId.UnitDown, ev.From.World + Vector3.up);
                         yield return AnimateDeath(ev);
                         break;
                     case CombatEventKind.Phase:
+                        if (ev.Text == "Player phase") GameAudio.Play(SoundId.PhasePlayer);
+                        else if (ev.Text == "Enemy phase") GameAudio.Play(SoundId.PhaseEnemy);
                         UpdateHud();
                         if (_banner != null) _banner.text = $"TURN {State.Turn}  -  {ev.Text.ToUpperInvariant()}";
                         yield return new WaitForSeconds(0.35f);
@@ -644,6 +654,7 @@ namespace Game.Combat
             {
                 if (t.Col != prev.Col) v.SetFacing(t.Col > prev.Col ? 1 : -1);
                 float time = Mathf.Abs(t.Y - prev.Y) > CombatGrid.StepHeight ? stepTime * 2f : stepTime;
+                GameAudio.Play(SoundId.CombatStep, t.World);
                 yield return Slide(v, t.World, time, Mathf.Abs(t.Y - prev.Y) > CombatGrid.StepHeight ? 0.6f : 0f);
                 prev = t;
             }

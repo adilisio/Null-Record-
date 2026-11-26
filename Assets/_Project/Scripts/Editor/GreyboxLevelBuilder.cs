@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Game.Audio;
 using Game.CameraSystem;
 using Game.Companions;
 using Game.Dialogue;
@@ -73,6 +74,13 @@ namespace Game.EditorTools
             new GameObject("DialogueUI").AddComponent<DialogueUI>();
             new GameObject("SaveManager").AddComponent<SaveManager>();
             new GameObject("PauseMenu").AddComponent<PauseMenu>();
+            new GameObject("AudioManager").AddComponent<AudioManager>();
+
+            // The listener rides with the player (the camera is 16 m back), so world sounds pan and fade sensibly.
+            var listener = new GameObject("AudioListener");
+            listener.transform.position = player.transform.position + Vector3.up;
+            listener.AddComponent<AudioListener>();
+            listener.AddComponent<FollowOffset>().Configure(player.transform, Vector3.up);
             BuildCompanion(level);
             new GameObject("Bootstrap").AddComponent<Bootstrap>();
 
@@ -173,6 +181,7 @@ namespace Game.EditorTools
             hz.size = new Vector3(2.6f, 8f, Depth);
             hazard.AddComponent<HazardVolume>().Configure(HazardType.Heat, "Scalded by venting steam.");
             AddSteamParticles(hazard.transform);
+            hazard.AddComponent<AmbientEmitter>().Configure(SoundId.SteamLoop, 12f);
             PointLight(room, "Light_Steam", new Vector3(31.5f, 1f, -1f), new Color(1f, 0.45f, 0.1f), 5f, 8f, shadows: false);
 
             GameObject card = Pickup(room, "Pickup_Keycard_L2", new Vector3(36f, 1f, 0f), Mat("Pickup_Keycard", new Color(0.2f, 0.6f, 1f), emission: new Color(0.2f, 0.6f, 1f) * 1.5f));
@@ -288,6 +297,7 @@ namespace Game.EditorTools
             player.AddComponent<PlayerInventory>();
             player.AddComponent<PlayerInteractor>();
             player.AddComponent<PlayerRespawn>();
+            player.AddComponent<PlayerAudio>();
             return player;
         }
 
@@ -347,7 +357,6 @@ namespace Game.EditorTools
             cam.farClipPlane = 100f;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.02f, 0.02f, 0.03f);
-            camGo.AddComponent<AudioListener>();
             camGo.transform.position = target.position + new Vector3(0f, 1.5f, -16f);
 
             SideCameraRig rig = camGo.AddComponent<SideCameraRig>();
