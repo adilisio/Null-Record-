@@ -71,6 +71,7 @@ namespace Game.EditorTools
             BuildRoomE(level);
             BuildResearchWing(level);
             BuildDressing(level);
+            BuildLogs(level);
             BuildCameraZones(level);
 
             GameObject player = BuildPlayer(new Vector3(1f, 0.05f, 0f));

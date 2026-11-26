@@ -13,6 +13,8 @@ namespace Game.Tests
 
         [TestCase("dace_recruit.json")]
         [TestCase("dace_banter.json")]
+        [TestCase("researcher_recruit.json")]
+        [TestCase("logs.json")]
         public void DialogueFile_IsConsistent(string file)
         {
             DialogueScript s = Load(file);

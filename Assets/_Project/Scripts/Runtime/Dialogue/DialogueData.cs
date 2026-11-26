@@ -108,6 +108,8 @@ namespace Game.Dialogue
                 case "dace": return new Info { Name = "Dace", Color = new Color(0.32f, 0.42f, 0.55f) };
                 case "researcher": return new Info { Name = "Researcher", Color = new Color(0.3f, 0.75f, 0.65f) };
                 case "pa": return new Info { Name = "Site PA", Color = new Color(0.55f, 0.2f, 0.18f) };
+                case "log_staff": return new Info { Name = "Staff log", Color = new Color(0.25f, 0.45f, 0.7f) };
+                case "log_subject": return new Info { Name = "Subject note", Color = new Color(0.7f, 0.5f, 0.25f) };
                 default: return new Info { Name = string.IsNullOrEmpty(key) ? "" : key, Color = new Color(0.3f, 0.3f, 0.32f) };
             }
         }

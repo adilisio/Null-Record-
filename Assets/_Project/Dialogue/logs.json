@@ -1,0 +1,19 @@
+{
+  "id": "logs",
+  "nodes": [
+    { "id": "holding_shift", "speaker": "log_staff", "text": "HOLDING, SHIFT NOTE. Holding 03 stays empty. If its door shows a fault, log it and walk away.", "next": "holding_shift_2" },
+    { "id": "holding_shift_2", "speaker": "log_staff", "text": "Do not open it to check. Records says there is nobody in there.", "next": "" },
+
+    { "id": "maint_scratched", "speaker": "log_subject", "text": "(Scratched inside a panel.) If you're reading this, you woke up too. They take the number off the door first. Then the file. Then you.", "next": "maint_scratched_2" },
+    { "id": "maint_scratched_2", "speaker": "log_subject", "text": "Go up. Every floor up is a floor they didn't plan for.", "next": "" },
+
+    { "id": "records_purge", "speaker": "log_staff", "text": "RECORDS, PURGE QUEUE. Batch 7 purged: twelve subject files. Subjects accounted for: eleven.", "next": "records_purge_2" },
+    { "id": "records_purge_2", "speaker": "log_staff", "text": "I flagged the mismatch. I was told to stop flagging the mismatch.", "next": "" },
+
+    { "id": "labs_counting", "speaker": "log_subject", "text": "(Written on the back of a specimen tag.) The voice on the intercom is kind until you stop listening. Then it starts counting.", "next": "labs_counting_2" },
+    { "id": "labs_counting_2", "speaker": "log_subject", "text": "I counted the lifts. Only the freight one goes all the way up.", "next": "" },
+
+    { "id": "labs_incident", "speaker": "log_staff", "text": "LABS, INCIDENT 41. A subject from Holding reached the Specimen Hall before lockdown. Freight shutter sealed from this side.", "next": "labs_incident_2" },
+    { "id": "labs_incident_2", "speaker": "log_staff", "text": "Someone on the other side kept knocking. Nobody here would say who.", "next": "" }
+  ]
+}

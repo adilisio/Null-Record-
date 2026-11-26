@@ -284,6 +284,21 @@ The owner's feedback was "Crouch barely moves" and "couldn't figure out combat".
   - A top-left objective line driven by progress: keycard → laser grid → freight lift → Labs pit → freight shutter.
   - An end card past the freight shutter, with fights won, level and scrap, and Back to Title / Keep Exploring (`StoryBeats`).
 
+### Story decisions (owner, 2026-11-26)
+- **Direction: up.** The escape climbs toward the surface. The freight lift rides *up* from the Server Hall to the Research Wing. The Research Wing still sits at y −30 in the shared scene; that's only layout, and the lift fades to black.
+- **Opening tone: the intercom.** On a new game, the "HOLDING 03 / Find a way up and out." card shows while the Site PA (`pa`) speaks two barks: a door-fault notice, then a "correction" saying Holding 03 is unassigned. The PA barks once more on reaching the Research Wing.
+- **Logs: staff and earlier subjects both.** There are five `LogTerminal`s, all with text in `Dialogue/logs.json` (start node = log id):
+  - Holding: staff shift note.
+  - Maintenance: subject scratching.
+  - Records: staff purge queue.
+  - Labs: a subject's specimen tag.
+  - Labs, east side: staff incident 41.
+
+  Reading one sets `log_<id>`. Unread screens pulse. The end card counts logs read.
+- **Behind the shutter: someone waiting.** A dark, backlit silhouette (the Subject model, blacked out) stands past the freight shutter. The end card reads "SOMEONE WAS WAITING". Who it is stays open: it has no name, face or interaction.
+- **Names:** Dace and "Researcher" stay placeholders.
+- **All the new wording is PLACEHOLDER** (PA lines, log text, end card) and meant to be rewritten.
+
 ### Later milestones (rough)
 2. Greybox all three regions and the gating map
 3. Companions 2 and 3, the full skill sets and the XP/scrap economy
@@ -302,7 +317,7 @@ The owner's feedback was "Crouch barely moves" and "couldn't figure out combat".
 | Scenes | One scene per region plus additive UI and systems scenes |
 
 ## 14. Open questions
-- Should the black site go **down** (escape by descending to the truth) or **up** (climbing toward the surface)?
+- ~~Down or up?~~ **Up**: the escape climbs toward the surface (owner, 2026-11-26).
 - How many endings? (Suggestion: 2, shaped by which companions you kept close and whether you expose the site.)
 - Dialogue tooling: JSON for now (see §9). Move to Ink if branching gets heavy?
 - ~~Grid tile size and multi-floor encounters~~ (prototype: 1 m tiles, multi-floor allowed; see §7)

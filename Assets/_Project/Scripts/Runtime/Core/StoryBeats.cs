@@ -31,6 +31,7 @@ namespace Game.Core
         private GameObject _endCard;
         private Text _endStats;
         private bool _endShown;
+        private bool _paResearch;
 
         public bool EndCardVisible => _endCard != null && _endCard.activeSelf;
         public string ObjectiveText => _objective != null ? _objective.text : "";
@@ -50,13 +51,24 @@ namespace Game.Core
             GameFlow.StartedNewGame = false;
         }
 
+        /// <summary>Intercom lines over the opening card. PLACEHOLDER wording.</summary>
+        public static readonly string[] IntroPa =
+        {
+            "Holding 03: door fault. Occupant, remain where you are.",
+            "Correction. Holding 03 is unassigned. Disregard.",
+        };
+
         private IEnumerator Intro()
         {
             IntroPlaying = true;
             _introGroup.gameObject.SetActive(true);
             for (float t = 0f; t < 1f; t += Time.unscaledDeltaTime) { _introGroup.alpha = t; yield return null; }
             _introGroup.alpha = 1f;
-            for (float t = 0f; t < 4f; t += Time.unscaledDeltaTime) yield return null;
+            foreach (string line in IntroPa)
+            {
+                DialogueUI.Ensure().Bark("pa", line);
+                for (float t = 0f; t < 4.2f; t += Time.unscaledDeltaTime) yield return null;
+            }
             for (float t = 1f; t > 0f; t -= Time.unscaledDeltaTime) { _introGroup.alpha = t; yield return null; }
             _introGroup.gameObject.SetActive(false);
             IntroPlaying = false;
@@ -69,6 +81,11 @@ namespace Game.Core
             _objective.text = busy ? "" : "> " + Objective();
 
             Vector3 pos = _inv.transform.position;
+            if (!_paResearch && pos.y < Region2BelowY && !busy)
+            {
+                _paResearch = true;
+                DialogueUI.Ensure().Bark("pa", "Freight lift in use. Research Wing staff, remain at your stations."); // PLACEHOLDER
+            }
             if (!_endShown && _inv.HasFlag(ShutterFlag) && pos.x > EndX && pos.y < Region2BelowY) ShowEnd();
             if (_endShown && !EndCardVisible && pos.x < EndX - 1.5f) _endShown = false; // walked back: the card can show again
         }
@@ -78,7 +95,7 @@ namespace Game.Core
         {
             if (_inv.KeycardLevel < 2) return "Find a Level 2 keycard";
             if (!_inv.HasTool(LaserGrid.SpooferTool)) return "Search Records for a way past the laser grid";
-            if (_inv.transform.position.y > Region2BelowY) return "Take the freight lift in the Server Hall";
+            if (_inv.transform.position.y > Region2BelowY) return "Ride the freight lift up (Server Hall)";
             if (!_inv.HasTool(RemoteConsole.OverrideTool)) return "Find a way across the pit in the Labs";
             if (!_inv.HasFlag(ShutterFlag)) return "Open the freight shutter";
             return "Go through the freight shutter";
@@ -89,7 +106,9 @@ namespace Game.Core
             _endShown = true;
             int fights = 0;
             foreach (string f in _inv.Flags) if (f.StartsWith("encounter_") && f.EndsWith("_cleared")) fights++;
-            _endStats.text = $"Fights won: {fights} of 3     Level {Progression.Level(_inv.Xp)}     Scrap: {_inv.Scrap}";
+            int logs = 0;
+            foreach (string f in _inv.Flags) if (f.StartsWith(LogTerminal.FlagPrefix)) logs++;
+            _endStats.text = $"Fights won: {fights} of 3     Logs: {logs} of {LogTerminal.Total}     Level {Progression.Level(_inv.Xp)}     Scrap: {_inv.Scrap}";
             _endCard.SetActive(true);
             if (_motor != null) _motor.ControlEnabled = false;
             SaveManager.Instance?.SaveNow("end");
@@ -113,12 +132,12 @@ namespace Game.Core
 
             // Opening card.
             Image scrim = MenuWidgets.Panel(r, "IntroCard", new Color(0f, 0f, 0f, 0.55f));
-            MenuWidgets.Anchor(scrim.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, -90f), new Vector2(0f, 110f));
+            MenuWidgets.Anchor(scrim.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 10f), new Vector2(0f, 170f));
             scrim.raycastTarget = false;
             _introGroup = scrim.gameObject.AddComponent<CanvasGroup>();
             _introGroup.blocksRaycasts = false;
             Text card = MenuWidgets.Label(scrim.transform, "Text",
-                "HOLDING 03\n<size=24>Subject record: no entry found.</size>\n<size=22><color=#FFC98A>Find a way out.</color></size>",
+                "HOLDING 03\n<size=24><color=#FFC98A>Find a way up and out.</color></size>",
                 46, MenuWidgets.TextColor, TextAnchor.MiddleCenter);
             card.lineSpacing = 1.15f;
             MenuWidgets.Stretch(card.rectTransform, Vector2.zero, Vector2.zero);
@@ -128,9 +147,9 @@ namespace Game.Core
             Image end = MenuWidgets.Panel(r, "EndCard", new Color(0.02f, 0.025f, 0.03f, 0.9f));
             MenuWidgets.Stretch(end.rectTransform, Vector2.zero, Vector2.zero);
             _endCard = end.gameObject;
-            Text title = MenuWidgets.Label(end.transform, "Title", "END OF THE SLICE", 52, MenuWidgets.TextColor, TextAnchor.MiddleCenter);
+            Text title = MenuWidgets.Label(end.transform, "Title", "SOMEONE WAS WAITING", 52, MenuWidgets.TextColor, TextAnchor.MiddleCenter);
             MenuWidgets.Anchor(title.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 120f), new Vector2(0f, 200f));
-            Text sub = MenuWidgets.Label(end.transform, "Sub", "Beyond the shutter, the record goes dark. More is on the way.", 22, MenuWidgets.Muted, TextAnchor.MiddleCenter);
+            Text sub = MenuWidgets.Label(end.transform, "Sub", "Past the shutter, a figure stands in the dark. It knows your number.  (End of the slice.)", 22, MenuWidgets.Muted, TextAnchor.MiddleCenter);
             MenuWidgets.Anchor(sub.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 80f), new Vector2(0f, 116f));
             _endStats = MenuWidgets.Label(end.transform, "Stats", "", 22, MenuWidgets.Accent, TextAnchor.MiddleCenter);
             MenuWidgets.Anchor(_endStats.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 30f), new Vector2(0f, 66f));

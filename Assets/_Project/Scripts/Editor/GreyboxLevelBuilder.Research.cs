@@ -68,7 +68,7 @@ namespace Game.EditorTools
             GameObject lift = new GameObject("FreightLift_Up");
             lift.transform.SetParent(room, false);
             lift.transform.position = new Vector3(100.6f, y, 0f);
-            lift.AddComponent<FreightLift>().Configure(new Vector3(88.2f, 0.05f, 0f), -1, "Take the freight lift (Server Hall)", "Server Hall.");
+            lift.AddComponent<FreightLift>().Configure(new Vector3(88.2f, 0.05f, 0f), -1, "Ride the freight lift down (Server Hall)", "Server Hall.");
             lift.GetComponent<FreightLift>().SetInteractionPoint(new Vector3(0.4f, 1.2f, 0f), 1.5f);
             Box(room, "Lift_Doors_Lobby", new Vector3(100.1f, y + 1.6f, 1.2f), new Vector3(0.6f, 3.2f, 1.4f), Mat("Door", new Color(0.55f, 0.57f, 0.6f), metallic: 0.6f), collider: false);
             Label(room, "FREIGHT LIFT", new Vector3(101.5f, y + 4f, 1.9f), new Color(1f, 0.7f, 0.3f), 0.5f);
@@ -198,7 +198,7 @@ namespace Game.EditorTools
             RemoteConsole shutter = sc.AddComponent<RemoteConsole>();
             shutter.Configure("freight shutter", shutterGo.transform, Vector3.up * 4.2f, sLight.GetComponent<Renderer>(), "shutter_freight");
             shutter.SetInteractionPoint(new Vector3(0f, 1.2f, 0f), 10f);
-            Label(room, "end of the slice", new Vector3(154.5f, y + 2.6f, 1.9f), new Color(0.5f, 0.55f, 0.6f), 0.35f);
+            Figure(room, new Vector3(155.8f, y, 0f));
             Label(room, "SPECIMEN HALL", new Vector3(137f, y + 6.5f, 1.9f), new Color(0.5f, 1f, 0.7f));
         }
 
