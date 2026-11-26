@@ -395,6 +395,45 @@ namespace Game.Tests
         }
 
         [Test]
+        public void StandingOnCover_GivesNoHeightBonus_ButRealHighGroundDoes()
+        {
+            var g = new CombatGrid();
+            for (int c = 0; c < 10; c++) g.AddTile(c, c == 4 ? 1f : 0f); // a 1 m crate at column 4
+            g.AddTile(7, 1f);                                                // and a 1 m ledge over column 7
+            g.Find(4, 1f).CoverTop = true;
+            g.LinkNeighbours();
+            CombatState s = Battle(g);
+            Unit me = s.AddUnit(CombatPresets.Subject, Team.Player, g.Find(4, 1f), leader: true);
+            Unit foe = s.AddUnit(CombatPresets.Enforcer, Team.Enemy, g.Find(5, 0f));
+            s.Start();
+            Assert.AreEqual(2, s.PreviewDamage(me.Tile, CombatPresets.Strike, foe.Tile, foe), "Strike 2, no bonus from the crate");
+            Assert.AreEqual(3, s.PreviewDamage(g.Find(7, 1f), CombatPresets.Strike, g.Find(8, 0f), null), "a real ledge still gives +1");
+            Assert.IsTrue(s.MoveOptions(me).ContainsKey(g.Find(3, 0f)), "cover stays part of the lane");
+        }
+
+        [Test]
+        public void EnemyCooldowns_LastAsLongAsThePlayers()
+        {
+            var slam = new SkillDef { Name = "Slam", Damage = 1, Cooldown = 2 };
+            var brute = new UnitDef { Name = "Brute", MaxHp = 20, Move = 0, Skills = new[] { slam } };
+            CombatGrid g = MakeGrid();
+            CombatState s = Battle(g);
+            Unit me = s.AddUnit(CombatPresets.Subject, Team.Player, Floor(g, 2), leader: true);
+            me.Hp = 99;
+            s.AddUnit(brute, Team.Enemy, Floor(g, 3));
+            s.Start();
+            var attackedOn = new List<int>();
+            for (int phase = 1; phase <= 5; phase++)
+            {
+                s.Events.Clear();
+                s.EndPlayerTurn();
+                foreach (CombatEvent e in s.Events) if (e.Kind == CombatEventKind.Attack) attackedOn.Add(phase);
+            }
+            // Cooldown 2 on a player skill means: use, skip one round, use again. Enemies match.
+            CollectionAssert.AreEqual(new[] { 1, 3, 5 }, attackedOn);
+        }
+
+        [Test]
         public void Progression_LevelsEveryFiftyXp_AndCaps()
         {
             Assert.AreEqual(1, Progression.Level(0));

@@ -175,7 +175,8 @@ namespace Game.Combat
         public int PreviewDamage(Tile from, SkillDef skill, Tile target, Unit victim)
         {
             int dmg = skill.Damage;
-            if (from.Y - target.Y >= CombatRules.HeightAdvantage) dmg += 1;
+            // Real high ground only: standing on a crate or barrel doesn't count.
+            if (!from.CoverTop && from.Y - target.Y >= CombatRules.HeightAdvantage) dmg += 1;
             if (skill.Ranged && Grid.Sight(from, target) == LineOfSight.HalfCover) dmg = Mathf.Max(1, dmg / 2);
             if (victim != null) dmg = Mathf.Max(1, dmg - victim.Def.Armor);
             return dmg;
@@ -227,6 +228,12 @@ namespace Game.Combat
         public void EndPlayerTurn()
         {
             if (Phase != Phase.Player) return;
+            // Enemy cooldowns tick here, one full round after they were set (players' tick at the end of the enemy phase).
+            foreach (Unit u in Units)
+            {
+                if (u.Team != Team.Enemy) continue;
+                for (int i = 0; i < u.Cooldowns.Length; i++) u.Cooldowns[i] = Mathf.Max(0, u.Cooldowns[i] - 1);
+            }
             Phase = Phase.Enemy;
             Emit(new CombatEvent { Kind = CombatEventKind.Phase, Text = "Enemy phase" });
             RunEnemyPhase();
@@ -381,7 +388,10 @@ namespace Game.Combat
 
             foreach (Unit u in Units)
             {
-                for (int i = 0; i < u.Cooldowns.Length; i++) u.Cooldowns[i] = Mathf.Max(0, u.Cooldowns[i] - 1);
+                if (u.Team == Team.Player)
+                {
+                    for (int i = 0; i < u.Cooldowns.Length; i++) u.Cooldowns[i] = Mathf.Max(0, u.Cooldowns[i] - 1);
+                }
                 u.Moved = false;
                 u.Acted = false;
             }
@@ -427,7 +437,8 @@ namespace Game.Combat
                 int place = PlaceScore(opt.Key, opt.Value, threat);
                 for (int si = 0; si < e.Def.Skills.Length; si++)
                 {
-                    if (!e.SkillReady(si) || e.Def.Skills[si].TargetsAllies) continue;
+                    // Ready by the time it acts: its cooldowns tick once more when the player phase ends.
+                    if (e.Cooldowns[si] > 1 || e.Def.Skills[si].TargetsAllies) continue;
                     SkillDef s = e.Def.Skills[si];
                     foreach (Unit p in players)
                     {

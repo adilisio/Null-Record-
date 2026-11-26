@@ -44,7 +44,7 @@ _Last updated 2026-11-26. Read this first in a new session, then `CLAUDE.md` (co
 - **Full verification** (about 6–8 min; builds scenes, lighting shots, WAVs, then EditMode and PlayMode tests):
   `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 test`
   - Results go to `Logs/batch/{edit,play}.xml`; screenshots go to `Screenshots/`.
-  - Current status: **145 tests passing** (93 EditMode, 52 PlayMode).
+  - Current status: **152 tests passing** (95 EditMode, 57 PlayMode).
 - **Publish the web build:** run `powershell -ExecutionPolicy Bypass -File Tools/unity-batch.ps1 web` (about 2 min after the first build), then `sh Tools/publish-web.sh`. Then check the live URL in the built-in browser.
 - **Scenes are generated.** Build All also rebuilds the character prefabs, skin materials and portraits (`CharacterArt`); rerun `python Tools/Art/make_skins.py` first if you change the skins.
 - **Scenes (detail):** `MainMenu.unity` and `Greybox_Intake.unity` are rebuilt by **Null Record → Build All Scenes**, so edit `MainMenuBuilder.cs` and `GreyboxLevelBuilder*.cs`, never the `.unity` files.
@@ -88,9 +88,11 @@ Code is under `Assets/_Project/Scripts/Runtime/{Player,World,Combat,Companions,D
 - **Untested by hand:** nobody has played a build with real hands yet. Feel, balance, mouse control in combat, touch on a real phone and web performance on phones are all unknown.
 - **Known rough edges:**
   - Dace has no collision, so they pass through walls and doors.
-  - Companion HP doesn't carry over between fights.
+  - Companions are fully healed between fights (a deliberate first-pass call).
+  - A benched companion pops straight to the terminal when another one is recruited.
   - The pause key is defined in code, not in the input asset.
   - URP Forward+ falls back to Forward on WebGL, so lights can look slightly different on the web.
+  - The editor-mode lighting shots (`lighting_*.png`) show the Subject and the kit panel edges in odd palette colours. PlayMode captures and the game itself render correctly.
 - **Not built yet:**
   - Per-unit XP, and skill choices on level-up
   - Tool rewards from fights (wait for the hacking-tool design)

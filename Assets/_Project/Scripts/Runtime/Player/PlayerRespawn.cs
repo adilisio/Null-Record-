@@ -42,6 +42,7 @@ namespace Game.Player
             GameAudio.Play(SoundId.Hurt, transform.position);
             yield return new WaitForSeconds(respawnDelay);
             _motor.Teleport(_checkpoint);
+            Game.UI.ScreenFade.FromBlack(0.4f);
             _motor.ControlEnabled = true;
             _respawning = false;
         }

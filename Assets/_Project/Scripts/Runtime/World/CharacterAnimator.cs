@@ -29,6 +29,19 @@ namespace Game.World
 
         public void Configure(Animator target) => animator = target;
 
+        /// <summary>Back to Idle at once (e.g. a companion getting up after a fight).</summary>
+        public void ResetPose()
+        {
+            if (animator == null || animator.runtimeAnimatorController == null) return;
+            foreach (AnimatorControllerParameter p in animator.parameters)
+            {
+                if (p.type == AnimatorControllerParameterType.Trigger) animator.ResetTrigger(p.nameHash);
+            }
+            animator.Play("Idle", 0, 0f);
+            LastAction = "";
+            _holdUntil = 0f;
+        }
+
         /// <summary>The last action fired with <see cref="Play"/> (for tests and debugging).</summary>
         public string LastAction { get; private set; } = "";
 

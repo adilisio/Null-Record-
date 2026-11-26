@@ -42,6 +42,7 @@ namespace Game.World
             CompanionFollower.Active?.WarpBehindPlayer();
             SideCameraRig rig = Camera.main != null ? Camera.main.GetComponent<SideCameraRig>() : null;
             if (rig != null) rig.SetTarget(player.transform);
+            Game.UI.ScreenFade.FromBlack(0.45f);
             GameMessages.Show(arrivalMessage);
         }
     }

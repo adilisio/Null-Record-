@@ -21,8 +21,8 @@ namespace Game.EditorTools
             FloorTiles(Group(root, "FloorTiles"), -2, (int)SliceEndX, 0f, 0f, 0f, "Shell/Floor");
             // Kit meshes over the greybox walkways, blocks and door; the greybox colliders stay.
             foreach (string walkway in new[] { "Catwalk", "Loft", "Mezzanine", "Platform_High" }) Reskin(walkway, "floor-panel");
-            Reskin("Block_LedgeClimb", "structure");
-            Reskin("Block_Archive", "structure");
+            FacePanels("Block_LedgeClimb");
+            FacePanels("Block_Archive");
             Reskin("Door_L2/Panel", "door-double-closed", 90f, asChild: true);
             HoldingProps(Group(root, "Holding"));
             MaintenanceProps(Group(root, "Maintenance"));
@@ -36,10 +36,11 @@ namespace Game.EditorTools
             // Three rows of 1 m panels, with a little deterministic variety.
             for (int x = x0; x < x1; x++)
             {
-                for (int row = 0; row < 3; row++)
+                for (int row = 0; row < 7; row++) // floor to just under the ceiling
                 {
                     string piece = row == 1 && Mathf.Abs(x) % 7 == 3 ? "wall-window" : "wall";
                     if (row == 2 && Mathf.Abs(x) % 9 == 4) piece = "wall-banner";
+                    if (row >= 4 && Mathf.Abs(x + row) % 11 == 5) piece = "wall-detail";
                     Prop(parent, piece, new Vector3(x + 0.5f, floorY + row, PanelZ), 0f);
                 }
             }
@@ -90,6 +91,34 @@ namespace Game.EditorTools
             Prop(parent, "display-wall-wide", new Vector3(45.5f, 1.8f, 1.95f), 180f, 1.6f);
             Prop(parent, "container-tall", new Vector3(54.9f, 0f, 1.45f), 0f, 1.4f);
             Reskin("Cover_Low", "container");
+        }
+
+        /// <summary>
+        /// Keeps a solid greybox block visible and tiles kit wall panels over its camera-facing side, so it reads as a
+        /// solid structure (the kit's "structure" mesh is an open frame and looked like a table).
+        /// </summary>
+        private static void FacePanels(string boxName)
+        {
+            GameObject box = GameObject.Find(boxName);
+            if (box == null)
+            {
+                Debug.LogWarning($"[Null Record] FacePanels: '{boxName}' not found.");
+                return;
+            }
+            box.GetComponent<Renderer>().sharedMaterial = Mat("BlockFace", new Color(0.22f, 0.24f, 0.27f), metallic: 0.3f);
+            Bounds b = box.GetComponent<Renderer>().bounds;
+            int cols = Mathf.Max(1, Mathf.RoundToInt(b.size.x));
+            int rows = Mathf.Max(1, Mathf.RoundToInt(b.size.y));
+            var group = new GameObject(box.name + "_Panels").transform;
+            group.SetParent(box.transform.parent, true);
+            for (int c = 0; c < cols; c++)
+            {
+                for (int r = 0; r < rows; r++)
+                {
+                    GameObject p = Prop(group, "wall", new Vector3(b.min.x + (c + 0.5f) * b.size.x / cols, b.min.y + r * b.size.y / rows, b.min.z - 0.02f), 0f);
+                    p.transform.localScale = new Vector3(b.size.x / cols, b.size.y / rows, 0.25f);
+                }
+            }
         }
 
         /// <summary>Places a kit piece with its pivot (bottom centre) at <paramref name="feet"/>.</summary>

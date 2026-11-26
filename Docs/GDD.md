@@ -237,6 +237,24 @@ One region (Intake / Holding), polished enough to show:
   - **Skills:** Static Dart (ranged 2–4, 1 damage) and **Patch**, which heals an ally (not self) for 3, range 1–3, cooldown 2. The enemy AI never uses support skills.
   - **Placeholder look:** a lab coat skin and a hand scanner.
 
+### Polish pass (2026-11-26, from a Fable review)
+- **Touch:**
+  - A screen tap is no longer bound to Attack: it was confirming combat moves and double-advancing dialogue. Dialogue advances on a tap anywhere that isn't an on-screen button.
+  - The controls are round, and the combat buttons sit in a bottom-centre strip.
+  - With touch controls showing, the combat camera sits lower so the grid clears them.
+- **Device-aware hints:** prompts, combat help, dialogue hints and the world signs read E, WASD and Space on keyboard, and USE, tap and JUMP on touch (`InputHints`, `HintLabel`).
+- **HUDs:**
+  - Exploration prompts and messages are on a screen canvas, with the prompt as a pill.
+  - The combat banner, unit and skill bar and the log are on a canvas under the banner.
+  - Units have small HP bars, and the shown HP counts down with the hits rather than jumping ahead.
+- **Downed bodies:** a companion at 0 HP goes down and gets up when the fight ends. Bodies tip forwards instead of backwards when a wall is within a body length behind.
+- **Cover:** standing on low cover (crates, barrels, tanks; `LowCover`) no longer gives a height advantage. Its top stays a tile. Removing it was tried, but in a one-lane side view there's no way around the cover, so it split the grid and stalemated melee.
+- **Enemy cooldowns:** they now tick at the end of the player phase, so they last as long as the players' do. The enemy AI plans with that in mind.
+- **Framing:** wall panels go up to the ceiling, the floor is deeper, and the camera is a little higher, so there's less black void.
+- **Solid blocks:** they keep their box and get a face of kit panels; the open-frame "structure" mesh read as a table.
+- **Transitions:** lift rides and respawns fade in from black.
+- **Companion HP:** companions are fully healed between fights. That's a deliberate first-pass call, still to revisit after hands-on play.
+
 ### Later milestones (rough)
 2. Greybox all three regions and the gating map
 3. Companions 2 and 3, the full skill sets and the XP/scrap economy

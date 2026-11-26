@@ -28,6 +28,8 @@ namespace Game.Combat
         public Vector3 World;
         /// <summary>Damage dealt to a unit that ends a move on, or is knocked onto, this tile (0 = safe).</summary>
         public int Hazard;
+        /// <summary>Top of low cover (a crate, a barrel): standable, but standing on it gives no height advantage.</summary>
+        public bool CoverTop;
         public readonly List<Edge> Edges = new List<Edge>();
 
         public override string ToString() => $"Tile(c{Col}, y{Y:0.##})";
@@ -221,7 +223,11 @@ namespace Game.Combat
                     {
                         if (!(overlap[i] is CharacterController)) clear = false;
                     }
-                    if (clear && grid.Find(c, y, 0.05f) == null) grid.AddTile(c, y);
+                    if (clear && grid.Find(c, y, 0.05f) == null)
+                    {
+                        Tile t = grid.AddTile(c, y);
+                        t.CoverTop = h.collider.GetComponentInParent<Game.World.LowCover>() != null; // low cover
+                    }
                 }
             }
 

@@ -33,7 +33,9 @@ namespace Game.Tests
             _motor.Teleport(new Vector3(88.6f, 0.05f, 0f));
             yield return Until(() => _interactor.Current == down, 2f, "lift prompt");
             yield return Tap(Key.E);
-            yield return Wait(0.3f);
+            yield return Wait(0.15f);
+            Assert.Greater(Game.UI.ScreenFade.Alpha, 0.2f, "the lift ride fades in from black");
+            yield return Wait(0.15f);
             Assert.Less(Y, R2Y + 1f, "arrived in the Research Wing");
             Assert.That(X, Is.EqualTo(102.5f).Within(0.5f));
             Assert.Less(Camera.main.transform.position.y, R2Y + 10f, "the camera came along");

@@ -79,6 +79,8 @@ namespace Game.Combat
         private readonly List<GameObject> _idleEnemies = new List<GameObject>();
         private readonly List<UnitView> _views = new List<UnitView>();
         private readonly List<string> _log = new List<string>();
+        /// <summary>Player-side bodies knocked down this fight, with their upright rotation (restored when it ends).</summary>
+        private readonly List<(Transform body, Quaternion upright)> _downed = new List<(Transform, Quaternion)>();
 
         private PlayerInteractor _player;
         private CompanionFollower _companion;
@@ -288,6 +290,14 @@ namespace Game.Combat
             GameAudio.SetCombat(false);
             yield return new WaitForSeconds(1.2f);
 
+            // Downed player-side bodies get back up.
+            foreach ((Transform body, Quaternion upright) in _downed)
+            {
+                if (body == null) continue;
+                body.rotation = upright;
+                body.GetComponentInChildren<CharacterAnimator>()?.ResetPose();
+            }
+            _downed.Clear();
             foreach (UnitView v in _views) v.Destroy();
             _views.Clear();
             _grid?.Destroy();
@@ -846,16 +856,35 @@ namespace Game.Combat
             UnitView v = ViewOf(ev.Target);
             if (v == null) yield break;
             v.Refresh(false);
-            if (!v.Owned) yield break; // the player's own body stays; defeat resets the encounter
             CharacterAnimator anim = v.Root.GetComponentInChildren<CharacterAnimator>();
+            if (!v.Owned)
+            {
+                // A companion at 0 HP goes down where they stand and gets up after the fight. (The Subject going down
+                // is a defeat, which resets the encounter, so the leader stays standing.)
+                if (anim == null || v.Unit.IsLeader) yield break;
+                v.HideLabels();
+                anim.Play("Down", 5f);
+                Quaternion up = v.Root.rotation;
+                _downed.Add((v.Root, up));
+                Quaternion down = up * Quaternion.Euler(FallPitch(v.Root), 0f, 0f);
+                for (float t = 0f; t < 1f; t += Time.deltaTime / 0.35f)
+                {
+                    v.Root.rotation = Quaternion.Slerp(up, down, t * t);
+                    yield return null;
+                }
+                v.Root.rotation = down;
+                GameAudio.Play(SoundId.Land, v.Root.position + Vector3.up * 0.3f, 0.8f);
+                yield break;
+            }
             if (anim != null)
             {
-                // Knocked out: arms fly up, the whole body tips over backwards from the feet, lies still, then sinks away.
+                // Knocked out: arms fly up, the whole body tips over from the feet (backwards, or forwards if a wall
+                // is right behind), lies still, then sinks away.
                 v.HideLabels();
                 anim.Play("Down", 5f);
                 yield return new WaitForSeconds(0.1f);
                 Quaternion upright = v.Root.rotation;
-                Quaternion flat = upright * Quaternion.Euler(-85f, 0f, 0f);
+                Quaternion flat = upright * Quaternion.Euler(FallPitch(v.Root), 0f, 0f);
                 for (float t = 0f; t < 1f; t += Time.deltaTime / 0.35f)
                 {
                     v.Root.rotation = Quaternion.Slerp(upright, flat, t * t); // accelerate like a fall
@@ -881,6 +910,20 @@ namespace Game.Combat
                 yield return null;
             }
             v.Root.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Pitch for tipping a body over: backwards (away from what hit it), unless a wall is within a body length
+        /// behind, in which case forwards, so it doesn't sink into the wall.
+        /// </summary>
+        private float FallPitch(Transform body)
+        {
+            Vector3 chest = body.position + Vector3.up * 0.9f;
+            foreach (RaycastHit h in Physics.RaycastAll(chest, -body.forward, 1.8f, environment, QueryTriggerInteraction.Ignore))
+            {
+                if (!(h.collider is CharacterController) && !h.transform.IsChildOf(body)) return 85f;
+            }
+            return -85f;
         }
 
         private static IEnumerator FloatAway(TextMesh tm)

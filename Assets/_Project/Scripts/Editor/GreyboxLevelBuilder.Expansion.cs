@@ -94,7 +94,7 @@ namespace Game.EditorTools
 
             // Encounter geometry on the 1 m lattice (tile edges at whole numbers from x = 74).
             GameObject zoneMarker = Box(room, "EncounterZone_Marker_Servers", new Vector3(81.5f, 0.02f, 0f), new Vector3(15f, 0.04f, 2.5f), encounter, collider: false);
-            Box(room, "Cover_Rack", new Vector3(79.5f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f)));
+            Box(room, "Cover_Rack", new Vector3(79.5f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f))).AddComponent<LowCover>();
             Box(room, "Mezzanine", new Vector3(84f, 2f, 0f), new Vector3(4f, 0.3f, 2f), metal);
             Box(room, "Hazard_ArcGrate_A", new Vector3(81.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
             Box(room, "Hazard_ArcGrate_B", new Vector3(87.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);

@@ -122,7 +122,7 @@ namespace Game.EditorTools
 
             // Shell spans x -2.5 .. SliceEndX + 0.5.
             float cx = (SliceEndX - 2f) * 0.5f, w = SliceEndX + 3f;
-            Box(shell, "Floor", new Vector3(cx, -0.5f, 0f), new Vector3(w, 1f, Depth), concrete);
+            Box(shell, "Floor", new Vector3(cx, -2f, 0f), new Vector3(w, 4f, Depth), concrete); // deep, so the frame's bottom isn't void
             Box(shell, "Ceiling", new Vector3(cx, 8.25f, 0f), new Vector3(w, 0.5f, Depth), concrete);
             Box(shell, "WallLeft", new Vector3(-2.25f, 4f, 0f), new Vector3(0.5f, 8f, Depth), concrete);
             Box(shell, "WallRight", new Vector3(SliceEndX + 0.25f, 4f, 0f), new Vector3(0.5f, 8f, Depth), concrete);
@@ -226,7 +226,7 @@ namespace Game.EditorTools
 
             // Props sit on the 1 m combat lattice (tile edges at whole numbers from x = 42).
             GameObject zoneMarker = Box(room, "EncounterZone_Marker", new Vector3(49f, 0.02f, 0f), new Vector3(14f, 0.04f, 2.5f), encounter, collider: false);
-            Box(room, "Cover_Low", new Vector3(47.5f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f)));
+            Box(room, "Cover_Low", new Vector3(47.5f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f))).AddComponent<LowCover>();
             Box(room, "Platform_High", new Vector3(51.5f, 2f, 0f), new Vector3(3f, 0.3f, 2f), Mat("Metal", new Color(0.5f, 0.52f, 0.55f), metallic: 0.8f));
             // Arcing floor grate under the platform's edge: live only during the fight (see EncounterController.SetHazards).
             // No collider, so the combat grid still sees the floor under it as one ordinary tile.

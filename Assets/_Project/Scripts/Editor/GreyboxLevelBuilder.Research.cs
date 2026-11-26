@@ -147,7 +147,7 @@ namespace Game.EditorTools
 
             // Encounter on the 1 m lattice from x = 134.
             GameObject zoneMarker = Box(room, "EncounterZone_Marker_Specimens", new Vector3(141f, y + 0.02f, 0f), new Vector3(14f, 0.04f, 2.5f), encounter, collider: false);
-            Box(room, "Cover_Tank", new Vector3(137.5f, y + 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f)));
+            Box(room, "Cover_Tank", new Vector3(137.5f, y + 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f))).AddComponent<LowCover>();
             Box(room, "Specimen_Platform", new Vector3(141.5f, y + 2f, 0f), new Vector3(3f, 0.3f, 2f), metal);
             Box(room, "Raised_Block", new Vector3(146.5f, y + 0.8f, 0f), new Vector3(3f, 1.6f, 2.4f), Mat("ArchiveBlock", new Color(0.28f, 0.3f, 0.34f)));
             Box(room, "Hazard_ArcGrate_C", new Vector3(138.5f, y + 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
@@ -256,7 +256,7 @@ namespace Game.EditorTools
             Reskin("Lab_Bench", "table-large");
             Reskin("Cover_Tank", "container");
             Reskin("Specimen_Platform", "floor-panel");
-            Reskin("Raised_Block", "structure");
+            FacePanels("Raised_Block");
         }
     }
 }

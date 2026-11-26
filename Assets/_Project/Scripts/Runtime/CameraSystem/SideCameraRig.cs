@@ -14,7 +14,7 @@ namespace Game.CameraSystem
     {
         [SerializeField] private Transform target;
         [SerializeField] private float distance = 16f;
-        [SerializeField] private float heightOffset = 1.5f;
+        [SerializeField] private float heightOffset = 2.1f; // raised so less of the frame is void below the floor
         [SerializeField] private float lookAhead = 2f;
         [SerializeField] private float lookAheadSmoothTime = 0.6f;
         [SerializeField] private float followSmoothTimeX = 0.2f;
