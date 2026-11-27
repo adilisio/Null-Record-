@@ -235,41 +235,19 @@ namespace Game.EditorTools
 
             Checkpoint(room, "Checkpoint_C", new Vector3(41.5f, 0f, 0f));
 
-            // Props sit on the 1 m combat lattice (tile edges at whole numbers from x = 42).
             GameObject zoneMarker = Box(room, "EncounterZone_Marker", new Vector3(49f, 0.02f, 0f), new Vector3(14f, 0.04f, 2.5f), encounter, collider: false);
-            Box(room, "Cover_Low", new Vector3(47.5f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f))).AddComponent<LowCover>();
+            Box(room, "Cover_Low", new Vector3(47.5f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f)));
             Box(room, "Platform_High", new Vector3(51.5f, 2f, 0f), new Vector3(3f, 0.3f, 2f), Mat("Metal", new Color(0.5f, 0.52f, 0.55f), metallic: 0.8f));
-            // Arcing floor grate under the platform's edge: live only during the fight (see EncounterController.SetHazards).
-            // No collider, so the combat grid still sees the floor under it as one ordinary tile.
-            Box(room, "Hazard_ArcGrate", new Vector3(50.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f),
+            // Arcing floor grate under the platform's edge: live only while the room's fight is on (ShockGrate).
+            GameObject arc = Box(room, "Hazard_ArcGrate", new Vector3(50.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f),
                 Mat("ArcGrate", new Color(0.12f, 0.14f, 0.05f), emission: new Color(0.7f, 1f, 0.15f) * 1.5f), collider: false);
 
-            GameObject engageSign = Hint(Label(room, "[ optional encounter: E to engage ]", new Vector3(49f, 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f), "[ optional encounter: USE to engage ]");
-            GameObject encGo = new GameObject("Encounter_Security");
-            encGo.transform.SetParent(room, false);
-            encGo.transform.position = new Vector3(44.5f, 0f, 0f);
-            EncounterController enc = encGo.AddComponent<EncounterController>();
-            enc.SetInteractionPoint(new Vector3(0f, 0.9f, 0f), 1.2f);
-            enc.SetHazards(new Vector2(50.5f, 0f));
-            enc.SetUnitModels(
-                new EncounterController.UnitModel { unit = "Enforcer", prefab = CharacterArt.Prefab("Enforcer") },
-                new EncounterController.UnitModel { unit = "Sentry", prefab = CharacterArt.Prefab("Sentry") });
-            enc.Configure(
-                new Rect(42f, -0.2f, 14f, 6.2f),
-                new[]
-                {
-                    new EncounterController.EnemySpawn { unit = "Enforcer", position = new Vector2(49.5f, 0f) },
-                    new EncounterController.EnemySpawn { unit = "Sentry", position = new Vector2(51.5f, 2.2f) },
-                    new EncounterController.EnemySpawn { unit = "Sentry", position = new Vector2(54.5f, 0f) },
-                },
-                30,
-                "encounter_security_cleared",
-                "Recovered: security incident report (fragment).",
-                TransparentMat("GridTile", new Color(1f, 1f, 1f, 0.3f)),
-                Mat("Enemy", new Color(0.5f, 0.16f, 0.14f)),
-                Mat("EnemyVisor", new Color(1f, 0.25f, 0.2f), emission: new Color(1f, 0.2f, 0.15f) * 2f),
-                zoneMarker.GetComponent<Renderer>(),
-                engageSign);
+            // First fight: two Enforcers and a Sentry on the platform. Walking in starts it; you can also run through.
+            GameObject sign = HostileSign(room, new Vector3(46f, 4.2f, 1.9f));
+            EnemyRoomAt(room, "Encounter_Security", new Rect(42f, -0.2f, 14f, 6.2f),
+                new[] { (EnemyKind.Enforcer, new Vector2(49.5f, 0f)), (EnemyKind.Sentry, new Vector2(51.5f, 2.2f)), (EnemyKind.Enforcer, new Vector2(54.5f, 0f)) },
+                30, 50, "encounter_security_cleared", "Recovered: security incident report (fragment).",
+                zoneMarker.GetComponent<Renderer>(), new[] { arc }, sign);
 
             Label(room, "SECURITY", new Vector3(44f, 6.5f, 1.9f), new Color(1f, 0.35f, 0.3f));
         }
@@ -314,6 +292,7 @@ namespace Game.EditorTools
             player.AddComponent<PlayerInventory>();
             player.AddComponent<PlayerInteractor>();
             player.AddComponent<PlayerRespawn>();
+            player.AddComponent<PlayerCombat>();
             player.AddComponent<PlayerAudio>();
             return player;
         }

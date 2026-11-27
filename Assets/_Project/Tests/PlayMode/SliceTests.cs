@@ -64,33 +64,18 @@ namespace Game.Tests
         }
 
         [UnityTest]
-        public IEnumerator ServerHall_Encounter_HasThreeEnemyTypes_AndTwoHazards()
+        public IEnumerator ServerHall_HasThreeKindsOfHostile_AndTwoShockGrates()
         {
-            EncounterController enc = GameObject.Find("Encounter_Servers")?.GetComponent<EncounterController>();
-            Assert.IsNotNull(enc, "Encounter_Servers missing (rebuild scenes)");
-            Assert.AreEqual(3, IdleHostilesBetween(74f, 90f), "three idle hostiles in the Server Hall");
-
-            _motor.Teleport(new Vector3(75.5f, 0.05f, 0f));
-            yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
-            enc.Engage(_interactor);
-            yield return Until(() => !enc.IsBusy, 5f, "opening events");
-
-            var names = new List<string>();
-            foreach (Unit u in enc.State.Alive(Team.Enemy)) names.Add(u.Name);
-            CollectionAssert.AreEquivalent(new[] { "Enforcer", "Sentry", "Warden" }, names);
-            int hazards = 0;
-            foreach (Tile t in enc.State.Grid.Tiles) if (t.Hazard > 0) hazards++;
-            Assert.AreEqual(2, hazards, "two arc grates");
-            foreach (Unit e in enc.State.Alive(Team.Enemy)) Assert.IsNotNull(e.Intent, $"{e.Name} plans");
-            yield return Wait(1.2f); // camera pulls back to frame the fight
-            foreach (Unit u in enc.State.Units)
-            {
-                if (!u.Alive) continue;
-                Vector3 vp = Camera.main.WorldToViewportPoint(u.Tile.World + Vector3.up);
-                Assert.That(vp.x, Is.InRange(0.02f, 0.98f), $"{u.Name} is on screen (x)");
-                Assert.That(vp.y, Is.InRange(0.02f, 0.98f), $"{u.Name} is on screen (y)");
-            }
-            yield return Shot("16_servers_combat");
+            EnemyRoom room = ServersRoom;
+            Assert.AreEqual(3, IdleHostilesBetween(74f, 90f), "three hostiles in the Server Hall");
+            var kinds = new List<string>();
+            foreach (Enemy e in room.Enemies) kinds.Add(e.Kind.ToString());
+            CollectionAssert.AreEquivalent(new[] { "Enforcer", "Sentry", "Warden" }, kinds);
+            int grates = 0;
+            foreach (ShockGrate g in Object.FindObjectsByType<ShockGrate>(FindObjectsSortMode.None))
+                if (g.transform.position.x > 74f && g.transform.position.x < 90f) grates++;
+            Assert.AreEqual(2, grates, "two arc grates");
+            yield return null;
         }
     }
 }

@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Game.Player
 {
     /// <summary>
-    /// Out-of-combat death: brief pause, then back to the last checkpoint.
-    /// Combat defeats are handled by the encounter system, not here.
+    /// Death (hazards, falls, or HP running out in a fight): brief pause, then back to the last checkpoint.
+    /// <see cref="Respawned"/> lets fights reset and HP refill.
     /// </summary>
     [RequireComponent(typeof(PlayerMotor))]
     public class PlayerRespawn : MonoBehaviour
@@ -19,6 +19,10 @@ namespace Game.Player
         private bool _respawning;
 
         public Vector3 Checkpoint => _checkpoint;
+        public bool Respawning => _respawning;
+
+        /// <summary>Raised after the player is back at the checkpoint.</summary>
+        public static event System.Action Respawned;
 
         private void Awake()
         {
@@ -45,6 +49,7 @@ namespace Game.Player
             Game.UI.ScreenFade.FromBlack(0.4f);
             _motor.ControlEnabled = true;
             _respawning = false;
+            Respawned?.Invoke();
         }
     }
 }

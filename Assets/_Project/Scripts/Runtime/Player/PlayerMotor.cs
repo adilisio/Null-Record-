@@ -84,6 +84,24 @@ namespace Game.Player
 
         public event Action<MotorState> StateChanged;
 
+        /// <summary>Set while an attack plays: on the ground the feet plant, and facing can't turn in the air either.</summary>
+        public bool AttackLocked { get; set; }
+        /// <summary>Knocked back by a hit: no input until this wears off.</summary>
+        public bool Stunned => Time.time < _stunUntil;
+        private float _stunUntil;
+
+        /// <summary>Throws the player (a hit): sets the velocity and ignores input for <paramref name="stun"/> seconds.</summary>
+        public void Knockback(Vector2 velocity, float stun)
+        {
+            if (ExternallyControlled) return;
+            if (State == MotorState.Ladder || State == MotorState.LedgeHang || State == MotorState.LedgeClimb) SetState(MotorState.Airborne);
+            _velocity = new Vector3(velocity.x, velocity.y, 0f);
+            _lastGroundedTime = float.NegativeInfinity;
+            _jumpCutApplied = true;
+            _stunUntil = Time.time + stun;
+            _input.ClearCrouchLatch();
+        }
+
         private float JumpVelocity => Mathf.Sqrt(2f * jumpHeight * -gravity);
 
         private void Awake()
@@ -113,6 +131,7 @@ namespace Game.Player
             if (!ControlEnabled) _input.ClearCrouchLatch();
             // A thumbstick (on-screen or real) past a third of its travel counts as a full push: phones rarely reach the rim.
             if (Mathf.Abs(move.x) > 0.35f) move.x = Mathf.Sign(move.x);
+            if (Stunned) move = Vector2.zero;
 
             switch (State)
             {
@@ -171,15 +190,18 @@ namespace Game.Player
                 if (_velocity.y < 0f) _velocity.y = -2f;
             }
 
-            if (Mathf.Abs(move.x) > 0.1f) SetFacing(move.x > 0f ? 1 : -1);
+            bool stunned = Stunned;
+            if (Mathf.Abs(move.x) > 0.1f && !AttackLocked && !stunned) SetFacing(move.x > 0f ? 1 : -1);
+            if (AttackLocked && grounded) move.x = 0f;
 
-            SetCrouch(ControlEnabled && grounded && _input.CrouchHeld);
+            if (!stunned) SetCrouch(ControlEnabled && grounded && _input.CrouchHeld);
 
             float targetSpeed = IsCrouching ? crouchSpeed : (_input.SprintHeld ? sprintSpeed : walkSpeed);
             float accel = grounded ? groundAcceleration : airAcceleration;
-            _velocity.x = Mathf.MoveTowards(_velocity.x, move.x * targetSpeed, accel * dt);
+            if (stunned) _velocity.x = Mathf.MoveTowards(_velocity.x, 0f, (grounded ? 14f : 3f) * dt);
+            else _velocity.x = Mathf.MoveTowards(_velocity.x, move.x * targetSpeed, accel * dt);
 
-            if (ControlEnabled && TryEnterLadder(move, grounded)) return;
+            if (ControlEnabled && !stunned && TryEnterLadder(move, grounded)) return;
 
             bool inCoyote = Time.time - _lastGroundedTime <= coyoteTime;
             // Jumping from a crouch stands up first (when there's room), so a crouch toggle never traps the jump button.
@@ -188,7 +210,7 @@ namespace Game.Player
                 _input.ClearCrouchLatch();
                 SetCrouch(false);
             }
-            if (ControlEnabled && _input.HasBufferedJump && inCoyote && !IsCrouching)
+            if (ControlEnabled && !stunned && _input.HasBufferedJump && inCoyote && !IsCrouching)
             {
                 _input.ConsumeJump();
                 _velocity.y = JumpVelocity;

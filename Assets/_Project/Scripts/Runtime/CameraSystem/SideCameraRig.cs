@@ -1,4 +1,3 @@
-using Game.Combat;
 using Game.Player;
 using UnityEngine;
 
@@ -65,23 +64,8 @@ namespace Game.CameraSystem
 
             Vector2 desired = new Vector2(target.position.x + _lead, target.position.y + heightOffset);
             float desiredDistance = ExploreDistance;
-            EncounterController fight = EncounterController.Active;
-            if (fight != null && _camera != null)
-            {
-                // Frame the encounter area with a little margin, centred on it.
-                Rect a = fight.Area;
-                float tan = Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
-                float fitW = (a.width * 0.5f + 1f) / (tan * _camera.aspect);
-                float fitH = (a.height * 0.5f + 1f) / tan;
-                desiredDistance = Mathf.Max(distance, fitW, fitH);
-                // With touch controls up, sit lower so the grid rides above the stick and buttons.
-                desired = a.center + new Vector2(0f, Game.UI.TouchControls.ShouldShow ? -1.3f : 0.5f);
-            }
-            else
-            {
-                UpdateBounds(desired, dt);
-                desired = Clamp(desired);
-            }
+            UpdateBounds(desired, dt);
+            desired = Clamp(desired);
             _distance = Mathf.SmoothDamp(_distance, desiredDistance, ref _distanceVelocity, 0.4f, Mathf.Infinity, dt);
 
             _focus.x = Mathf.SmoothDamp(_focus.x, desired.x, ref _velocity.x, followSmoothTimeX, Mathf.Infinity, dt);

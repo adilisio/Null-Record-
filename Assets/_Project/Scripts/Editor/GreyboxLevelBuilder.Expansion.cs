@@ -92,40 +92,18 @@ namespace Game.EditorTools
 
             Checkpoint(room, "Checkpoint_E", new Vector3(73.5f, 0f, 0f));
 
-            // Encounter geometry on the 1 m lattice (tile edges at whole numbers from x = 74).
             GameObject zoneMarker = Box(room, "EncounterZone_Marker_Servers", new Vector3(81.5f, 0.02f, 0f), new Vector3(15f, 0.04f, 2.5f), encounter, collider: false);
-            Box(room, "Cover_Rack", new Vector3(79.5f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f))).AddComponent<LowCover>();
+            Box(room, "Cover_Rack", new Vector3(79.5f, 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f)));
             Box(room, "Mezzanine", new Vector3(84f, 2f, 0f), new Vector3(4f, 0.3f, 2f), metal);
-            Box(room, "Hazard_ArcGrate_A", new Vector3(81.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
-            Box(room, "Hazard_ArcGrate_B", new Vector3(87.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
+            GameObject arcA = Box(room, "Hazard_ArcGrate_A", new Vector3(81.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
+            GameObject arcB = Box(room, "Hazard_ArcGrate_B", new Vector3(87.5f, 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
 
-            GameObject engageSign = Hint(Label(room, "[ optional encounter: E to engage ]", new Vector3(81.5f, 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f), "[ optional encounter: USE to engage ]");
-            var encGo = new GameObject("Encounter_Servers");
-            encGo.transform.SetParent(room, false);
-            encGo.transform.position = new Vector3(75.5f, 0f, 0f);
-            EncounterController enc = encGo.AddComponent<EncounterController>();
-            enc.SetInteractionPoint(new Vector3(0f, 0.9f, 0f), 1.2f);
-            enc.Configure(
-                new Rect(74f, -0.2f, 15f, 6.2f),
-                new[]
-                {
-                    new EncounterController.EnemySpawn { unit = "Enforcer", position = new Vector2(80.5f, 0f) },
-                    new EncounterController.EnemySpawn { unit = "Sentry", position = new Vector2(84.5f, 2.2f) },
-                    new EncounterController.EnemySpawn { unit = "Warden", position = new Vector2(86.5f, 0f) },
-                },
-                40,
-                "encounter_servers_cleared",
-                "Recovered: server maintenance log (fragment).",
-                TransparentMat("GridTile", new Color(1f, 1f, 1f, 0.3f)),
-                Mat("Enemy", new Color(0.5f, 0.16f, 0.14f)),
-                Mat("EnemyVisor", new Color(1f, 0.25f, 0.2f), emission: new Color(1f, 0.2f, 0.15f) * 2f),
-                zoneMarker.GetComponent<Renderer>(),
-                engageSign);
-            enc.SetHazards(new Vector2(81.5f, 0f), new Vector2(87.5f, 0f));
-            enc.SetUnitModels(
-                new EncounterController.UnitModel { unit = "Enforcer", prefab = CharacterArt.Prefab("Enforcer") },
-                new EncounterController.UnitModel { unit = "Sentry", prefab = CharacterArt.Prefab("Sentry") },
-                new EncounterController.UnitModel { unit = "Warden", prefab = CharacterArt.Prefab("Warden") });
+            // An Enforcer, a Sentry on the mezzanine, and the first Warden (armoured from the front; lure it onto a grate).
+            GameObject sign = HostileSign(room, new Vector3(78f, 4.2f, 1.9f));
+            EnemyRoomAt(room, "Encounter_Servers", new Rect(74f, -0.2f, 15f, 6.2f),
+                new[] { (EnemyKind.Enforcer, new Vector2(80.5f, 0f)), (EnemyKind.Sentry, new Vector2(84.5f, 2.2f)), (EnemyKind.Warden, new Vector2(86.5f, 0f)) },
+                40, 50, "encounter_servers_cleared", "Recovered: server maintenance log (fragment).",
+                zoneMarker.GetComponent<Renderer>(), new[] { arcA, arcB }, sign);
 
             // Freight lift to the Research Wing (region 2).
             Box(room, "Lift_Doors", new Vector3(89.6f, 1.6f, 1.2f), new Vector3(0.6f, 3.2f, 1.4f), Mat("Door", new Color(0.55f, 0.57f, 0.6f), metallic: 0.6f), collider: false);

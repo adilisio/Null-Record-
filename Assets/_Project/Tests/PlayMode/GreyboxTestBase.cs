@@ -39,8 +39,10 @@ namespace Game.Tests
         protected float X => _motor.transform.position.x;
         protected float Y => _motor.transform.position.y;
 
-        /// <summary>The optional fight in Security (the level now has more than one encounter).</summary>
-        protected static EncounterController SecurityEncounter => GameObject.Find("Encounter_Security").GetComponent<EncounterController>();
+        /// <summary>The hostile room in Security (the level has three).</summary>
+        protected static EnemyRoom SecurityRoom => GameObject.Find("Encounter_Security").GetComponent<EnemyRoom>();
+        protected static EnemyRoom ServersRoom => GameObject.Find("Encounter_Servers").GetComponent<EnemyRoom>();
+        protected static EnemyRoom SpecimensRoom => GameObject.Find("Encounter_Specimens").GetComponent<EnemyRoom>();
 
         /// <summary>Dace, companion 1 (the level can hold more than one companion).</summary>
         protected static Game.Companions.CompanionNPC DaceNpc
@@ -55,13 +57,13 @@ namespace Game.Tests
             }
         }
 
-        /// <summary>Idle hostile figures (unparented "Hostile_*" roots) standing between two x positions.</summary>
+        /// <summary>Living hostiles standing between two x positions.</summary>
         protected static int IdleHostilesBetween(float x0, float x1)
         {
             int n = 0;
-            foreach (Transform t in UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            foreach (Enemy e in UnityEngine.Object.FindObjectsByType<Enemy>(FindObjectsSortMode.None))
             {
-                if (t.parent == null && t.name.StartsWith("Hostile_") && t.gameObject.activeInHierarchy && t.position.x >= x0 && t.position.x <= x1) n++;
+                if (e.gameObject.activeInHierarchy && !e.Dead && e.transform.position.x >= x0 && e.transform.position.x <= x1) n++;
             }
             return n;
         }
@@ -70,6 +72,7 @@ namespace Game.Tests
         public IEnumerator SetUp()
         {
             Game.Core.StoryBeats.SkipIntro = true;
+            Enemy.Passive = true; // route tests walk past hostiles; combat tests switch them on
             // The batch-mode editor never has focus; make keyboard input count anyway.
             // Work on a clone so the project's settings asset is never touched, and never
             // assign the original back: the Input System may have destroyed it by then.

@@ -3,7 +3,7 @@
 _Last updated: 2026-11-25_
 
 ## 1. One-liner
-A grounded, near-future, side-on (2.5D) Metroidvania. You play a silent protagonist who wakes inside a corporate black site that has erased every record of them. You hack your way through the facility to get out and find out why. Fights are optional and play out as turn-based tactics on a grid, right where you stand in the level.
+A grounded, near-future, side-on (2.5D) Metroidvania. You play a silent protagonist who wakes inside a corporate black site that has erased every record of them. You hack your way through the facility to get out and find out why. Fights are real-time and side-on: quick strikes, telegraphed enemy attacks, knockback, right where you stand in the level.
 
 ## 2. Title
 **Chosen: Null Record.** The other candidates, kept for reference:
@@ -18,14 +18,14 @@ A grounded, near-future, side-on (2.5D) Metroidvania. You play a silent protagon
 
 ## 3. Pillars
 1. **Access is progress.** The world opens through hacking tools and environmental protection, not jump upgrades.
-2. **Fights are a choice.** Every combat encounter is optional and clearly marked. Engaging pays off in tools, scrap, story and XP. Skipping them is never a dead end on the main path.
+2. **Fights are a choice.** Hostile rooms are clearly signed and never lock behind you: you can fight or run through. Clearing one pays off in scrap, XP and a log fragment. Skipping them is never a dead end on the main path.
 3. **Grounded and quiet.** Low-poly forms under harsh, practical lighting, an industrial soundscape and no superheroics. The player is a person in a building, not a weapon.
 4. **Story carries the run.** It's story-heavy within a 1–3 hour game: text boxes with portraits, three companions with arcs, and plenty of logs.
 
 ## 4. Core loops
 **Moment to moment (exploration):** run, jump, climb, interact → find a locked door, terminal or hazard → use or acquire a tool → new route.
 
-**Encounter (opt-in):** find a marked encounter → choose to engage → the local level space snaps into a grid → turn-based tactics with protagonist + one companion → rewards → the level returns to free movement.
+**Fight:** walk into a hostile room → read each enemy's wind-up, strike, dodge, use grates and armour → clear the room for rewards, or push through.
 
 **Macro:** explore a region → meet a companion and recruit them → gain a hacking tool or hazard protection → open the next region → story beat → escape.
 
@@ -57,55 +57,45 @@ Two kinds of gate, with no movement upgrades:
 
 Base movement is fixed from the start: walk, run, jump, crouch, ledge-climb, ladders and interact.
 
-## 7. Combat: in-place grid tactics
-- **Trigger:** only at **optional, marked encounters** (side rooms, bounties, sealed labs). Main-path progress never requires a fight.
-- **Space:** the 2.5D level plane itself becomes the grid. It's a 2D grid on the side-on plane: X = horizontal position, Y = floor or platform level. Tiles come from the actual level geometry, and ladders and ledges become vertical moves between tiles.
-- **Turns:** player phase (protagonist, then companion, in any order) → enemy phase. Enemy intents are shown in advance.
-- **Actions:** move + one action per unit per turn. There's a small skill set per unit, cooldown-based, with no mana.
-- **Hacking is not used in combat.** Combat skills are a separate set, so exploration tools and combat stay distinct.
-- **Terrain:** cover (half and full), height advantage, hazards (steam vents, live wires, drop-offs), and knockback into hazards.
-- **Fail state:** losing restarts the encounter from just before it. Autosave makes this low-cost.
-- **Rewards (all four):**
-  - **Hacking tools:** some optional tools come only from fights (they shorten routes or open shortcuts and secret areas)
-  - **Scrap:** spent at workbenches on upgrades for combat skills and equipment
-  - **Story info:** logs, alternate companion dialogue, reveals about the black site
-  - **XP:** levels raise HP and unlock skill choices for the protagonist and each companion
+## 7. Combat: real-time, side-on (2026-11-27)
+The owner tried the grid tactics on a phone and didn't like them, so combat became real-time action in the classic side-scrolling style. The grid prototype was retired; its last commit is `05a8af5` if it's ever wanted back.
 
-### Prototype decisions (2026-11-26)
-These are first-pass calls made to get the prototype playable. Revisit them after hands-on play.
-- **Tiles:** 1 m columns. A tile is any surface in a column with standing headroom, so multi-floor encounters work: a platform and the floor under it are separate tiles. Level props in encounter rooms should sit on whole-metre edges.
-- **Moving between tiles:** walking to a neighbouring tile costs 1, and so does dropping down (up to 4.5 m). Climbing a ledge up to 2.5 m costs 2, which matches the player's ledge climb.
-- **Enemy intents target a tile, not a unit.** At the start of each player phase every enemy shows where it will move and which tile it will hit, with the expected damage. Stepping off that tile dodges the attack, and an enemy standing on it gets hit instead.
-- **Damage:**
-  - Height advantage (attacking from 0.9 m or more above) adds +1.
-  - Half cover halves ranged damage.
-  - Armour subtracts flat damage, but a hit always deals at least 1.
-  - Knockback into a wall or another unit deals 1 to each; knockback off a drop of 1.5 m or more deals 2.
-  - Melee reaches the adjacent column with a height difference of up to 1.2 m.
-- **Outcome:** losing the protagonist loses the fight, but losing the companion doesn't. On defeat, the encounter resets to the moment before you engaged.
-- **No randomness.** Results are fully predictable, which keeps the shown intents honest.
-- **Prototype roster:**
-  - Subject: HP 8, Move 4. Strike 2; Shove 1 + push 2, cooldown 2.
-  - Guard (companion stand-in): HP 12, Move 3, Armour 1. Baton 3; Shield Bash 1 + push 2.
-  - Enforcer (melee): HP 6. Stun Prod 3.
-  - Sentry (ranged 2–5): HP 4. Taser Shot 2.
-- **Third enemy, the Warden (2026-11-26, first pass):** HP 9, Move 2, Armour 2. Its only skill is Maul (3 damage, push 1). Armour lowers normal hits to 1 (Strike 2 → 1, Dace's Baton 3 → 1), but knockback impacts, falls and hazards ignore armour. So it's a puzzle enemy: shove it into walls, onto arc grates or off the mezzanine.
-- **Hazard tiles (2026-11-26, first pass):** a hazard tile deals 2 damage, ignoring armour, to any unit that **ends a move on it or is knocked onto it**. Walking through it is safe. It's a tactical tool: shove enemies onto it. The Security fight has one, an arcing floor grate under the platform's edge that's live only during the fight. It's drawn in lime on the grid, and the help line warns when the cursor is on it. Enemies avoid ending on hazards unless it's their only attack.
-- **Enemy positioning (2026-11-26, first pass):**
-  - Ranged enemies keep high ground while nobody is in range, rather than dropping down to close in.
-  - They prefer firing spots the player's melee units can't reach next turn.
-  - Every enemy weighs where it stands against the damage it can deal (100 points = 1 damage): a hazard costs 150, each threatening melee unit 40, and each column outside its range band 30.
-- **XP (2026-11-26, first pass):** one **shared party XP pool** for now (the full design wants per-unit XP). Each level is 50 XP, up to level 5. Each level gives the Subject and the companion +2 max HP in later fights. The Security encounter awards 50 XP, so the first win reaches level 2. XP is saved and shows on the debug HUD. Skill choices on level-up come later.
-- **Controls:** the existing Player actions, so keyboard, mouse and gamepad all work.
-  - Move moves the cursor; Jump or Attack confirms; Crouch cancels.
-  - Previous and Next change the action; Sprint switches unit; Interact ends the turn.
-- **Not in yet:**
-  - Per-unit XP and skill choices on level-up
-  - Skill upgrades
-  - More hazard kinds (steam timing, wires that switch on and off)
-  - Full cover
-  - Turning units and skills into ScriptableObjects
-  - Combat audio
+- **Where:** three hostile rooms on the main path (Security, the Server Hall, the Specimen Hall), each with a sign. Walking in starts the fight. Nothing locks: you can run through. Enemies stay inside their room and never walk off ledges.
+- **The Subject (unarmed, placeholder):** one strike (J or click on desktop; ATTACK on touch; X/□ on a gamepad).
+  - Timing: a 0.06 s start, a 0.12 s active window and 0.18 s recovery; reach 1.45 m.
+  - It works standing, mid-air, or low while crouched.
+  - On the ground your feet plant during the swing, and you can't turn mid-swing.
+  - One damage per hit. A strike knocks a taser bolt out of the air.
+- **HP:** 5, plus 1 per level. Pips show top-left.
+  - A hit knocks you back, stuns you for 0.35 s, and makes you invulnerable for 1 s (you flicker).
+  - Crouching shrinks your body, so high shots pass over.
+  - At 0 HP you go back to the last checkpoint with full HP, and the room resets.
+  - Checkpoints refill HP. HP isn't saved.
+- **Enemies.** Every attack is telegraphed: a red "!" over the head during a wind-up, then the attack, then a recovery where it's open. First-pass numbers:
+
+  | Enemy | HP | Behaviour |
+  |---|---|---|
+  | Enforcer | 3 | Walks up, winds up for 0.45 s, lunges with a stun prod (1 damage). Hops crates. A hit interrupts it. |
+  | Sentry | 2 | Holds position, winds up for 0.7 s, fires a slow bolt (1 damage), then rests for 1.5 s. |
+  | Warden | 8 | Slow. Winds up for 0.85 s, then swings a maul (2 damage, big knockback). Too heavy to flinch or be knocked back. **Armour:** hits from the front are blocked, except during the 1.1 s recovery after a swing. Hits from behind always land. |
+
+  Walking into an Enforcer or a Warden hurts (1 damage).
+- **Shock grates:** live only while their room's fight is on. They deal 1 damage and throw anyone standing on them upward, enemies included and ignoring armour. Lure the Warden onto one.
+- **Rooms:** clearing every hostile pays scrap, 50 XP and a log fragment, and sets `encounter_*_cleared` (saved, so a cleared room stays cleared). Leaving a room for 2.5 s heals the survivors and sends them back to their posts. Dying resets the room.
+- **Companions:** simple help for now.
+  - Dace swings a baton (1 damage) at a hostile within reach every 1.6 s.
+  - The Researcher heals you 1 HP every 7 s while you're hurt in a fight.
+- **Code:**
+  - `Combatant`: HP, body box, invulnerability, and block rules. Hits are box overlaps on the X/Y plane, with no physics layers.
+  - `PlayerCombat`, `Enemy`, `EnemyRoom`, `Bolt`, `ShockGrate`.
+  - `Enemy.Passive` keeps hostiles still for tests that only walk the route.
+- **Open / next:**
+  - Feel tuning on a phone.
+  - Hit-stop and screen shake.
+  - A weapon or sub-weapon for the Subject (owner's call).
+  - Companion AI beyond the simple assists.
+  - Real enemy death animations.
+  - Skill unlocks on level-up.
 
 ## 8. Save, death and flow
 - **Frequent autosave:** on room transitions, after dialogue and before and after encounters.
@@ -173,7 +163,7 @@ These are first-pass calls made to get the prototype playable. Revisit them afte
   - **Portraits:** each speaking character's head is rendered from their model into `Resources/Portraits/<speaker>.png` when the scenes are built.
   - **Recorded sounds:** Kenney impact and sci-fi sounds replace the synth for footsteps, ladder clanks, hits, hurt, knockback, unit down, landing, door open and the zap. Every other sound, and the music, is still synthesised. **Mix:** when the scenes are built, the editor measures each recording's loudness against the synth sound it replaces and saves a per-clip gain to `Resources/Sounds/gains.json`. The game applies it, so the tuned mix levels still hold. It's only been checked by measurement, not by ear.
   - **Lighting screenshots:** **Null Record → Capture Lighting Shots** renders each room to `Screenshots/lighting_*.png` without entering Play mode.
-- **Camera:** an orthographic or narrow-FOV perspective side view with a little depth for parallax layers. During combat it pulls back slightly and shows a grid overlay.
+- **Camera:** an orthographic or narrow-FOV perspective side view with a little depth for parallax layers. It keeps following the player during fights.
 - **Audio:** industrial and percussive: machine hum, clanks, pneumatic hiss and rhythmic hits that build tension in combat. Each region has an ambient bed.
 - **Audio (placeholder pass, 2026-11-26):** every sound is synthesised in code (`Game.Audio.Synth`) from noise, oscillators and envelopes. There are no audio files yet; each `SoundId` can be mapped to a recorded clip later.
   - **Player:** footsteps (4 variants, quieter while crouching), jump, landing (louder the harder you land), ladder and ledge clanks, and a hurt sound on death.
@@ -309,8 +299,7 @@ The owner's feedback was "Crouch barely moves" and "couldn't figure out combat".
 | System | Approach |
 |---|---|
 | Player controller | Kinematic `CharacterController` or Rigidbody, locked to Z = 0 |
-| World grid | Grid generated at runtime from tagged level geometry inside an encounter volume |
-| Combat | State machine (Explore ↔ Encounter); turn manager; data-driven units and skills as ScriptableObjects |
+| Combat | Real-time: `Combatant` HP and box hits, `Enemy` state machines, `EnemyRoom` rewards and resets |
 | Gating | `IAccessRequirement` on doors and hazards, checked against the player's inventory and flags |
 | Dialogue | ScriptableObject graph, or Ink (to be decided) |
 | Save | JSON save of flags, inventory, position and companion state |

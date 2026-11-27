@@ -173,25 +173,17 @@ namespace Game.Tests
         }
 
         [UnityTest]
-        public IEnumerator SpecimenHall_Encounter_AndTheShutter()
+        public IEnumerator SpecimenHall_HasThreeKindsOfHostile()
         {
-            EncounterController enc = Named<EncounterController>("Encounter_Specimens");
-            Assert.AreEqual(3, IdleHostilesBetween(134f, 149f), "three idle hostiles in the Specimen Hall");
+            EnemyRoom room = SpecimensRoom;
+            Assert.AreEqual(3, IdleHostilesBetween(134f, 149f), "three hostiles in the Specimen Hall");
+            var kinds = new List<string>();
+            foreach (Enemy e in room.Enemies) kinds.Add(e.Kind.ToString());
+            CollectionAssert.AreEquivalent(new[] { "Enforcer", "Sentry", "Warden" }, kinds);
             _motor.Teleport(new Vector3(135.5f, R2Y + 0.05f, 0f));
-            yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
-            enc.Engage(_interactor);
-            yield return Until(() => !enc.IsBusy, 5f, "opening");
-            var names = new List<string>();
-            Unit warden = null;
-            foreach (Unit u in enc.State.Alive(Team.Enemy))
-            {
-                names.Add(u.Name);
-                if (u.Name == "Warden") warden = u;
-            }
-            CollectionAssert.AreEquivalent(new[] { "Enforcer", "Sentry", "Warden" }, names);
-            Assert.That(warden.Tile.Y, Is.EqualTo(R2Y + 1.6f).Within(0.1f), "the Warden starts on the raised block");
-            yield return Wait(1.2f);
-            yield return Shot("25_specimens_combat");
+            yield return Wait(0.5f);
+            Assert.IsTrue(room.PlayerInside);
+            yield return Shot("25_specimens_room");
         }
 
         [UnityTest]

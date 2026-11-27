@@ -145,40 +145,18 @@ namespace Game.EditorTools
             Material grate = Mat("ArcGrate", new Color(0.12f, 0.14f, 0.05f), emission: new Color(0.7f, 1f, 0.15f) * 1.5f);
             Checkpoint(room, "Checkpoint_H", new Vector3(133.2f, y, 0f));
 
-            // Encounter on the 1 m lattice from x = 134.
+            // Hostile room from x = 134.
             GameObject zoneMarker = Box(room, "EncounterZone_Marker_Specimens", new Vector3(141f, y + 0.02f, 0f), new Vector3(14f, 0.04f, 2.5f), encounter, collider: false);
-            Box(room, "Cover_Tank", new Vector3(137.5f, y + 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f))).AddComponent<LowCover>();
+            Box(room, "Cover_Tank", new Vector3(137.5f, y + 0.5f, 0f), new Vector3(1f, 1f, 2f), Mat("Crate", new Color(0.45f, 0.4f, 0.32f)));
             Box(room, "Specimen_Platform", new Vector3(141.5f, y + 2f, 0f), new Vector3(3f, 0.3f, 2f), metal);
             Box(room, "Raised_Block", new Vector3(146.5f, y + 0.8f, 0f), new Vector3(3f, 1.6f, 2.4f), Mat("ArchiveBlock", new Color(0.28f, 0.3f, 0.34f)));
-            Box(room, "Hazard_ArcGrate_C", new Vector3(138.5f, y + 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
+            GameObject arc = Box(room, "Hazard_ArcGrate_C", new Vector3(138.5f, y + 0.03f, 0f), new Vector3(0.9f, 0.05f, 2f), grate, collider: false);
 
-            GameObject engageSign = Hint(Label(room, "[ optional encounter: E to engage ]", new Vector3(141f, y + 4.2f, 1.9f), new Color(1f, 0.4f, 0.35f), 0.4f), "[ optional encounter: USE to engage ]");
-            var encGo = new GameObject("Encounter_Specimens");
-            encGo.transform.SetParent(room, false);
-            encGo.transform.position = new Vector3(135.5f, y, 0f);
-            EncounterController enc = encGo.AddComponent<EncounterController>();
-            enc.SetInteractionPoint(new Vector3(0f, 0.9f, 0f), 1.2f);
-            enc.Configure(
-                new Rect(134f, y - 0.2f, 14f, 6.2f),
-                new[]
-                {
-                    new EncounterController.EnemySpawn { unit = "Enforcer", position = new Vector2(139.5f, y) },
-                    new EncounterController.EnemySpawn { unit = "Sentry", position = new Vector2(141.5f, y + 2.2f) },
-                    new EncounterController.EnemySpawn { unit = "Warden", position = new Vector2(146.5f, y + 1.6f) },
-                },
-                50,
-                "encounter_specimens_cleared",
-                "Recovered: specimen intake log (fragment).",
-                TransparentMat("GridTile", new Color(1f, 1f, 1f, 0.3f)),
-                Mat("Enemy", new Color(0.5f, 0.16f, 0.14f)),
-                Mat("EnemyVisor", new Color(1f, 0.25f, 0.2f), emission: new Color(1f, 0.2f, 0.15f) * 2f),
-                zoneMarker.GetComponent<Renderer>(),
-                engageSign);
-            enc.SetHazards(new Vector2(138.5f, y));
-            enc.SetUnitModels(
-                new EncounterController.UnitModel { unit = "Enforcer", prefab = CharacterArt.Prefab("Enforcer") },
-                new EncounterController.UnitModel { unit = "Sentry", prefab = CharacterArt.Prefab("Sentry") },
-                new EncounterController.UnitModel { unit = "Warden", prefab = CharacterArt.Prefab("Warden") });
+            GameObject sign = HostileSign(room, new Vector3(137f, y + 4.2f, 1.9f));
+            EnemyRoomAt(room, "Encounter_Specimens", new Rect(134f, y - 0.2f, 14f, 6.2f),
+                new[] { (EnemyKind.Enforcer, new Vector2(139.5f, y)), (EnemyKind.Sentry, new Vector2(141.5f, y + 2.2f)), (EnemyKind.Warden, new Vector2(143.5f, y)) },
+                50, 50, "encounter_specimens_cleared", "Recovered: specimen intake log (fragment).",
+                zoneMarker.GetComponent<Renderer>(), new[] { arc }, sign);
 
             // Companion 2 waits past the fight (you can walk past idle hostiles without engaging).
             BuildResearcher(room, new Vector3(150f, y, 0f));

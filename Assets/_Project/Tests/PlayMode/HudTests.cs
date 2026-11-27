@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using Game.Combat;
+using Game.World;
 using Game.Dialogue;
 using Game.Player;
 using Game.UI;
@@ -37,18 +38,19 @@ namespace Game.Tests
         {
             GreyboxHUD hud = Object.FindAnyObjectByType<GreyboxHUD>();
             Assert.IsNotNull(hud, "exploration HUD");
-            EncounterController enc = SecurityEncounter;
-            _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
-            yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
+            LogTerminal log = GameObject.Find("Log_holding_shift").GetComponent<LogTerminal>();
+            _motor.Teleport(log.transform.position + new Vector3(0f, 0.05f, 0f));
+            yield return Until(() => _interactor.Current == log, 2f, "log prompt");
             yield return null;
             StringAssert.StartsWith("E:", hud.PromptText, "keyboard prompt");
+            StringAssert.StartsWith("HP 5/5", hud.HpText, "HP shows");
             HintLabel sign = null;
             foreach (HintLabel h in Object.FindObjectsByType<HintLabel>(FindObjectsSortMode.None))
             {
-                if (h.GetComponent<TextMesh>().text.Contains("engage") && Mathf.Abs(h.transform.position.x - 49f) < 1f) sign = h;
+                if (h.GetComponent<TextMesh>().text.Contains("hostiles") && Mathf.Abs(h.transform.position.x - 46f) < 1f) sign = h;
             }
-            Assert.IsNotNull(sign, "the Security engage sign follows the device");
-            StringAssert.Contains("E to engage", sign.GetComponent<TextMesh>().text);
+            Assert.IsNotNull(sign, "the Security sign follows the device");
+            StringAssert.Contains("[J / click]", sign.GetComponent<TextMesh>().text);
             yield return Shot("30_hud_prompt");
 
             TouchControls.ForceVisible = true;
@@ -57,21 +59,15 @@ namespace Game.Tests
                 yield return null;
                 yield return null;
                 StringAssert.StartsWith("USE:", hud.PromptText, "touch prompt");
-                StringAssert.Contains("USE to engage", sign.GetComponent<TextMesh>().text);
-                enc.Engage(_interactor);
-                yield return Until(() => !enc.IsBusy, 5f, "opening");
-                yield return null;
-                StringAssert.Contains("Tap a tile", enc.HelpText);
-                StringAssert.Contains("TURN 1", enc.BannerText);
-                yield return Wait(1f);
-                yield return Shot("31_hud_combat_touch");
+                StringAssert.Contains("[ATTACK]", sign.GetComponent<TextMesh>().text);
             }
             finally
             {
                 TouchControls.ForceVisible = false;
             }
             yield return null;
-            StringAssert.Contains("WASD", enc.HelpText, "keyboard controls again");
+            yield return null;
+            StringAssert.Contains("[J / click]", sign.GetComponent<TextMesh>().text, "keyboard wording again");
         }
 
         [UnityTest]

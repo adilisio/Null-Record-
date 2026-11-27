@@ -27,15 +27,12 @@ namespace Game.Tests
                 yield return Wait(0.2f);
                 yield return Shot("50_touch_explore");
 
-                EncounterController enc = SecurityEncounter;
-                _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
-                yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
-                enc.Engage(_interactor);
-                yield return Until(() => !enc.IsBusy, 5f, "combat starts");
-                yield return null;
-                StringAssert.Contains("END TURN", Labels(touch));
-                StringAssert.Contains("UNIT", Labels(touch));
+                StringAssert.Contains("ATTACK", Labels(touch));
+                Enemy.Passive = false;
+                _motor.Teleport(new Vector3(46.5f, 0.05f, 0f));
+                yield return Wait(0.6f);
                 yield return Shot("51_touch_combat");
+                Enemy.Passive = true;
             }
             finally
             {

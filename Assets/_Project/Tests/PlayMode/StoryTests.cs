@@ -66,26 +66,5 @@ namespace Game.Tests
             }
         }
 
-        [UnityTest]
-        public IEnumerator Retreat_FromThePauseMenu_ResetsTheFight()
-        {
-            EncounterController enc = SecurityEncounter;
-            _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
-            yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
-            enc.Engage(_interactor);
-            yield return Until(() => !enc.IsBusy, 5f, "combat starts");
-            PauseMenu pause = Object.FindAnyObjectByType<PauseMenu>();
-            pause.Pause();
-            yield return null;
-            Assert.IsTrue(pause.RetreatButton.gameObject.activeSelf, "retreat offered during a fight");
-            pause.RetreatButton.onClick.Invoke();
-            yield return Until(() => enc.Status == EncounterStatus.Idle, 3f, "fight resets");
-            Assert.IsFalse(_motor.ExternallyControlled, "control returns");
-            Assert.AreEqual(1f, Time.timeScale, "unpaused");
-            pause.Pause();
-            yield return null;
-            Assert.IsFalse(pause.RetreatButton.gameObject.activeSelf, "no retreat outside a fight");
-            pause.Resume();
-        }
     }
 }

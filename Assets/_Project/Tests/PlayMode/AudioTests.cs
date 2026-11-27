@@ -81,35 +81,21 @@ namespace Game.Tests
         }
 
         [UnityTest]
-        public IEnumerator Combat_PlaysItsLoopAndStingers()
+        public IEnumerator Combat_LoopPlaysWhileInAHostileRoom()
         {
-            EncounterController enc = SecurityEncounter;
-            _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
-            yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
-            yield return Wait(0.3f);
+            Enemy.Passive = false;
+            _motor.Teleport(new Vector3(38.5f, 0.05f, 0f));
+            yield return Wait(0.5f);
             float musicBefore = Audio.MusicVolume;
             Assert.Greater(musicBefore, 0f, "exploration music is up before the fight");
-            enc.Engage(_interactor);
-            Assert.IsTrue(Audio.CombatMusicOn, "combat loop on");
+            Assert.IsFalse(Audio.CombatMusicOn);
+            _motor.Teleport(new Vector3(43.0f, 0.05f, 0f));
+            yield return Until(() => Audio.CombatMusicOn, 1f, "combat loop on inside Security");
             yield return Wait(1.2f);
             Assert.Less(Audio.MusicVolume, musicBefore * 0.5f, "music ducks under the combat loop");
-            yield return Until(() => !enc.IsBusy, 5f, "opening");
-            Assert.GreaterOrEqual(Audio.PlayCount(SoundId.PhasePlayer), 1);
-
-            foreach (Unit u in enc.State.Units)
-            {
-                if (u.IsLeader) u.Hp = 1;
-            }
-            for (int i = 0; i < 6 && !enc.State.IsOver; i++)
-            {
-                enc.State.EndPlayerTurn();
-                yield return Until(() => !enc.IsBusy, 10f, "enemy phase");
-            }
-            Assert.GreaterOrEqual(Audio.PlayCount(SoundId.PhaseEnemy), 1);
-            Assert.GreaterOrEqual(Audio.PlayCount(SoundId.Hit), 1, "the hit that downed the Subject");
-            yield return Until(() => enc.Status == EncounterStatus.Idle, 4f, "defeat resets");
-            Assert.IsFalse(Audio.CombatMusicOn, "combat loop off afterwards");
-            Assert.AreEqual(1, Audio.PlayCount(SoundId.Defeat));
+            _motor.Teleport(new Vector3(38.5f, 0.05f, 0f));
+            yield return Until(() => !Audio.CombatMusicOn, 1f, "combat loop off after leaving");
+            Enemy.Passive = true;
         }
 
         [UnityTest]

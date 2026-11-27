@@ -87,33 +87,20 @@ namespace Game.Tests
         }
 
         [UnityTest]
-        public IEnumerator Encounter_SavesBeforeTheFight_AndStaysClearedAfterReload()
+        public IEnumerator ClearedRoom_StaysClearedAfterReload()
         {
-            EncounterController enc = SecurityEncounter;
+            EnemyRoom room = SecurityRoom;
             _motor.Teleport(new Vector3(44.5f, 0.05f, 0f));
-            yield return Until(() => _interactor.Current == enc, 2f, "encounter prompt");
-            int before = Saves.SaveCount;
-            enc.Engage(_interactor);
-            Assert.AreEqual(before + 1, Saves.SaveCount, "saved right before the fight");
-            Assert.AreEqual("encounter", Saves.LastSaveReason);
-            Assert.IsFalse(SavedFlag("encounter_security_cleared"), "the pre-fight save is from before winning");
-
-            // Win quickly (the rules are covered elsewhere): leave one enemy at 1 HP and strike it.
-            Unit keep = null;
-            foreach (Unit u in enc.State.Units)
-            {
-                if (u.Team != Team.Enemy) continue;
-                if (keep == null) { keep = u; u.Hp = 1; }
-                else u.Hp = 0;
-            }
-            yield return WinBySweep(enc);
-            yield return Until(() => enc.Status == EncounterStatus.Cleared, 5f, "encounter cleared");
+            yield return Wait(0.2f);
+            Combatant me = _motor.GetComponent<Combatant>();
+            foreach (Enemy e in room.Enemies) e.Body.Damage(new HitInfo { Damage = 99, From = e.transform.position, Source = me });
+            yield return Until(() => room.Cleared, 2f, "room cleared");
             yield return Until(() => SavedFlag("encounter_security_cleared"), 3f, "autosave after the win");
 
             yield return LoadScene();
-            enc = SecurityEncounter;
-            Assert.AreEqual(EncounterStatus.Cleared, enc.Status, "a won fight stays won");
-            Assert.IsFalse(enc.IsAvailable(_interactor));
+            room = SecurityRoom;
+            yield return null;
+            Assert.IsTrue(room.Cleared, "a cleared room stays cleared");
             Assert.AreEqual(30, _inventory.Scrap);
             Assert.AreEqual(0, IdleHostilesBetween(42f, 56f), "no hostiles come back in Security");
         }
@@ -124,25 +111,6 @@ namespace Game.Tests
             return d != null && System.Array.IndexOf(d.flags, flag) >= 0;
         }
 
-        /// <summary>Ends the fight by having the Subject strike the one remaining enemy, wherever it is.</summary>
-        private IEnumerator WinBySweep(EncounterController enc)
-        {
-            CombatState st = enc.State;
-            Unit last = st.Units.Find(u => u.Team == Team.Enemy && u.Alive);
-            Unit subject = st.Units.Find(u => u.IsLeader);
-            // Put the Subject next to it on the grid (test shortcut), then strike.
-            Tile next = null;
-            foreach (Edge e in last.Tile.Edges)
-            {
-                if (e.Kind == EdgeKind.Walk && !st.Occupied(e.To)) next = e.To;
-            }
-            Assert.IsNotNull(next, "free tile beside the last enemy");
-            subject.Tile = next;
-            _motor.transform.position = next.World;
-            Assert.IsTrue(st.TryUseSkill(subject, 0, last.Tile));
-            yield return Until(() => !enc.IsBusy, 5f, "strike resolves");
-            Assert.AreEqual(Phase.Victory, st.Phase);
-        }
 
         [UnityTest]
         public IEnumerator CorruptSave_StartsFresh()
