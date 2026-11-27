@@ -94,7 +94,8 @@ namespace Game.UI
             _feed.text = string.Join("\n", lines);
 
             if (_combat == null && player != null) _combat = player.GetComponent<Game.Combat.PlayerCombat>();
-            bool showHp = _combat != null && Time.timeScale > 0f;
+            // Hidden while a bark (intercom, banter) sits over the same corner.
+            bool showHp = _combat != null && Time.timeScale > 0f && (Game.Dialogue.DialogueUI.Instance == null || !Game.Dialogue.DialogueUI.Instance.BarkVisible);
             _hp.text = showHp ? $"HP {_combat.Hp}/{_combat.MaxHp}" : "";
             for (int i = 0; i < _pips.Length; i++)
             {
