@@ -61,11 +61,20 @@ Base movement is fixed from the start: walk, run, jump, crouch, ledge-climb, lad
 The owner tried the grid tactics on a phone and didn't like them, so combat became real-time action in the classic side-scrolling style. The grid prototype was retired; its last commit is `05a8af5` if it's ever wanted back.
 
 - **Where:** three hostile rooms on the main path (Security, the Server Hall, the Specimen Hall), each with a sign. Walking in starts the fight. Nothing locks: you can run through. Enemies stay inside their room and never walk off ledges.
-- **The Subject (unarmed, placeholder):** one strike (J or click on desktop; ATTACK on touch; X/□ on a gamepad).
+- **The Subject:** one strike, with fists or a found weapon (below), (J or click on desktop; ATTACK on touch; X/□ on a gamepad).
   - Timing: a 0.06 s start, a 0.12 s active window and 0.18 s recovery; reach 1.45 m.
   - It works standing, mid-air, or low while crouched.
   - On the ground your feet plant during the swing, and you can't turn mid-swing.
   - One damage per hit. A strike knocks a taser bolt out of the air.
+- **Findable weapons (owner, 2026-11-27):** you start with your fists. A weapon you pick up is equipped. Switch with 1 / 2 on the keyboard, RB or the d-pad on a gamepad, or the weapon button on touch (it appears once you find a weapon). The weapon in hand shows in the right hand and under the HP pips. First pass:
+
+  | Weapon | Where | Damage | Reach | Feel |
+  |---|---|---|---|---|
+  | Fists | always | 1 | 1.45 m | fast (0.06 / 0.12 / 0.18 s) |
+  | Pipe | Maintenance floor, under the catwalk (x 25.5) | 2 | 1.9 m | slow and heavy (0.11 / 0.14 / 0.3 s); two hits drop an Enforcer |
+  | Shock Baton | Records floor (x 64.8) | 1 | 1.6 m | quick (0.05 / 0.12 / 0.16 s); **shock**: gets through the Warden's armour and stuns anything for 0.7 s, the Warden included |
+
+  Weapons are inventory tools (`weapon_pipe`, `weapon_baton`), so they're saved. The definitions live in `Weapons.cs`.
 - **HP:** 5, plus 1 per level. Pips show top-left.
   - A hit knocks you back, stuns you for 0.35 s, and makes you invulnerable for 1 s (you flicker).
   - Crouching shrinks your body, so high shots pass over.
@@ -92,7 +101,6 @@ The owner tried the grid tactics on a phone and didn't like them, so combat beca
 - **Open / next:**
   - Feel tuning on a phone.
   - Hit-stop and screen shake.
-  - A weapon or sub-weapon for the Subject (owner's call).
   - Companion AI beyond the simple assists.
   - Real enemy death animations.
   - Skill unlocks on level-up.
@@ -273,6 +281,9 @@ The owner's feedback was "Crouch barely moves" and "couldn't figure out combat".
   - A non-blocking opening card on a new game: "HOLDING 03 / Subject record: no entry found. / Find a way out."
   - A top-left objective line driven by progress: keycard → laser grid → freight lift → Labs pit → freight shutter.
   - An end card past the freight shutter, with fights won, level and scrap, and Back to Title / Keep Exploring (`StoryBeats`).
+
+### Camera (owner, 2026-11-27)
+- Zoomed out a little: desktop distance 16 → 17.5; on touch 0.78× → 0.9× of that.
 
 ### Story decisions (owner, 2026-11-26)
 - **Direction: up.** The escape climbs toward the surface. The freight lift rides *up* from the Server Hall to the Research Wing. The Research Wing still sits at y −30 in the shared scene; that's only layout, and the lift fades to black.

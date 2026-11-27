@@ -247,7 +247,7 @@ namespace Game.Combat
 
         private bool ArmourBlocks(HitInfo hit)
         {
-            if (State == Phase.Recover) return false; // open right after a swing
+            if (State == Phase.Recover || hit.Pierce) return false; // open right after a swing; shock gets through
             if (hit.Source == null) return false; // hazards and falls ignore armour
             float side = Mathf.Sign(hit.From.x - transform.position.x);
             return side == _facing; // from the front
@@ -257,11 +257,16 @@ namespace Game.Combat
 
         private void OnHurt(HitInfo hit)
         {
-            Tint(new Color(1f, 0.55f, 0.5f));
-            if (kind == EnemyKind.Warden) return; // too heavy to flinch or be knocked back
+            Tint(hit.Stun > 0f ? new Color(0.5f, 0.85f, 1f) : new Color(1f, 0.55f, 0.5f));
+            if (kind == EnemyKind.Warden)
+            {
+                // Too heavy to flinch or be knocked back, but a shock locks it up.
+                if (hit.Stun > 0f) SetPhase(Phase.Flinch, hit.Stun);
+                return;
+            }
             _knockVx = Mathf.Sign(transform.position.x - hit.From.x) * Mathf.Min(4f, Mathf.Abs(hit.Knock.x) + 1f);
             _anim?.Play("Hit", 0.25f);
-            SetPhase(Phase.Flinch, 0.3f);
+            SetPhase(Phase.Flinch, Mathf.Max(0.3f, hit.Stun));
         }
 
         private void OnDied()

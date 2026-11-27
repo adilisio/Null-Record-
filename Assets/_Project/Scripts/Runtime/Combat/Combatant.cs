@@ -16,6 +16,10 @@ namespace Game.Combat
         /// <summary>Where the blow came from (attacker position), for armour and knockback direction.</summary>
         public Vector3 From;
         public Combatant Source;
+        /// <summary>Stuns the target for this long (shock weapons); even the Warden flinches.</summary>
+        public float Stun;
+        /// <summary>Gets through armour.</summary>
+        public bool Pierce;
     }
 
     /// <summary>

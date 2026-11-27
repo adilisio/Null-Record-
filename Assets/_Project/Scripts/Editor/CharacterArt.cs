@@ -118,9 +118,9 @@ namespace Game.EditorTools
         /// <summary>
         /// Builds the character's weapon from primitives and parents it to the right hand, so the action clips swing it.
         /// It is laid along the forearm-to-hand direction in the idle pose (down at rest, forward when aiming).
-        /// The Subject is unarmed.
+        /// The Subject starts unarmed; the weapons they can find are added to the scene's player (see <see cref="AttachPlayerWeapons"/>).
         /// </summary>
-        private static void AttachWeapon(string character, Transform bones)
+        private static GameObject AttachWeapon(string character, Transform bones)
         {
             AnimationClip idle = AssetDatabase.LoadAllAssetsAtPath($"{KenneyDir}/Animations/idle.fbx").OfType<AnimationClip>().First(c => c.name == "Idle");
             idle.SampleAnimation(bones.gameObject, 0.25f);
@@ -157,6 +157,16 @@ namespace Game.EditorTools
                     Part(weapon, PrimitiveType.Cube, metal, new Vector3(0f, 0.13f, 0f), new Vector3(0.12f, 0.08f, 0.03f));
                     Part(weapon, PrimitiveType.Cube, glow, new Vector3(0f, 0.13f, -0.017f), new Vector3(0.09f, 0.055f, 0.005f));
                     break;
+                case "Pipe": // found weapon: a length of pipe
+                    Part(weapon, PrimitiveType.Cylinder, grip, new Vector3(0f, 0.06f, 0f), new Vector3(0.055f, 0.08f, 0.055f));
+                    Part(weapon, PrimitiveType.Cylinder, metal, new Vector3(0f, 0.42f, 0f), new Vector3(0.05f, 0.34f, 0.05f));
+                    Part(weapon, PrimitiveType.Cylinder, hazard, new Vector3(0f, 0.74f, 0f), new Vector3(0.065f, 0.025f, 0.065f));
+                    break;
+                case "ShockBaton": // found weapon: a security shock baton
+                    Part(weapon, PrimitiveType.Cylinder, grip, new Vector3(0f, 0.05f, 0f), new Vector3(0.05f, 0.08f, 0.05f));
+                    Part(weapon, PrimitiveType.Cylinder, metal, new Vector3(0f, 0.3f, 0f), new Vector3(0.04f, 0.18f, 0.04f));
+                    Part(weapon, PrimitiveType.Sphere, glow, new Vector3(0f, 0.5f, 0f), new Vector3(0.075f, 0.075f, 0.075f));
+                    break;
                 case "Sentry": // taser pistol, barrel along the arm
                     Part(weapon, PrimitiveType.Cube, grip, new Vector3(0f, 0.04f, 0f), new Vector3(0.06f, 0.1f, 0.09f));
                     Part(weapon, PrimitiveType.Cube, metal, new Vector3(0f, 0.14f, 0f), new Vector3(0.07f, 0.16f, 0.06f));
@@ -164,9 +174,28 @@ namespace Game.EditorTools
                     break;
                 default:
                     Object.DestroyImmediate(weapon);
-                    return;
+                    return null;
             }
             weapon.transform.SetParent(hand, true);
+            return weapon;
+        }
+
+        /// <summary>
+        /// Puts every findable weapon in the player model's right hand, hidden; <c>PlayerCombat</c> shows the one equipped.
+        /// </summary>
+        public static void AttachPlayerWeapons(Transform model)
+        {
+            Transform bones = model.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Root");
+            if (bones == null)
+            {
+                Debug.LogWarning("[Null Record] AttachPlayerWeapons: no Root bone on the player model.");
+                return;
+            }
+            foreach (string w in new[] { "Pipe", "ShockBaton" })
+            {
+                GameObject prop = AttachWeapon(w, bones);
+                if (prop != null) prop.SetActive(false);
+            }
         }
 
         private static void Part(GameObject parent, PrimitiveType type, Material mat, Vector3 localPos, Vector3 size)

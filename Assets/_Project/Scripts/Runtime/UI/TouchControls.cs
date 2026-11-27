@@ -17,7 +17,9 @@ namespace Game.UI
         public static bool ForceVisible { get; set; }
 
         private GameObject _root;
-        private Text _aLabel, _bLabel, _yLabel, _xLabel;
+        private Text _aLabel, _bLabel, _yLabel, _xLabel, _wLabel;
+        private GameObject _weaponButton;
+        private Game.Combat.PlayerCombat _combat;
         private static readonly Color YIdle = new Color(1f, 1f, 1f, 0.18f);
 
         public bool Visible => _root != null && _root.activeSelf;
@@ -47,6 +49,15 @@ namespace Game.UI
             _bLabel.text = "CROUCH";
             _yLabel.text = "USE";
             _xLabel.text = "ATTACK";
+            // Weapon switch: only once a second weapon has been found; shows what's in hand.
+            if (_combat == null)
+            {
+                GameObject p = GameObject.FindWithTag("Player");
+                if (p != null) _combat = p.GetComponent<Game.Combat.PlayerCombat>();
+            }
+            bool weapons = _combat != null && _combat.Owned.Count > 1 && !inDialogue;
+            if (_weaponButton.activeSelf != weapons) _weaponButton.SetActive(weapons);
+            if (weapons) _wLabel.text = _combat.Weapon.Name.ToUpperInvariant().Replace(" ", "\n");
         }
 
         private void Build()
@@ -72,6 +83,10 @@ namespace Game.UI
             _aLabel = Button(r, "A", "<Gamepad>/buttonSouth", new Vector2(-20f, 40f), 118f, new Color(1f, 0.74f, 0.45f, 0.3f));
             _bLabel = Button(r, "B", "<Gamepad>/buttonEast", new Vector2(-24f, 178f), 92f, new Color(1f, 1f, 1f, 0.18f));
             _yLabel = Button(r, "Y", "<Gamepad>/buttonNorth", new Vector2(-158f, 182f), 88f, YIdle);
+            _wLabel = Button(r, "Weapon", "<Gamepad>/rightShoulder", new Vector2(-30f, 300f), 84f, new Color(1f, 0.42f, 0.35f, 0.2f));
+            _wLabel.fontSize = 15;
+            _weaponButton = _wLabel.transform.parent.gameObject;
+            _weaponButton.SetActive(false);
 
             // Pause, top-right.
             Text pause = Button(r, "Pause", "<Gamepad>/start", new Vector2(-30f, 0f), 90f, new Color(1f, 1f, 1f, 0.2f), top: true);

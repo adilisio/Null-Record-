@@ -1,6 +1,7 @@
 using System.Collections;
 using Game.Combat;
 using Game.UI;
+using Game.World;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -47,7 +48,7 @@ namespace Game.Tests
         private IEnumerator Swing()
         {
             Assert.IsTrue(Combat.TryAttack(), "strike starts");
-            yield return Wait(PlayerCombat.Startup + PlayerCombat.Active + PlayerCombat.Recovery + 0.1f);
+            yield return Wait(Combat.Weapon.Total + 0.1f);
         }
 
         [TearDown]
@@ -196,6 +197,67 @@ namespace Game.Tests
             yield return Wait(0.25f);
             Assert.AreEqual(0, Bolt.Live.Count, "struck down");
             Assert.AreEqual(5, Combat.Hp);
+        }
+
+        [UnityTest]
+        public IEnumerator Pipe_IsFoundInMaintenance_EquipsItself_AndHitsForTwo()
+        {
+            Assert.AreSame(Weapons.Fists, Combat.Weapon, "you start with your fists");
+            ItemPickup pipe = GameObject.Find("Pickup_Pipe").GetComponent<ItemPickup>();
+            _motor.Teleport(new Vector3(pipe.transform.position.x, 0.05f, 0f));
+            yield return Until(() => _interactor.Current == pipe, 2f, "pipe prompt");
+            yield return Tap(Key.E);
+            yield return null;
+            Assert.AreSame(Weapons.Pipe, Combat.Weapon, "a find is equipped");
+            Transform prop = FindChild(_motor.transform, "Weapon_Pipe");
+            Assert.IsNotNull(prop, "the pipe prop is in the hand (rebuild scenes)");
+            Assert.IsTrue(prop.gameObject.activeInHierarchy, "and shows");
+
+            Enemy enf = FarEnforcer;
+            yield return StandAt(enf.transform.position.x - 1.9f, 0f, 1);
+            yield return Swing();
+            Assert.AreEqual(1, enf.Body.Hp, "the pipe reaches further and hits for 2");
+            yield return Shot("42_pipe");
+        }
+
+        [UnityTest]
+        public IEnumerator ShockBaton_GetsThroughTheWardensArmour_AndStunsIt()
+        {
+            _inventory.GrantTool(Weapons.ShockBaton.Id);
+            yield return null;
+            Assert.AreSame(Weapons.ShockBaton, Combat.Weapon);
+            Enemy warden = First(ServersRoom, EnemyKind.Warden);
+            yield return StandAt(warden.transform.position.x - 1.3f, 0f, 1);
+            yield return Swing();
+            Assert.AreEqual(HitResult.Hit, Combat.LastResult, "shock gets through from the front");
+            Assert.AreEqual(7, warden.Body.Hp);
+            Assert.AreEqual(Enemy.Phase.Flinch, warden.State, "and locks it up");
+        }
+
+        [UnityTest]
+        public IEnumerator Weapons_SwitchWith1And2_AndTheHudShowsThem()
+        {
+            _inventory.GrantTool(Weapons.Pipe.Id);
+            _inventory.GrantTool(Weapons.ShockBaton.Id);
+            yield return null;
+            Assert.AreEqual(3, Combat.Owned.Count, "fists, pipe, baton");
+            Assert.AreSame(Weapons.ShockBaton, Combat.Weapon);
+            yield return Tap(Key.Digit2);
+            Assert.AreSame(Weapons.Fists, Combat.Weapon, "2 goes to the next (wrapping)");
+            yield return Tap(Key.Digit1);
+            Assert.AreSame(Weapons.ShockBaton, Combat.Weapon, "1 goes back");
+            yield return Tap(Key.Digit1);
+            Assert.AreSame(Weapons.Pipe, Combat.Weapon);
+            yield return null;
+            GreyboxHUD hud = Object.FindAnyObjectByType<GreyboxHUD>();
+            StringAssert.StartsWith("PIPE", hud.WeaponText);
+            Assert.IsFalse(FindChild(_motor.transform, "Weapon_ShockBaton").gameObject.activeSelf, "only the weapon in hand shows");
+        }
+
+        private static Transform FindChild(Transform root, string name)
+        {
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true)) if (t.name == name) return t;
+            return null;
         }
 
         [UnityTest]

@@ -191,6 +191,12 @@ namespace Game.EditorTools
             lining.GetComponent<ItemPickup>().ConfigureProtection(HazardType.Heat);
             lining.GetComponent<ItemPickup>().SetSaveId("pickup_thermal_lining");
 
+            // Findable weapon 1: a pipe on the floor under the catwalk, before the first fight.
+            GameObject pipe = Pickup(room, "Pickup_Pipe", new Vector3(25.5f, 0.8f, 0f),
+                Mat("Pickup_Weapon", new Color(1f, 0.35f, 0.3f), emission: new Color(1f, 0.3f, 0.25f) * 1.5f));
+            pipe.GetComponent<ItemPickup>().ConfigureTool(Game.Combat.Weapons.Pipe.Id, Game.Combat.Weapons.Pipe.Name);
+            pipe.GetComponent<ItemPickup>().SetSaveId("pickup_weapon_pipe");
+
             // Steam vent spanning floor to ceiling; impassable without Thermal Lining.
             Box(room, "SteamGrate", new Vector3(31.5f, 0.02f, 0f), new Vector3(3f, 0.05f, 2.5f), grate, collider: false);
             GameObject hazard = new GameObject("Hazard_Steam");
@@ -281,6 +287,7 @@ namespace Game.EditorTools
 
             // Character model (Kenney CC0 base, our skin); the motor turns local +Z toward the facing direction.
             GameObject body = CharacterBody(player.transform, "Subject", new Color(0.85f, 0.85f, 0.8f), new Color(0.1f, 0.8f, 0.9f));
+            CharacterArt.AttachPlayerWeapons(body.transform);
 
             PlayerInputReader input = player.AddComponent<PlayerInputReader>();
             InputActionAsset actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputActionsPath);

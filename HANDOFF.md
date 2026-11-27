@@ -4,7 +4,7 @@ _Last updated 2026-11-26, end of a long session. A new session should read this 
 
 - **Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls). It's live and current as of commit `c27d93e`.
 - **Repo:** https://github.com/adilisio/Null-Record- (public). `main` holds the source and everything is pushed; `gh-pages` holds only the web build.
-- **Status:** 132 automated tests passing (70 EditMode, 62 PlayMode). The working tree is clean.
+- **Status:** 135 automated tests passing (70 EditMode, 65 PlayMode). The working tree is clean.
 
 ---
 
@@ -136,6 +136,7 @@ All commits are on `main`.
 | Phone polish (`b7d44dd`) | After the owner's first phone play ("crouch barely moves", "couldn't figure out combat"): next-step combat line, action bar, tap-an-enemy-to-attack, engage anywhere in the arena, END TURN pulse, Retreat; crouch 3.2 and a toggle on touch, auto-run on touch, crawl space in Holding; closer touch camera, dimmer back wall; opening card, objective line, end card (`StoryBeats`, placeholder text). See GDD "Phone polish" |
 | Story pass (`ef2eac6`) | Owner's answers: the escape goes **up**, the opening uses the **intercom** (Site PA barks), logs come from **staff and earlier subjects** (5 `LogTerminal`s, text in `Dialogue/logs.json`), and **someone is waiting** past the shutter (a silhouette; end card "Someone was waiting"). Names stay placeholder. See GDD "Story decisions" |
 | Real-time combat (`c27d93e`) | The owner didn't like the grid tactics, so fights are now real-time side-on action: strike, HP, knockback, telegraphed Enforcer/Sentry/Warden, `EnemyRoom` rewards, shock grates, simple companion assists, ATTACK on touch. The grid code is deleted; the last grid commit is `05a8af5`. Tests set `Enemy.Passive = true` (in `GreyboxTestBase`); combat tests turn it off. See GDD §7 |
+| Weapons and zoom (owner, 2026-11-27) | Findable weapons: Pipe (Maintenance, 2 damage, long and slow) and Shock Baton (Records, gets through armour and stuns). Picking one up equips it; switch with 1 / 2, RB / d-pad, or the touch weapon button (`Weapons.cs`). Camera pulled back: distance 17.5, touch ×0.9 |
 
 **Decisions and lessons worth keeping:**
 - **Cover stays a tile.** In a one-lane side view, removing it split the grid and stalemated melee, so the fix was "no height bonus from cover" instead.

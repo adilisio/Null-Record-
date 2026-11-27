@@ -28,6 +28,7 @@ namespace Game.UI
         private Text _feed;
         private Text _debug;
         private Text _hp;
+        private Text _weapon;
         private Image[] _pips = new Image[0];
         private Game.Combat.PlayerCombat _combat;
 
@@ -36,6 +37,8 @@ namespace Game.UI
         public string FeedText => _feed != null ? _feed.text : "";
         /// <summary>The HP label next to the pips, e.g. "HP 3/5".</summary>
         public string HpText => _hp != null ? _hp.text : "";
+        /// <summary>The weapon line under the pips, e.g. "PIPE  (1 / 2 switch)".</summary>
+        public string WeaponText => _weapon != null ? _weapon.text : "";
 
         public void SetPlayer(PlayerInteractor p) => player = p;
 
@@ -81,6 +84,10 @@ namespace Game.UI
                 _pips[i].gameObject.SetActive(false);
             }
 
+            _weapon = MenuWidgets.Label(r, "Weapon", "", 16, new Color(0.9f, 0.92f, 0.95f, 0.9f), TextAnchor.UpperLeft);
+            MenuWidgets.Anchor(_weapon.rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(24f, -136f), new Vector2(0f, -110f));
+            _weapon.gameObject.AddComponent<Shadow>().effectDistance = new Vector2(1.5f, -1.5f);
+
             _debug = MenuWidgets.Label(r, "Debug", "", 14, MenuWidgets.Muted, TextAnchor.UpperLeft);
             MenuWidgets.Anchor(_debug.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(12f, -40f), new Vector2(-12f, -8f));
         }
@@ -97,6 +104,8 @@ namespace Game.UI
             // Hidden while a bark (intercom, banter) sits over the same corner.
             bool showHp = _combat != null && Time.timeScale > 0f && (Game.Dialogue.DialogueUI.Instance == null || !Game.Dialogue.DialogueUI.Instance.BarkVisible);
             _hp.text = showHp ? $"HP {_combat.Hp}/{_combat.MaxHp}" : "";
+            string switchHint = InputHints.Touch ? "" : "   (1 / 2 switch)";
+            _weapon.text = showHp && _combat.Owned.Count > 1 ? _combat.Weapon.Name.ToUpperInvariant() + switchHint : "";
             for (int i = 0; i < _pips.Length; i++)
             {
                 bool on = showHp && i < _combat.MaxHp;

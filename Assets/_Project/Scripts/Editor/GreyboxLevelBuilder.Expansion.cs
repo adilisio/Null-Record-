@@ -54,6 +54,12 @@ namespace Game.EditorTools
             spoofer.GetComponent<ItemPickup>().ConfigureTool(LaserGrid.SpooferTool, "Signal Spoofer");
             spoofer.GetComponent<ItemPickup>().SetSaveId("pickup_spoofer");
 
+            // Findable weapon 2: a shock baton on the Records floor, before the first Warden.
+            GameObject baton = Pickup(room, "Pickup_ShockBaton", new Vector3(64.8f, 0.8f, 0f),
+                Mat("Pickup_Weapon", new Color(1f, 0.35f, 0.3f), emission: new Color(1f, 0.3f, 0.25f) * 1.5f));
+            baton.GetComponent<ItemPickup>().ConfigureTool(Game.Combat.Weapons.ShockBaton.Id, Game.Combat.Weapons.ShockBaton.Name);
+            baton.GetComponent<ItemPickup>().SetSaveId("pickup_weapon_baton");
+
             // Laser grid into the Server Hall, under a header like the Security door.
             Material concrete = Mat("Concrete", new Color(0.32f, 0.33f, 0.35f));
             Box(room, "Grid_Header", new Vector3(72f, 5.5f, 0f), new Vector3(0.6f, 5f, Depth), concrete);

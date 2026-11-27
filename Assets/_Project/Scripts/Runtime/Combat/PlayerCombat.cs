@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 namespace Game.Combat
 {
     /// <summary>
-    /// The Subject's side of real-time combat: an unarmed strike (on the ground, mid-air, or low while crouched),
+    /// The Subject's side of real-time combat: a strike with fists or a found weapon (on the ground, mid-air, or low while crouched),
     /// HP, knockback with a moment of invulnerability when hit, and death sending you back to the last checkpoint.
     /// HP refills at checkpoints and on respawn, and isn't saved.
     /// </summary>
@@ -18,8 +18,6 @@ namespace Game.Combat
     public class PlayerCombat : MonoBehaviour
     {
         public const int BaseHp = 5;
-        public const float Startup = 0.06f, Active = 0.12f, Recovery = 0.18f;
-        public const float Reach = 1.45f;
         public const float HurtInvulnerability = 1.0f;
 
         private PlayerMotor _motor;
@@ -29,7 +27,9 @@ namespace Game.Combat
         private Combatant _body;
         private CharacterAnimator _anim;
         private Renderer[] _renderers;
-        private InputAction _attack;
+        private InputAction _attack, _next, _prev;
+        private readonly List<WeaponDef> _owned = new List<WeaponDef> { Weapons.Fists };
+        private Transform[] _props = new Transform[0];
 
         private float _swingStart = -10f;
         private bool _swinging;
@@ -49,6 +49,10 @@ namespace Game.Combat
         public int SwingCount { get; private set; }
         /// <summary>Result of the last swing that connected with something.</summary>
         public HitResult LastResult { get; private set; } = HitResult.Missed;
+        /// <summary>The weapon in hand.</summary>
+        public WeaponDef Weapon { get; private set; } = Weapons.Fists;
+        /// <summary>Weapons found so far, fists first.</summary>
+        public IReadOnlyList<WeaponDef> Owned => _owned;
 
         private void Awake()
         {
@@ -63,7 +67,10 @@ namespace Game.Combat
             _body.Died += OnDied;
             _anim = GetComponentInChildren<CharacterAnimator>();
             // Only renderers that are visible to begin with flicker (hidden placeholder bodies stay hidden).
-            _renderers = System.Array.FindAll(GetComponentsInChildren<Renderer>(), r => r.enabled);
+            _renderers = System.Array.FindAll(GetComponentsInChildren<Renderer>(true), r => r.enabled);
+            var props = new List<Transform>();
+            foreach (Transform t in GetComponentsInChildren<Transform>(true)) if (t.name.StartsWith("Weapon_")) props.Add(t);
+            _props = props.ToArray();
             PlayerRespawn.Respawned += OnRespawned;
         }
 
@@ -71,7 +78,13 @@ namespace Game.Combat
 
         private void Start()
         {
-            if (_input != null && _input.Map != null) _attack = _input.Map.FindAction("Attack");
+            if (_input != null && _input.Map != null)
+            {
+                _attack = _input.Map.FindAction("Attack");
+                _next = _input.Map.FindAction("Next");
+                _prev = _input.Map.FindAction("Previous");
+            }
+            RefreshOwned(announce: false);
             _lastLevel = _inv != null ? Progression.Level(_inv.Xp) : 1;
             _body.SetMaxHp(MaxHpFor(_inv != null ? _inv.Xp : 0), true);
             if (_respawn != null) _lastCheckpoint = _respawn.Checkpoint;
@@ -100,6 +113,9 @@ namespace Game.Combat
                 _body.Refill();
             }
 
+            RefreshOwned(announce: true);
+            if (CanAct && _next != null && _next.WasPressedThisFrame()) Cycle(1);
+            if (CanAct && _prev != null && _prev.WasPressedThisFrame()) Cycle(-1);
             if (_attack != null && _attack.WasPressedThisFrame() && FromAllowedDevice()) TryAttack();
             TickSwing();
             Flicker();
@@ -131,31 +147,37 @@ namespace Game.Combat
             _hitThisSwing.Clear();
             _motor.AttackLocked = true;
             SwingCount++;
-            _anim?.Play("Strike", Startup + Active + Recovery);
+            _anim?.Play(Weapon.Anim, Weapon.Total);
             GameAudio.Play(SoundId.Swing, transform.position + Vector3.up, 0.8f);
             return true;
         }
 
         /// <summary>The strike's hit box right now (also for tests and gizmos).</summary>
         public Rect StrikeBox => _swingLow
-            ? Combatant.Front(transform.position, _swingFacing, 0.1f, Reach, 0.1f, 1.0f)
+            ? Combatant.Front(transform.position, _swingFacing, 0.1f, Weapon.Reach, 0.1f, 1.0f)
             : _swingAir
-                ? Combatant.Front(transform.position, _swingFacing, 0.1f, Reach, -0.4f, 1.65f) // reaches down a little from a jump
-                : Combatant.Front(transform.position, _swingFacing, 0.1f, Reach, 0.55f, 1.65f);
+                ? Combatant.Front(transform.position, _swingFacing, 0.1f, Weapon.Reach, -0.4f, 1.65f) // reaches down a little from a jump
+                : Combatant.Front(transform.position, _swingFacing, 0.1f, Weapon.Reach, 0.55f, 1.65f);
 
         private void TickSwing()
         {
             if (!_swinging) return;
             float t = Time.time - _swingStart;
-            if (t >= Startup && t <= Startup + Active)
+            WeaponDef w = Weapon;
+            if (t >= w.Startup && t <= w.Startup + w.Active)
             {
                 Rect box = StrikeBox;
-                var hit = new HitInfo { Damage = 1, Knock = new Vector2(_swingFacing * 3.5f, 2f), From = transform.position, Source = _body };
+                var hit = new HitInfo
+                {
+                    Damage = w.Damage, Knock = new Vector2(_swingFacing * (w.Damage > 1 ? 5f : 3.5f), 2f), From = transform.position, Source = _body,
+                    Stun = w.Stun, Pierce = w.Stun > 0f,
+                };
                 HitResult r = Combatant.HitBox(box, Team.Player, hit, _hitThisSwing);
                 if (r == HitResult.Hit)
                 {
                     LastResult = r;
                     GameAudio.Play(SoundId.Hit, transform.position + new Vector3(_swingFacing, 1.1f, 0f));
+                    if (w.Stun > 0f) GameAudio.Play(SoundId.Zap, transform.position + new Vector3(_swingFacing, 1.1f, 0f), 0.6f);
                 }
                 else if (r == HitResult.Blocked)
                 {
@@ -165,7 +187,7 @@ namespace Game.Combat
                     if (!_blockedHintShown)
                     {
                         _blockedHintShown = true;
-                        GameMessages.Show("Its armour turns the blow. Strike right after it swings, or from behind.");
+                        GameMessages.Show("Its armour turns the blow. Strike right after it swings, from behind, or with something that shocks.");
                     }
                 }
                 for (int i = Bolt.Live.Count - 1; i >= 0; i--)
@@ -173,11 +195,48 @@ namespace Game.Combat
                     if (box.Overlaps(Bolt.Live[i].Box)) Bolt.Live[i].Pop();
                 }
             }
-            if (t > Startup + Active + Recovery || !_motor.ControlEnabled || _motor.Stunned)
+            if (t > w.Total || !_motor.ControlEnabled || _motor.Stunned)
             {
                 _swinging = false;
                 _motor.AttackLocked = false;
             }
+        }
+
+        /// <summary>Picks up weapons granted to the inventory (pickups, loading a save); a new find is equipped.</summary>
+        private void RefreshOwned(bool announce)
+        {
+            if (_inv == null) return;
+            WeaponDef newest = null;
+            foreach (WeaponDef w in Weapons.All)
+            {
+                if (w == Weapons.Fists || _owned.Contains(w) || !_inv.HasTool(w.Id)) continue;
+                _owned.Add(w);
+                newest = w;
+            }
+            if (newest == null) return;
+            _owned.Sort((a, b) => System.Array.IndexOf(Weapons.All, a).CompareTo(System.Array.IndexOf(Weapons.All, b)));
+            Equip(newest);
+            if (announce)
+            {
+                string how = PlayerInputReader.TouchStyle ? "Tap the weapon button" : "Press 1 / 2";
+                GameMessages.Show($"Equipped: {newest.Name}. {how} to switch.");
+            }
+        }
+
+        /// <summary>Next (+1) or previous (-1) of the weapons found so far.</summary>
+        public void Cycle(int dir)
+        {
+            if (_owned.Count < 2 || _swinging) return;
+            int i = (_owned.IndexOf(Weapon) + dir + _owned.Count) % _owned.Count;
+            Equip(_owned[i]);
+            GameAudio.Play(SoundId.UiMove, transform.position + Vector3.up, 0.6f);
+        }
+
+        public void Equip(WeaponDef w)
+        {
+            if (w == null || !_owned.Contains(w)) return;
+            Weapon = w;
+            foreach (Transform p in _props) if (p != null) p.gameObject.SetActive(p.name == w.Prop);
         }
 
         private void OnHurt(HitInfo hit)

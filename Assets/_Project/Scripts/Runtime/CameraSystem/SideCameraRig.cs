@@ -12,7 +12,7 @@ namespace Game.CameraSystem
     public class SideCameraRig : MonoBehaviour
     {
         [SerializeField] private Transform target;
-        [SerializeField] private float distance = 16f;
+        [SerializeField] private float distance = 17.5f;
         [SerializeField] private float heightOffset = 2.1f; // raised so less of the frame is void below the floor
         [SerializeField] private float lookAhead = 2f;
         [SerializeField] private float lookAheadSmoothTime = 0.6f;
@@ -44,7 +44,7 @@ namespace Game.CameraSystem
 
         /// <summary>Exploring distance: closer on touch screens, where the character would otherwise be tiny.</summary>
         public float ExploreDistance => Game.UI.TouchControls.ShouldShow ? distance * TouchDistanceScale : distance;
-        public const float TouchDistanceScale = 0.78f;
+        public const float TouchDistanceScale = 0.9f;
 
         private void Awake()
         {
