@@ -2,9 +2,9 @@
 
 _Last updated 2026-11-26, end of a long session. A new session should read this first, then `CLAUDE.md` (conventions) and `Docs/GDD.md` (design, and every first-pass decision with its reasons)._
 
-- **Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls). It's live and current as of commit `ef2eac6`.
+- **Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls). It's live and current as of commit `c27d93e`.
 - **Repo:** https://github.com/adilisio/Null-Record- (public). `main` holds the source and everything is pushed; `gh-pages` holds only the web build.
-- **Status:** 160 automated tests passing (97 EditMode, 63 PlayMode). The working tree is clean.
+- **Status:** 132 automated tests passing (70 EditMode, 62 PlayMode). The working tree is clean.
 
 ---
 
@@ -135,6 +135,7 @@ All commits are on `main`.
 | Fable polish review | Touch tap fix, device hints, screen HUDs, HP bars, downed companions, cover height rule, enemy cooldown fix, fuller framing, solid blocks, fades |
 | Phone polish (`b7d44dd`) | After the owner's first phone play ("crouch barely moves", "couldn't figure out combat"): next-step combat line, action bar, tap-an-enemy-to-attack, engage anywhere in the arena, END TURN pulse, Retreat; crouch 3.2 and a toggle on touch, auto-run on touch, crawl space in Holding; closer touch camera, dimmer back wall; opening card, objective line, end card (`StoryBeats`, placeholder text). See GDD "Phone polish" |
 | Story pass (`ef2eac6`) | Owner's answers: the escape goes **up**, the opening uses the **intercom** (Site PA barks), logs come from **staff and earlier subjects** (5 `LogTerminal`s, text in `Dialogue/logs.json`), and **someone is waiting** past the shutter (a silhouette; end card "Someone was waiting"). Names stay placeholder. See GDD "Story decisions" |
+| Real-time combat (`c27d93e`) | The owner didn't like the grid tactics, so fights are now real-time side-on action: strike, HP, knockback, telegraphed Enforcer/Sentry/Warden, `EnemyRoom` rewards, shock grates, simple companion assists, ATTACK on touch. The grid code is deleted; the last grid commit is `05a8af5`. Tests set `Enemy.Passive = true` (in `GreyboxTestBase`); combat tests turn it off. See GDD §7 |
 
 **Decisions and lessons worth keeping:**
 - **Cover stays a tile.** In a one-lane side view, removing it split the grid and stalemated melee, so the fix was "no height bonus from cover" instead.
@@ -152,7 +153,7 @@ All commits are on `main`.
 
 ## 8. Suggested next steps (offer 2–3; the owner picks)
 
-1. **Tune combat:** balance the three fights (ideally after a hands-on play), skill choices on level-up, a tool reward from a fight.
+1. **Tune real-time combat** after the owner's phone play: hit-stop, screen shake, enemy numbers, a weapon or sub-weapon for the Subject (owner's call), real death animations, better companion AI.
 2. **Expand further:** the third region (Security Core) past the freight shutter, the drone link tool, companion 3 (ranged), who the figure past the shutter is (owner's call).
 3. **Phone pass 2:** fix whatever the owner hits when they replay the phone polish. Also still open: combat camera closer on phones, crouch-walk animation (the pose is a frozen jump frame).
 4. **Rewrite the companions** once the owner gives names and voices.
