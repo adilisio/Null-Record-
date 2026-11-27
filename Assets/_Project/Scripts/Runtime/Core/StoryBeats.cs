@@ -77,7 +77,7 @@ namespace Game.Core
         private void Update()
         {
             if (_inv == null || _objective == null) return;
-            bool busy = EncounterController.Active != null || (DialogueUI.Instance != null && DialogueUI.Instance.IsOpen) || _endShown || Time.timeScale <= 0f;
+            bool busy = EncounterController.Active != null || (DialogueUI.Instance != null && (DialogueUI.Instance.IsOpen || DialogueUI.Instance.BarkVisible)) || _endShown || Time.timeScale <= 0f;
             _objective.text = busy ? "" : "> " + Objective();
 
             Vector3 pos = _inv.transform.position;
