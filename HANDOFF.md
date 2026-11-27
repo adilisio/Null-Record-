@@ -1,8 +1,8 @@
 # Null Record: handoff
 
-_Last updated 2026-11-26, end of a long session. A new session should read this first, then `CLAUDE.md` (conventions) and `Docs/GDD.md` (design, and every first-pass decision with its reasons)._
+_Last updated 2026-11-27, end of a long session. A new session should read this first, then `CLAUDE.md` (conventions) and `Docs/GDD.md` (design, and every first-pass decision with its reasons)._
 
-- **Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls). It's live and current as of commit `c27d93e`.
+- **Play it:** https://adilisio.github.io/Null-Record-/ (desktop browser, or Android Chrome with touch controls). It's live and current as of commit `624b961` (weapons and zoom).
 - **Repo:** https://github.com/adilisio/Null-Record- (public). `main` holds the source and everything is pushed; `gh-pages` holds only the web build.
 - **Status:** 135 automated tests passing (70 EditMode, 65 PlayMode). The working tree is clean.
 
@@ -114,9 +114,9 @@ Everything below is greybox plus CC0 placeholder art. "Placeholder" means it's m
   - Dace's real name, voice and lines.
   - Companion 2 ("Researcher"): name, voice, look and lines. The owner said "keep placeholder" for now.
   - The protagonist's subject ID and why they were erased.
-  - Whether the facility goes up or down. Lift signs are deliberately direction-neutral.
+  - Who the figure waiting past the shutter is. The escape goes **up** (decided 2026-11-26).
   - The endings.
-- **Hand-tested once:** the owner played on a phone once (2026-11-26). The phone polish pass answers that, but it hasn't been replayed by hand yet. Next, ask them to retry crouch and fight 1.
+- **Hand-tested once:** the owner played on a phone once (2026-11-26), before real-time combat. Real-time combat, weapons and the wider camera haven't been played by hand yet. Next, ask how fights and switching weapons feel on the phone.
 - **Story wording:** the opening card, objective lines and end card are placeholders (`StoryBeats.cs`). They avoid naming anyone, and say nothing about the facility's direction or why the Subject was erased.
 
 ## 6. This session, in order
@@ -154,7 +154,8 @@ All commits are on `main`.
 
 ## 8. Suggested next steps (offer 2–3; the owner picks)
 
-1. **Tune real-time combat** after the owner's phone play: hit-stop, screen shake, enemy numbers, a weapon or sub-weapon for the Subject (owner's call), real death animations, better companion AI.
-2. **Expand further:** the third region (Security Core) past the freight shutter, the drone link tool, companion 3 (ranged), who the figure past the shutter is (owner's call).
-3. **Phone pass 2:** fix whatever the owner hits when they replay the phone polish. Also still open: combat camera closer on phones, crouch-walk animation (the pose is a frozen jump frame).
-4. **Rewrite the companions** once the owner gives names and voices.
+1. **Combat feel pass** after the owner's phone play: hit-stop, screen shake, damage and speed tuning, zoom, real death animations, better companion AI.
+2. **More weapons:** a third, rarer one (Labs) or a secret one off the main path; a sub-weapon (owner's call). Add it to `Weapons.All`, a prop case in `CharacterArt.AttachWeapon`, and a pickup in the builder.
+3. **Expand further:** the third region (Security Core) past the freight shutter, the drone link tool, companion 3 (ranged), who the figure past the shutter is (owner's call).
+4. **Phone pass 2:** fix whatever the owner hits when they replay the phone polish. Also still open: combat camera closer on phones, crouch-walk animation (the pose is a frozen jump frame).
+5. **Rewrite the companions** once the owner gives names and voices.
