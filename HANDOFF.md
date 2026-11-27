@@ -157,5 +157,5 @@ All commits are on `main`.
 1. **Combat feel pass** after the owner's phone play: hit-stop, screen shake, damage and speed tuning, zoom, real death animations, better companion AI.
 2. **More weapons:** a third, rarer one (Labs) or a secret one off the main path; a sub-weapon (owner's call). Add it to `Weapons.All`, a prop case in `CharacterArt.AttachWeapon`, and a pickup in the builder.
 3. **Expand further:** the third region (Security Core) past the freight shutter, the drone link tool, companion 3 (ranged), who the figure past the shutter is (owner's call).
-4. **Phone pass 2:** fix whatever the owner hits when they replay the phone polish. Also still open: combat camera closer on phones, crouch-walk animation (the pose is a frozen jump frame).
+4. **Phone pass 2:** fix whatever the owner hits when they replay the phone polish. Also still open: crouch-walk animation (the pose is a frozen jump frame).
 5. **Rewrite the companions** once the owner gives names and voices.
